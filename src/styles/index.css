@@ -1,0 +1,51 @@
+@import "../../design/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "ss01", "cv01";
+    overflow: hidden;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+}
+
+/* Scroll containers + helpers carried over from the design prototype. */
+.scroll {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 8px;
+  border: 3px solid var(--bg);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-3);
+}
+[data-theme] {
+  transition: background-color 0.35s ease, color 0.25s ease;
+}
+.faded-strike {
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-3);
+}

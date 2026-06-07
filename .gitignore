@@ -64,3 +64,23 @@ fastlane/test_output
 .vscode/
 *.swp
 *.swo
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vite
+.vite/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/
+.cargo/
+
+# Test / coverage
+coverage/
