@@ -1,0 +1,18 @@
+# Notes: WYSIWYG editing, Markdown storage, and a deliberate fidelity ceiling
+
+Notes are authored WYSIWYG in TipTap (ProseMirror) but stored as Markdown with YAML frontmatter. TipTap has no native Markdown I/O, so we adopt the **`tiptap-markdown`** extension (markdown-it under the hood) for both parse and serialize, targeting **GitHub-Flavored Markdown** (GFM) so task-list checkboxes (`- [ ]`) and strikethrough stay readable in other markdown tools.
+
+**Supported, round-trip-stable feature set:** headings (H1–H3), paragraphs, bold, italic, strikethrough, inline code, bullet + ordered lists, task-list checkboxes, blockquote, code block, links. Images, tables, and embeds are deferred past v1.
+
+**Deliberate fidelity ceiling:** round-trip is guaranteed *only* for the supported set. Obsidian-specific syntax — `[[wikilinks]]`, `#tags`, callouts, embeds — is not a recognized node and is preserved as plain text at best, not rendered. **This app is not a general Obsidian replacement for arbitrary markdown**; it round-trips its own feature set faithfully. The frontmatter stays Obsidian-compatible; the body is "our markdown."
+
+The note title lives in frontmatter only — the body never repeats it as an H1. Saves are debounced (~800ms) autosaves flushed on blur/navigation/quit; each bumps `updated` and never touches `created`.
+
+## Why record this
+
+`tiptap-markdown` + GFM is a tech choice with editor lock-in, and the fidelity ceiling is a scope boundary that will surprise a future "why doesn't my wikilink work?" reader. Both are expensive to reverse once notes exist on disk in this dialect.
+
+## Considered Options
+
+- **Hand-wire `prosemirror-markdown`** — more control, more work, same outcome for our feature set. Rejected for v1.
+- **Store raw ProseMirror JSON instead of Markdown** — perfect round-trip, but breaks the portability/human-readability requirement (§5 of the brief). Rejected outright.
