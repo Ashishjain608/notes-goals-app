@@ -84,3 +84,6 @@ src-tauri/gen/
 
 # Test / coverage
 coverage/
+
+# Local session handoff notes (not part of the codebase)
+handoff/
