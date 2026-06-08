@@ -258,6 +258,40 @@ interface NoteEditorPaneProps {
   onDelete: (note: Note) => void;
 }
 
+const NOTE_CONTEXTS: ReadonlyArray<{ value: Context; label: string }> = [
+  { value: "office", label: "Office" },
+  { value: "personal", label: "Personal" },
+];
+
+/** A compact Office / Personal toggle for switching a note's context inline. */
+function ContextSwitcher({
+  value,
+  onChange,
+}: {
+  value: Context;
+  onChange: (context: Context) => void;
+}): JSX.Element {
+  return (
+    <div className="flex gap-0.5 rounded-md bg-surface-2 p-0.5">
+      {NOTE_CONTEXTS.map((c) => {
+        const active = value === c.value;
+        return (
+          <button
+            key={c.value}
+            type="button"
+            onClick={() => onChange(c.value)}
+            className={`flex items-center gap-1.5 rounded-[5px] px-2 py-[3px] text-[12px] font-medium transition-colors duration-150 ${
+              active ? "bg-surface text-ink shadow-sm" : "bg-transparent text-ink-3 hover:text-ink-2"
+            }`}
+          >
+            <ContextDot context={c.value} size={6} /> {c.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** The editor pane: title, toolbar, body, metadata, and delete affordance. */
 function NoteEditorPane({
   note,
@@ -267,9 +301,11 @@ function NoteEditorPane({
   onOpenGoal,
   onDelete,
 }: NoteEditorPaneProps): JSX.Element {
-  const { editor, title, setTitle, loadingBody } = useNoteEditor(note, store, {
-    onBody,
-  });
+  const { editor, title, setTitle, context, setContext, loadingBody } = useNoteEditor(
+    note,
+    store,
+    { onBody },
+  );
 
   if (!note) {
     return (
@@ -283,39 +319,50 @@ function NoteEditorPane({
   }
 
   return (
-    <div className="scroll flex-1 pb-20">
-      <div className="mx-auto max-w-[660px] px-10">
+    <div className="flex h-full min-w-0 flex-1 flex-col">
+      <div className="mx-auto flex h-full w-full max-w-[1000px] flex-col px-8">
         <Toolbar editor={editor} onDelete={() => onDelete(note)} />
 
-        <div className="pt-3.5">
-          <div className="mb-3.5 flex items-center gap-2.5 text-[12.5px] text-ink-2">
-            <span className="inline-flex items-center gap-1.5">
-              <ContextDot context={note.context} size={7} />
-              {note.context}
-            </span>
-            {goal && (
-              <>
-                <span className="text-ink-3">·</span>
-                <GoalChip goal={goal} onOpen={onOpenGoal} />
-              </>
-            )}
-            <span className="ml-auto text-xs text-ink-3">
-              Edited {ageInDays(note.updated)}d ago
-            </span>
-          </div>
+        <div className="mb-3 mt-1 flex items-center gap-2.5 text-[12.5px] text-ink-2">
+          <ContextSwitcher value={context} onChange={setContext} />
+          {goal && (
+            <>
+              <span className="text-ink-3">·</span>
+              <GoalChip goal={goal} onOpen={onOpenGoal} />
+            </>
+          )}
+          <span className="ml-auto text-xs text-ink-3">
+            Edited {ageInDays(note.updated)}d ago
+          </span>
+        </div>
 
+        {/* Title and body share one bordered frame — a border only, same background
+            as the page — split by a hairline so the two regions read as distinct.
+            The frame fills the pane; Enter in the title drops into the body. */}
+        <div className="mb-6 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-line">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                editor?.commands.focus("start");
+              }
+            }}
             placeholder="Untitled"
             aria-label="Note title"
-            className="mb-[18px] w-full border-none bg-transparent font-serif text-[36px] font-medium leading-[1.1] tracking-[-0.015em] text-ink outline-none placeholder:text-ink-3"
+            className="w-full border-none bg-transparent px-7 pb-4 pt-5 font-serif text-[30px] font-medium leading-[1.15] tracking-[-0.015em] text-ink outline-none placeholder:text-ink-3"
           />
-
+          <div className="h-px bg-line" />
           {loadingBody ? (
-            <div className="font-serif text-[18px] italic text-ink-3">Loading…</div>
+            <div className="px-7 py-5 font-serif text-[18px] italic text-ink-3">Loading…</div>
           ) : (
-            <EditorContent editor={editor} className="note-prose" />
+            <div
+              className="scroll min-h-0 flex-1 cursor-text"
+              onClick={() => editor?.commands.focus()}
+            >
+              <EditorContent editor={editor} className="note-prose px-7 py-6" />
+            </div>
           )}
         </div>
       </div>
@@ -448,14 +495,20 @@ function EditorStyles(): JSX.Element {
 }
 
 const NOTE_PROSE_CSS = `
+.note-prose {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
 .note-prose .ProseMirror {
+  flex: 1;
   font-family: var(--serif);
   font-size: 18px;
   line-height: 1.62;
   color: var(--ink);
   letter-spacing: .002em;
   outline: none;
-  min-height: 320px;
+  min-height: 240px;
 }
 .note-prose .ProseMirror > * + * { margin-top: 14px; }
 .note-prose .ProseMirror p { margin: 0; }

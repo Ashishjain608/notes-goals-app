@@ -20,6 +20,7 @@ function taskCreatedDaysAgo(daysAgo: number): Task {
     completed: null,
     goalId: null,
     subtasks: [],
+    details: "",
   };
 }
 

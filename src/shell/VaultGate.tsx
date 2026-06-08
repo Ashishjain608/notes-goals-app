@@ -9,7 +9,9 @@ import { Brand } from "./Brand";
 
 function Centered({ children }: { children: React.ReactNode }): JSX.Element {
   return (
-    <div className="grid h-screen place-items-center bg-bg px-6 text-ink">
+    <div className="relative grid h-screen place-items-center bg-bg px-6 text-ink">
+      {/* Draggable strip reserving the macOS traffic-light area before the shell mounts. */}
+      <div data-tauri-drag-region className="absolute inset-x-0 top-0 h-10" />
       <div className="flex max-w-sm flex-col items-center text-center">{children}</div>
     </div>
   );

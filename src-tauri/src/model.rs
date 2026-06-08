@@ -71,6 +71,10 @@ pub struct Task {
     /// A task links to at most one goal.
     pub goal_id: Option<String>,
     pub subtasks: Vec<Subtask>,
+    /// Free-form notes/details for the task. Defaults to empty so task files
+    /// written before this field existed still load (ADR-0006 resilience).
+    #[serde(default)]
+    pub details: String,
 }
 
 /// Note metadata — the markdown body lives in the `.md` file and is loaded

@@ -9,7 +9,7 @@
 import { useEffect } from "react";
 import { useStore } from "@/store";
 import { NavRail } from "@/shell/NavRail";
-import { TopChrome } from "@/shell/TopChrome";
+import { TitleBar } from "@/shell/TitleBar";
 import { VaultGate } from "@/shell/VaultGate";
 import { CommandPalette, TaskDetail } from "@/views/Capture";
 import Today from "@/views/Today";
@@ -68,14 +68,16 @@ export default function App(): JSX.Element {
   if (status !== "ready") return <VaultGate />;
 
   return (
-    <div className="flex h-screen bg-bg text-ink">
-      <NavRail />
-      <main className="flex min-w-0 flex-1 flex-col">
-        <TopChrome />
-        <div className="min-h-0 flex-1">
-          <CurrentView />
-        </div>
-      </main>
+    <div className="flex h-screen flex-col bg-bg text-ink">
+      <TitleBar />
+      <div className="flex min-h-0 flex-1">
+        <NavRail />
+        <main className="flex min-w-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1">
+            <CurrentView />
+          </div>
+        </main>
+      </div>
       <CommandPalette />
       <TaskDetail />
     </div>

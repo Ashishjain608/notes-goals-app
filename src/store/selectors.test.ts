@@ -36,6 +36,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     completed: null,
     goalId: null,
     subtasks: [],
+    details: "",
     ...overrides,
   };
 }

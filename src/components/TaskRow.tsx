@@ -44,6 +44,9 @@ export function TaskRow({
   const dropped = task.status === "dropped";
   const muted = done || dropped;
   const a = computeAging(task, mode);
+  // Celebrate only a just-now completion, so done tasks don't animate on load/nav.
+  const justCompleted =
+    done && task.completed != null && Date.now() - new Date(task.completed).getTime() < 2500;
 
   // Tint only applies to open (non-muted) rows; hover always wins over the tint.
   const tint = !muted && a.tintClass ? a.tintClass : "bg-transparent";
@@ -62,7 +65,12 @@ export function TaskRow({
         />
       )}
 
-      <Checkbox checked={done} dropped={dropped} onClick={() => onToggle?.(task.id)} />
+      <Checkbox
+        checked={done}
+        dropped={dropped}
+        celebrate={justCompleted}
+        onClick={() => onToggle?.(task.id)}
+      />
 
       <div className="min-w-0 flex-1">
         <div

@@ -49,3 +49,42 @@
   text-decoration: line-through;
   text-decoration-color: var(--ink-3);
 }
+
+/* Task completion flourish — a small in-place confetti burst, plus a box pop and
+   a check draw-in. Applied by Checkbox only for freshly completed tasks (gated in
+   TaskRow), so already-done tasks never animate on load or navigation. */
+@keyframes ng-complete-pop {
+  0% { transform: scale(0.72); }
+  55% { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+@keyframes ng-complete-draw {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes ng-burst {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  12% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(1) rotate(var(--rot));
+  }
+}
+.ng-complete-pop {
+  animation: ng-complete-pop 0.34s cubic-bezier(0.34, 1.56, 0.5, 1);
+}
+.ng-complete-draw path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: ng-complete-draw 0.32s cubic-bezier(0.65, 0, 0.35, 1) 0.05s forwards;
+}
+.ng-burst-piece {
+  animation: ng-burst 0.62s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ng-complete-pop,
+  .ng-complete-draw path,
+  .ng-burst-piece {
+    animation: none;
+  }
+}

@@ -42,6 +42,8 @@ export interface Task {
   /** A task links to at most one goal. */
   goalId: string | null;
   subtasks: Subtask[];
+  /** Free-form notes/details for the task (markdown-ish plain text; "" when empty). */
+  details: string;
 }
 
 /**

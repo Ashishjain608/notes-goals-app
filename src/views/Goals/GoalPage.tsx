@@ -12,7 +12,7 @@
  * regardless of the goal's status. Progress and links come from the pure
  * selectors; task mutations and navigation are delegated to store actions.
  */
-import { useMemo, type JSX } from "react";
+import { useMemo, useState, type JSX } from "react";
 import type { Goal, Note, Task } from "@/types";
 import {
   useStore,
@@ -79,22 +79,47 @@ interface TaskListProps {
   onOpenGoal: (goalId: string) => void;
 }
 
-/** The linked-task list: open tasks, then a dense done group, with a header. */
+/** Inline quick-add that creates a task already linked to this goal. */
+function GoalQuickAdd({ onAdd }: { onAdd: (title: string) => void }): JSX.Element {
+  const [title, setTitle] = useState("");
+  const submit = (): void => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    onAdd(trimmed);
+    setTitle("");
+  };
+  return (
+    <div className="mx-4 mb-2.5 flex items-center gap-2.5 rounded-lg border border-line bg-surface px-3.5 py-2.5 shadow-sm">
+      <span className="text-ink-3">
+        <Icon name="plus" size={17} />
+      </span>
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+        }}
+        placeholder="Add a task to this goal"
+        className="flex-1 border-none bg-transparent text-[14px] tracking-[-.005em] text-ink outline-none placeholder:text-ink-3"
+      />
+      <kbd className="font-mono text-[11px] text-ink-3">↵</kbd>
+    </div>
+  );
+}
+
+/** The linked-task list: open tasks, then a dense done group (or an empty hint). */
 function LinkedTasks({ open, done, total, onToggle, onOpen, onOpenGoal }: TaskListProps): JSX.Element {
   if (total === 0) {
     return (
       <EmptyState
         title="No tasks linked yet"
-        hint="Link tasks from their detail panel and they'll gather here."
+        hint="Add one above, or link existing tasks from their detail panel."
       />
     );
   }
 
   return (
     <div>
-      <div className="mb-1 px-4 text-xs font-semibold uppercase tracking-[.07em] text-ink-3">
-        Linked tasks · {total}
-      </div>
       {open.map((task) => (
         <TaskRow
           key={task.id}
@@ -200,6 +225,7 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
   const navigate = useStore((s) => s.navigate);
   const toggleTaskStatus = useStore((s) => s.toggleTaskStatus);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
+  const addTask = useStore((s) => s.addTask);
 
   const goal = useMemo(() => goals.find((g) => g.id === goalId), [goals, goalId]);
 
@@ -211,6 +237,10 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
   const openGoal = (id: string): void => navigate("goal", id);
 
   if (!goal) return <GoalNotFound onBack={goBack} />;
+
+  const addLinkedTask = (title: string): void => {
+    void addTask({ title, context: goal.context, goalId: goal.id });
+  };
 
   return (
     <div className="scroll h-full pt-10 pb-[120px]">
@@ -233,6 +263,10 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
             <div className="mt-[28px] mb-[18px] h-px bg-line" />
 
             <div className="-ml-4">
+              <div className="mb-2 px-4 text-xs font-semibold uppercase tracking-[.07em] text-ink-3">
+                Linked tasks · {progress.total}
+              </div>
+              <GoalQuickAdd onAdd={addLinkedTask} />
               <LinkedTasks
                 open={linkedTasks.open}
                 done={linkedTasks.done}

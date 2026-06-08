@@ -99,6 +99,7 @@ pub fn create_task(app: AppHandle, input: CreateTaskInput) -> AppResult<Task> {
         completed: None,
         goal_id: input.goal_id,
         subtasks: Vec::new(),
+        details: String::new(),
     };
     store_io::write_task(&vault, &task)?;
     Ok(task)
@@ -285,6 +286,7 @@ mod tests {
             completed: None,
             goal_id: None,
             subtasks: vec![],
+            details: String::new(),
         };
         apply_completed_rule(&mut t);
         assert!(t.completed.is_some(), "done should set completed");
@@ -334,6 +336,7 @@ mod tests {
             completed: None,
             goal_id: Some("g1".into()),
             subtasks: vec![],
+            details: String::new(),
         };
         store_io::write_task(&vault, &linked_task).unwrap();
 

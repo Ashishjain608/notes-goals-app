@@ -77,6 +77,7 @@ interface Task {
   completed: string | null;   // UTC datetime; auto-set on →done, cleared on reopen (Rust)
   goalId: string | null;      // ≤ 1 goal
   subtasks: Subtask[];
+  details: string;            // free-form notes ("" when empty); serde-default on load
 }                             // no `order` field — sorting is derived
 
 interface Note {

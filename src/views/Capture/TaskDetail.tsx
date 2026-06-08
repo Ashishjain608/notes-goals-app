@@ -200,6 +200,60 @@ function Subtasks({
   );
 }
 
+/** An inline native date picker for choosing an arbitrary due / snooze date. */
+function DatePickerRow({
+  value,
+  min,
+  onPick,
+}: {
+  value: IsoDate | null;
+  min?: IsoDate;
+  onPick: (date: IsoDate | null) => void;
+}): JSX.Element {
+  return (
+    <label className="flex cursor-pointer items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-[13.5px] text-ink transition-colors duration-100 hover:bg-raise">
+      <span className="text-ink-3">
+        <Icon name="calendar" size={15} />
+      </span>
+      <span className="flex-1">Pick a date…</span>
+      <input
+        type="date"
+        value={value ?? ""}
+        min={min}
+        onChange={(e) => onPick(e.target.value || null)}
+        className="bg-transparent text-[13px] tabular-nums text-ink-2 outline-none"
+      />
+    </label>
+  );
+}
+
+/** The free-form details section: a notes textarea saved on blur. */
+function Details({
+  taskId,
+  details,
+  onSave,
+}: {
+  taskId: string;
+  details: string;
+  onSave: (details: string) => void;
+}): JSX.Element {
+  return (
+    <div className="px-3">
+      <div className="mb-2 text-[11.5px] font-semibold uppercase tracking-[.07em] text-ink-3">
+        Details
+      </div>
+      <textarea
+        key={taskId}
+        defaultValue={details}
+        onBlur={(e) => onSave(e.target.value)}
+        placeholder="Add notes, links, or anything worth remembering…"
+        rows={3}
+        className="min-h-[76px] w-full resize-y rounded-md bg-surface-2 px-3 py-2.5 text-[13.5px] leading-[1.55] text-ink outline-none placeholder:text-ink-3"
+      />
+    </div>
+  );
+}
+
 /** The confirmed delete control, distinct from the "dropped" status. */
 function DeleteAction({ onDelete }: { onDelete: () => void }): JSX.Element {
   return (
@@ -219,6 +273,7 @@ export function TaskDetail(): JSX.Element | null {
   const detailTaskId = useStore((s) => s.detailTaskId);
   const tasks = useStore((s) => s.tasks);
   const goals = useStore((s) => s.goals);
+  const theme = useStore((s) => s.theme);
   const patchTask = useStore((s) => s.patchTask);
   const setTaskStatus = useStore((s) => s.setTaskStatus);
   const deleteTask = useStore((s) => s.deleteTask);
@@ -249,6 +304,10 @@ export function TaskDetail(): JSX.Element | null {
   const setGoal = (goalId: string | null): void => {
     void patchTask(task.id, { goalId });
     setMenu(null);
+  };
+
+  const setDetails = (details: string): void => {
+    if (details !== task.details) void patchTask(task.id, { details });
   };
 
   const toggleSubtask = (subtaskId: string): void => {
@@ -286,7 +345,10 @@ export function TaskDetail(): JSX.Element | null {
         onClick={closeTaskDetail}
         className="animate-overlayIn fixed inset-0 z-40 bg-[rgba(20,18,15,.18)]"
       />
-      <aside className="animate-panelIn fixed bottom-0 right-0 top-0 z-[41] flex w-[440px] max-w-[92vw] flex-col border-l border-line bg-surface shadow">
+      <aside
+        style={{ colorScheme: theme }}
+        className="animate-panelIn fixed bottom-0 right-0 top-0 z-[41] flex w-[440px] max-w-[92vw] flex-col border-l border-line bg-surface shadow"
+      >
         <DetailHeader task={task} onClose={closeTaskDetail} />
 
         <div className="scroll flex-1 px-4 pb-10 pt-5">
@@ -323,6 +385,7 @@ export function TaskDetail(): JSX.Element | null {
                 label="In a week"
                 onClick={() => setDue(dateKeyDaysAhead(7))}
               />
+              <DatePickerRow value={task.due} onPick={setDue} />
               {task.due && (
                 <OptionRow icon="x" label="Clear due date" danger onClick={() => setDue(null)} />
               )}
@@ -355,6 +418,7 @@ export function TaskDetail(): JSX.Element | null {
                 label="In a month"
                 onClick={() => setSnooze(dateKeyDaysAhead(30))}
               />
+              <DatePickerRow value={task.snoozeUntil} min={dateKeyDaysAhead(1)} onPick={setSnooze} />
               {task.snoozeUntil && (
                 <OptionRow icon="x" label="Un-snooze" danger onClick={() => setSnooze(null)} />
               )}
@@ -381,6 +445,10 @@ export function TaskDetail(): JSX.Element | null {
               {task.goalId && <OptionRow icon="x" label="Unlink" danger onClick={() => setGoal(null)} />}
             </MenuBox>
           </DetailRow>
+
+          <Divider />
+
+          <Details taskId={task.id} details={task.details} onSave={setDetails} />
 
           <Divider />
 

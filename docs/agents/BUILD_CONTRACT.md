@@ -60,7 +60,7 @@ function computeAging(task: Task, mode: AgingMode): {
 };
 
 function ContextDot(props: { context: Context; size?: number }): JSX.Element;
-function Checkbox(props: { checked: boolean; dropped?: boolean; size?: number; onClick?: () => void }): JSX.Element;
+function Checkbox(props: { checked: boolean; dropped?: boolean; size?: number; celebrate?: boolean; onClick?: () => void }): JSX.Element;
 function AgeTag(props: { task: Task; mode: AgingMode }): JSX.Element;
 function DueChip(props: { due: IsoDate | null }): JSX.Element | null;
 function SubtaskMeta(props: { subtasks: Subtask[] }): JSX.Element | null;
@@ -141,7 +141,7 @@ interface AppState {
   addTask: (input: CreateTaskInput) => Promise<Task>;
   toggleTaskStatus: (id: string) => Promise<void>;       // open <-> done
   setTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
-  patchTask: (id: string, patch: Partial<Pick<Task,"title"|"due"|"snoozeUntil"|"goalId"|"subtasks">>) => Promise<void>;
+  patchTask: (id: string, patch: Partial<Pick<Task,"title"|"details"|"due"|"snoozeUntil"|"goalId"|"subtasks">>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;             // hard delete (→ trash)
 
   // note actions

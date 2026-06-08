@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Goal, Subtask, Task } from "@/types";
+import { toLocalDateKey } from "@/lib/dates";
 import { Icon } from "./Icon";
 import { ContextDot } from "./ContextDot";
 import { DueChip } from "./DueChip";
@@ -26,6 +27,7 @@ function task(over: Partial<Task> = {}): Task {
     completed: null,
     goalId: null,
     subtasks: [],
+    details: "",
     ...over,
   };
 }
@@ -74,7 +76,11 @@ describe("DueChip", () => {
     expect(renderToStaticMarkup(<DueChip due={null} />)).toBe("");
   });
   it("renders a label for a due date", () => {
-    const html = renderToStaticMarkup(<DueChip due="2026-06-07" />);
+    // A future date so the label is always a "Due …" variant (not "overdue"),
+    // regardless of the day the test runs (DueChip uses the real clock).
+    const future = new Date();
+    future.setDate(future.getDate() + 5);
+    const html = renderToStaticMarkup(<DueChip due={toLocalDateKey(future)} />);
     expect(html).toContain("Due");
   });
 });

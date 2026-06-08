@@ -4,7 +4,6 @@
  */
 import { Icon, type IconName } from "@/components";
 import { useStore } from "@/store";
-import { Brand } from "./Brand";
 
 type NavKey = "today" | "tasks" | "notes" | "goals";
 
@@ -36,9 +35,6 @@ export function NavRail(): JSX.Element {
 
   return (
     <nav className="flex w-[66px] shrink-0 flex-col items-center gap-1.5 border-r border-line bg-bg py-4">
-      <div className="mb-3">
-        <Brand />
-      </div>
       {NAV.map((n) => {
         const on = active === n.key;
         return (

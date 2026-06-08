@@ -340,6 +340,7 @@ mod tests {
                 title: "check fps".to_string(),
                 status: SubtaskStatus::Done,
             }],
+            details: "Some **details** for this task.".to_string(),
         }
     }
 
@@ -381,6 +382,28 @@ mod tests {
 
         let loaded = read_task(&vault, "task-1").unwrap();
         assert_eq!(loaded, task);
+    }
+
+    #[test]
+    fn task_without_details_field_defaults_to_empty() {
+        // A task file written before `details` existed must still load.
+        let vault = temp_vault();
+        let legacy = r#"{
+  "id": "legacy",
+  "title": "Old task",
+  "context": "office",
+  "status": "open",
+  "created": "2026-06-07T06:30:00Z",
+  "due": null,
+  "snoozeUntil": null,
+  "completed": null,
+  "goalId": null,
+  "subtasks": []
+}"#;
+        fs::write(entity_path(&vault, EntityKind::Task, "legacy"), legacy).unwrap();
+
+        let loaded = read_task(&vault, "legacy").unwrap();
+        assert_eq!(loaded.details, "");
     }
 
     #[test]

@@ -66,7 +66,7 @@ export interface AppState {
   setTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
   patchTask: (
     id: string,
-    patch: Partial<Pick<Task, "title" | "due" | "snoozeUntil" | "goalId" | "subtasks">>,
+    patch: Partial<Pick<Task, "title" | "details" | "due" | "snoozeUntil" | "goalId" | "subtasks">>,
   ) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
 

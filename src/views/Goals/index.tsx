@@ -14,6 +14,7 @@ import type { Goal } from "@/types";
 import { useStore, selectGoalsOverview, selectGoalProgress } from "@/store";
 import { ProgressBar, ContextDot, Icon } from "@/components";
 import { formatShortDate } from "@/lib/dates";
+import { NewGoalDialog } from "./NewGoalDialog";
 
 /* ----------------------------------------------------------------- live cards */
 
@@ -144,6 +145,8 @@ export default function GoalsOverview(): JSX.Element {
   const contextFilter = useStore((s) => s.contextFilter);
   const navigate = useStore((s) => s.navigate);
 
+  const [adding, setAdding] = useState(false);
+
   const { live, closed } = useMemo(
     () => selectGoalsOverview(goals, contextFilter),
     [goals, contextFilter],
@@ -154,13 +157,23 @@ export default function GoalsOverview(): JSX.Element {
   return (
     <div className="scroll h-full pt-10 pb-[120px]">
       <div className="mx-auto max-w-[760px] px-10">
-        <header className="mb-[26px]">
-          <div className="mb-2 text-xs font-semibold uppercase tracking-[.1em] text-accent-ink">
-            Goals
+        <header className="mb-[26px] flex items-end justify-between gap-4">
+          <div>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-[.1em] text-accent-ink">
+              Goals
+            </div>
+            <h1 className="m-0 font-serif text-[32px] font-normal tracking-[-.01em] text-ink">
+              What I&apos;m working toward
+            </h1>
           </div>
-          <h1 className="m-0 font-serif text-[32px] font-normal tracking-[-.01em] text-ink">
-            What I&apos;m working toward
-          </h1>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 py-2 text-[13px] font-medium text-ink-2 shadow-sm transition-colors duration-150 hover:text-ink"
+          >
+            <Icon name="plus" size={16} />
+            New goal
+          </button>
         </header>
 
         {live.length === 0 ? (
@@ -180,6 +193,7 @@ export default function GoalsOverview(): JSX.Element {
 
         <ClosedSection closed={closed} onOpen={openGoal} />
       </div>
+      <NewGoalDialog open={adding} onClose={() => setAdding(false)} />
     </div>
   );
 }

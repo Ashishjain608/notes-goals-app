@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, type Editor } from "@tiptap/react";
-import type { Note } from "@/types";
+import type { Context, Note } from "@/types";
 import { buildNoteExtensions } from "@/lib/markdown";
 
 /** ~800ms debounce window for autosave (ADR-0005). */
@@ -43,6 +43,10 @@ export interface UseNoteEditorResult {
   title: string;
   /** Edit the title; arms the autosave debounce. */
   setTitle: (next: string) => void;
+  /** Working copy of the context (office | personal). */
+  context: Context;
+  /** Switch the note's context; persists immediately with the live body. */
+  setContext: (next: Context) => void;
   /** True while the selected note's body is being fetched for the first time. */
   loadingBody: boolean;
 }
@@ -66,6 +70,7 @@ export function useNoteEditor(
   const editor = useEditor({ extensions, immediatelyRender: false }, []);
 
   const [title, setTitleState] = useState(note?.title ?? "");
+  const [context, setContextState] = useState<Context>(note?.context ?? "office");
   const [loadingBody, setLoadingBody] = useState(false);
 
   // Keep the latest onBody in a ref so callbacks stay stable across renders.
@@ -83,6 +88,9 @@ export function useNoteEditor(
   // Mirror the working title for save payloads without re-arming effects.
   const titleRef = useRef(title);
   titleRef.current = title;
+  // Mirror the working context the same way.
+  const contextRef = useRef(context);
+  contextRef.current = context;
 
   /** Persist the pending edit immediately and cancel the debounce. */
   const flush = useCallback(() => {
@@ -97,7 +105,10 @@ export function useNoteEditor(
     const body = getMarkdown(editor);
     bodyCache.current.set(target.id, body);
     onBodyRef.current?.(target.id, body);
-    void store.saveNote({ ...target, title: titleRef.current }, body);
+    void store.saveNote(
+      { ...target, title: titleRef.current, context: contextRef.current },
+      body,
+    );
   }, [editor, store]);
 
   /** Arm (or re-arm) the ~800ms debounce against the currently loaded note. */
@@ -117,6 +128,18 @@ export function useNoteEditor(
       scheduleSave();
     },
     [scheduleSave],
+  );
+
+  /** Switch the note's context — a discrete choice, so persist it immediately. */
+  const setContext = useCallback(
+    (next: Context) => {
+      setContextState(next);
+      contextRef.current = next;
+      if (!note || note.id !== loadedIdRef.current) return; // nothing loaded yet
+      pendingNoteRef.current = note;
+      flush();
+    },
+    [note, flush],
   );
 
   // Body edits → schedule a save. Registered once; reads live refs internally.
@@ -149,6 +172,8 @@ export function useNoteEditor(
     const targetId = note.id;
     setTitleState(note.title);
     titleRef.current = note.title;
+    setContextState(note.context);
+    contextRef.current = note.context;
 
     const cached = bodyCache.current.get(targetId);
     if (cached !== undefined) {
@@ -186,7 +211,7 @@ export function useNoteEditor(
   // Flush any pending save when the component unmounts.
   useEffect(() => () => flush(), [flush]);
 
-  return { editor, title, setTitle, loadingBody };
+  return { editor, title, setTitle, context, setContext, loadingBody };
 }
 
 /** Replace the editor's content with markdown without emitting an `update`. */
