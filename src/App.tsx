@@ -17,6 +17,7 @@ import Backlog from "@/views/Backlog";
 import Notes from "@/views/Notes";
 import GoalsOverview from "@/views/Goals";
 import GoalPage from "@/views/Goals/GoalPage";
+import Activity from "@/views/Activity";
 
 function CurrentView(): JSX.Element {
   const screen = useStore((s) => s.route.screen);
@@ -26,6 +27,8 @@ function CurrentView(): JSX.Element {
       return <Backlog />;
     case "notes":
       return <Notes />;
+    case "activity":
+      return <Activity />;
     case "goals":
       return <GoalsOverview />;
     case "goal":

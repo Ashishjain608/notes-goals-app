@@ -102,7 +102,7 @@ Frozen store hook + API:
 
 ```ts
 type AppStatus = "loading" | "needs-vault" | "ready" | "error";
-type Screen = "today" | "tasks" | "notes" | "goals" | "goal";
+type Screen = "today" | "tasks" | "notes" | "goals" | "goal" | "activity";
 
 interface AppState {
   // data
@@ -189,6 +189,11 @@ function selectGoalsOverview(goals: Goal[], filter: ContextFilter): { live: Goal
 // NOTES full-text (title + body). Body search is async-capable; for v1 filter by title
 // synchronously and let the Notes view do body search via getNoteBody if needed.
 function selectNotes(notes: Note[], filter: ContextFilter, query: string): Note[];
+
+// ACTIVITY: a read-only day lens — tasks created and completed on a local day key
+// (ADR-0004), each chronological; context filter applies. Same task may appear in both.
+interface DayActivity { created: Task[]; completed: Task[]; }
+function selectDayActivity(tasks: Task[], filter: ContextFilter, day: IsoDate): DayActivity;
 ```
 
 Agent S may run `npx vitest run src/store` for selector tests it adds.
@@ -205,6 +210,8 @@ Frozen entry exports (default export from the folder's `index.tsx`):
   (Office | Personal side-by-side) when `contextFilter === "all"`, single column otherwise;
   serif date header + summary; completed-today tucked at bottom; embeds the inline quick-add.
 - `src/views/Backlog/` → `Backlog` — status tabs + chips + title filter; uses `selectBacklog`.
+- `src/views/Activity/` → `Activity` — read-only day lens (date stepper + Completed/Created
+  sections); uses `selectDayActivity`. A retrospective sibling of Today, not a stored page.
 - `src/views/Notes/` → `Notes` — two-pane list + TipTap editor (`buildNoteExtensions`);
   full-text search; autosave (~800ms, flush on blur/switch) via `saveNote`; delete.
 - `src/views/Goals/` → `GoalsOverview` (grid + Closed section) and

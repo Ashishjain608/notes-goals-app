@@ -5,11 +5,12 @@
 import { Icon, type IconName } from "@/components";
 import { useStore } from "@/store";
 
-type NavKey = "today" | "tasks" | "notes" | "goals";
+type NavKey = "today" | "tasks" | "activity" | "notes" | "goals";
 
 const NAV: { key: NavKey; label: string; icon: IconName }[] = [
   { key: "today", label: "Today", icon: "today" },
   { key: "tasks", label: "All Tasks", icon: "tasks" },
+  { key: "activity", label: "Activity", icon: "clock" },
   { key: "notes", label: "Notes", icon: "notes" },
   { key: "goals", label: "Goals", icon: "goals" },
 ];

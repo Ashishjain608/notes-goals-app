@@ -46,6 +46,10 @@ _Avoid_: defer, hide, pause.
 The hero view. A live query over all Tasks, not a stored page — it shows the open (un-snoozed) Tasks plus those completed today. Carry-forward is emergent: an open Task keeps appearing here until it is `done` or `dropped`. There is no daily page and no copy-forward step.
 _Avoid_: daily note, daily page, inbox.
 
+**Activity**:
+A read-only retrospective lens over a single (past or present) day: the Tasks **created** and the Tasks **completed** on that local day, derived live from their timestamps. Like Today it owns no data and is not a stored page — it is the "look back" counterpart to Today's "now". Reopening a Task clears its completion, so it leaves that day's completed list (the lens reflects current timestamps, not an immutable event log).
+_Avoid_: journal (implies writing — see Note), daily log page, history.
+
 **Age**:
 How long a Task has been open, measured as `today − created`. Surfaced as a subtle cue so rotting Tasks become visible.
 

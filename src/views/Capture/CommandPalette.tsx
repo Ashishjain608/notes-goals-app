@@ -24,6 +24,7 @@ function defaultContext(filter: string): Context {
 const JUMPS: ReadonlyArray<{ screen: Screen; label: string; icon: IconName }> = [
   { screen: "today", label: "Today", icon: "today" },
   { screen: "tasks", label: "All Tasks", icon: "tasks" },
+  { screen: "activity", label: "Activity", icon: "clock" },
   { screen: "notes", label: "Notes", icon: "notes" },
   { screen: "goals", label: "Goals", icon: "goals" },
 ];

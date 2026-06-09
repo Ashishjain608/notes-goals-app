@@ -24,7 +24,7 @@ import type {
 import * as ipc from "@/lib/ipc";
 
 export type AppStatus = "loading" | "needs-vault" | "ready" | "error";
-export type Screen = "today" | "tasks" | "notes" | "goals" | "goal";
+export type Screen = "today" | "tasks" | "notes" | "goals" | "goal" | "activity";
 export type Theme = "light" | "dark";
 
 export interface AppState {

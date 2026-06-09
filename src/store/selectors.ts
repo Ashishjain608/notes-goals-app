@@ -9,8 +9,8 @@
  * and docs/IMPLEMENTATION_PLAN.md §6.
  */
 
-import type { ContextFilter, Goal, Note, Task, TaskStatus } from "@/types";
-import { ageInDays, isCompletedToday, isSnoozed } from "@/lib/dates";
+import type { ContextFilter, Goal, IsoDate, Note, Task, TaskStatus } from "@/types";
+import { ageInDays, isCompletedToday, isSnoozed, toLocalDateKeyFromIso } from "@/lib/dates";
 
 /* ---------------------------------------------------------------- utilities */
 
@@ -203,6 +203,43 @@ export function selectGoalsOverview(
   });
 
   return { live, closed };
+}
+
+/* ----------------------------------------------------------------- ACTIVITY */
+
+export interface DayActivity {
+  /** Tasks whose `created` falls on the day (whatever their status is now). */
+  created: Task[];
+  /** Tasks whose `completed` falls on the day (i.e. marked done that day). */
+  completed: Task[];
+}
+
+/**
+ * Activity for one local day (ADR-0004): tasks created on `day` and tasks
+ * completed on `day`, each in chronological order. A task created and finished
+ * the same day appears in both lists. `day` is a local 'YYYY-MM-DD' key; stored
+ * UTC timestamps are converted to local before bucketing. The context filter
+ * applies. This is a read-only lens over current timestamps — reopening a task
+ * clears its `completed`, so it then leaves that day's completed list.
+ */
+export function selectDayActivity(tasks: Task[], filter: ContextFilter, day: IsoDate): DayActivity {
+  const created: Task[] = [];
+  const completed: Task[] = [];
+
+  for (const task of tasks) {
+    if (!matchesFilter(task.context, filter)) continue;
+    if (toLocalDateKeyFromIso(task.created) === day) created.push(task);
+    if (task.completed && toLocalDateKeyFromIso(task.completed) === day) completed.push(task);
+  }
+
+  created.sort(byCreatedAsc);
+  completed.sort((a, b) => {
+    const ca = a.completed ?? "";
+    const cb = b.completed ?? "";
+    return ca < cb ? -1 : ca > cb ? 1 : 0;
+  });
+
+  return { created, completed };
 }
 
 /* -------------------------------------------------------------------- NOTES */

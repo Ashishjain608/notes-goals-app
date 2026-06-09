@@ -45,9 +45,11 @@ const stroke = {
 
 const paths: Record<IconName, JSX.Element> = {
   today: (
+    // A calendar with today's date marked — distinct from the Activity clock.
     <>
-      <circle cx="12" cy="12" r="8.2" {...stroke} />
-      <path d="M12 7.6V12l3 1.8" {...stroke} />
+      <rect x="3.5" y="5" width="17" height="15" rx="2.5" {...stroke} />
+      <path d="M3.5 9.5h17M8 3v4M16 3v4" {...stroke} />
+      <rect x="9.8" y="12.4" width="4.4" height="4.4" rx="1.2" fill="currentColor" stroke="none" />
     </>
   ),
   tasks: <path d="M5 7h14M5 12h14M5 17h9" {...stroke} />,

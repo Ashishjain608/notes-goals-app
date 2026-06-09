@@ -9,6 +9,7 @@ import type { Goal, Note, Task } from "@/types";
 import {
   goalsById,
   selectBacklog,
+  selectDayActivity,
   selectGoalNotes,
   selectGoalProgress,
   selectGoalTasks,
@@ -16,6 +17,7 @@ import {
   selectNotes,
   selectToday,
 } from "./selectors";
+import { toLocalDateKey } from "@/lib/dates";
 
 /** Fixed local-day reference for every test: 2026-06-07 (local noon). */
 const NOW = new Date(2026, 5, 7, 12, 0, 0);
@@ -339,5 +341,58 @@ describe("selectNotes", () => {
     const a = makeNote({ id: "a" });
     const res = selectNotes([a], "all", "");
     expect(res.map((n) => n.id)).toEqual(["a"]);
+  });
+});
+
+/* ----------------------------------------------------------------- activity */
+
+describe("selectDayActivity", () => {
+  // Build timestamps from LOCAL components so day bucketing is timezone-stable.
+  const isoAt = (y: number, mo: number, d: number, h = 10): string =>
+    new Date(y, mo, d, h).toISOString();
+  const dayKey = (y: number, mo: number, d: number): string => toLocalDateKey(new Date(y, mo, d));
+
+  it("buckets tasks by their created and completed local day", () => {
+    const createdToday = makeTask({ created: isoAt(2026, 5, 8) });
+    const completedToday = makeTask({
+      created: isoAt(2026, 5, 1),
+      status: "done",
+      completed: isoAt(2026, 5, 8, 15),
+    });
+    const otherDay = makeTask({ created: isoAt(2026, 5, 9) });
+
+    const res = selectDayActivity([createdToday, completedToday, otherDay], "all", dayKey(2026, 5, 8));
+    expect(res.created.map((t) => t.id)).toEqual([createdToday.id]);
+    expect(res.completed.map((t) => t.id)).toEqual([completedToday.id]);
+  });
+
+  it("lists a task created and completed the same day in both buckets", () => {
+    const t = makeTask({
+      created: isoAt(2026, 5, 8, 9),
+      status: "done",
+      completed: isoAt(2026, 5, 8, 17),
+    });
+    const res = selectDayActivity([t], "all", dayKey(2026, 5, 8));
+    expect(res.created.map((x) => x.id)).toEqual([t.id]);
+    expect(res.completed.map((x) => x.id)).toEqual([t.id]);
+  });
+
+  it("honors the context filter", () => {
+    const office = makeTask({ created: isoAt(2026, 5, 8), context: "office" });
+    const personal = makeTask({ created: isoAt(2026, 5, 8), context: "personal" });
+    const day = dayKey(2026, 5, 8);
+    expect(selectDayActivity([office, personal], "office", day).created.map((t) => t.id)).toEqual([
+      office.id,
+    ]);
+    expect(selectDayActivity([office, personal], "personal", day).created.map((t) => t.id)).toEqual([
+      personal.id,
+    ]);
+  });
+
+  it("sorts each bucket chronologically", () => {
+    const early = makeTask({ created: isoAt(2026, 5, 8, 8) });
+    const late = makeTask({ created: isoAt(2026, 5, 8, 20) });
+    const res = selectDayActivity([late, early], "all", dayKey(2026, 5, 8));
+    expect(res.created.map((t) => t.id)).toEqual([early.id, late.id]);
   });
 });
