@@ -16,6 +16,14 @@ _Avoid_: todo, item, card.
 A piece of long-form writing, authored WYSIWYG and stored as portable Markdown. Optionally owned by one Goal.
 _Avoid_: doc, page, entry.
 
+**Notebook**:
+A user-created, named container that groups Notes for organization, and nothing more. Belongs to exactly one Context and holds only Notes of that Context. A Note belongs to at most one Notebook (or none); a Notebook's Note list is never stored — it is computed live from the Notes that point to it, so a Notebook may be empty. Notebooks do not nest. Purely organizational: a Notebook carries no Status, progress, or date — that is what distinguishes it from a Goal, which a Note may *also* be linked to independently.
+_Avoid_: folder (that is the **Data folder** / vault — a real directory on disk; a Notebook is virtual and is **not** a directory), tag/label (those imply many-membership; a Note has at most one Notebook), category, notebook-as-Goal.
+
+**Unfiled**:
+The live set of Notes that belong to no Notebook. Not a stored Notebook — it is the absence of one, surfaced as its own group. **File** is the verb for putting a Note into a Notebook (and *unfiling* removes it); a Note also becomes Unfiled when its Notebook is deleted or its Context changes away from the Notebook's.
+_Avoid_: inbox (a non-term — see Today), uncategorized, root.
+
 **Goal**:
 A longer-term aspiration or project promoted to a first-class object. Its task list and note list are never stored — they are computed live from everything pointing at it.
 _Avoid_: project (the user's prior word for it — Goal is the canonical term), objective, milestone.
@@ -62,8 +70,8 @@ A single-level checklist item under a Task — `{ id, title, status }` with stat
 _Avoid_: child task, nested task.
 
 **Data folder** (a.k.a. vault):
-The user-chosen directory holding all Tasks, Notes, and Goals as individual files. Portable, git/Dropbox/iCloud-friendly. The app stores only its path, nothing else, outside it.
-_Avoid_: database, library, store (those refer to the in-memory representation).
+The user-chosen directory holding all Tasks, Notes, Goals, and Notebooks as individual files. Portable, git/Dropbox/iCloud-friendly. The app stores only its path, nothing else, outside it. Refer to it as "vault" or "Data folder" — not bare "folder", which now reads as a **Notebook**.
+_Avoid_: database, library, store (those refer to the in-memory representation); bare "folder" (collides with Notebook).
 
 ## Relationships
 

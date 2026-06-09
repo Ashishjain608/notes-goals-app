@@ -15,13 +15,16 @@ import type {
   ContextFilter,
   CreateGoalInput,
   CreateNoteInput,
+  CreateNotebookInput,
   CreateTaskInput,
   Goal,
   Note,
+  Notebook,
   Task,
   TaskStatus,
 } from "@/types";
 import * as ipc from "@/lib/ipc";
+import { reconcileNoteNotebook } from "./selectors";
 
 export type AppStatus = "loading" | "needs-vault" | "ready" | "error";
 export type Screen = "today" | "tasks" | "notes" | "goals" | "goal" | "activity";
@@ -35,6 +38,7 @@ export interface AppState {
   tasks: Task[];
   notes: Note[];
   goals: Goal[];
+  notebooks: Notebook[];
   // ui
   contextFilter: ContextFilter;
   theme: Theme;
@@ -80,6 +84,13 @@ export interface AppState {
   saveNote: (note: Note, body: string) => Promise<void>;
   getNoteBody: (id: string) => Promise<string>;
   deleteNote: (id: string) => Promise<void>;
+  /** File a note into a notebook, or null to unfile (persists via move_note). */
+  moveNoteToNotebook: (id: string, notebookId: string | null) => Promise<void>;
+
+  // notebook actions
+  addNotebook: (input: CreateNotebookInput) => Promise<Notebook>;
+  renameNotebook: (id: string, name: string) => Promise<void>;
+  deleteNotebook: (id: string) => Promise<void>;
 
   // goal actions
   addGoal: (input: CreateGoalInput) => Promise<Goal>;
@@ -151,6 +162,7 @@ export const useStore = create<AppState>((set, get) => ({
   tasks: [],
   notes: [],
   goals: [],
+  notebooks: [],
   // ui
   contextFilter: "all",
   theme: "light",
@@ -179,6 +191,7 @@ export const useStore = create<AppState>((set, get) => ({
         tasks: snapshot.tasks,
         notes: snapshot.notes,
         goals: snapshot.goals,
+        notebooks: snapshot.notebooks,
         status: "ready",
         errorMessage: null,
       });
@@ -197,6 +210,7 @@ export const useStore = create<AppState>((set, get) => ({
         tasks: snapshot.tasks,
         notes: snapshot.notes,
         goals: snapshot.goals,
+        notebooks: snapshot.notebooks,
         status: "ready",
         errorMessage: null,
       });
@@ -214,6 +228,7 @@ export const useStore = create<AppState>((set, get) => ({
         tasks: snapshot.tasks,
         notes: snapshot.notes,
         goals: snapshot.goals,
+        notebooks: snapshot.notebooks,
         status: "ready",
         errorMessage: null,
       });
@@ -230,6 +245,7 @@ export const useStore = create<AppState>((set, get) => ({
         tasks: snapshot.tasks,
         notes: snapshot.notes,
         goals: snapshot.goals,
+        notebooks: snapshot.notebooks,
       });
     } catch (err) {
       set({ status: "error", errorMessage: errorMessageOf(err) });
@@ -331,7 +347,11 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   saveNote: async (note, body) => {
-    const updated = await withSaveGuard(() => ipc.updateNote(note, body));
+    // A notebook only holds notes of its own context; if an edit (e.g. a
+    // context switch) has left the note pointing at a notebook it can no longer
+    // belong to, unfile it before persisting (ADR-0008).
+    const reconciled = reconcileNoteNotebook(note, get().notebooks);
+    const updated = await withSaveGuard(() => ipc.updateNote(reconciled, body));
     set((s) => ({ notes: s.notes.map((n) => (n.id === updated.id ? updated : n)) }));
   },
 
@@ -342,6 +362,37 @@ export const useStore = create<AppState>((set, get) => ({
     set((s) => ({
       notes: s.notes.filter((n) => n.id !== id),
       selectedNoteId: s.selectedNoteId === id ? null : s.selectedNoteId,
+    }));
+  },
+
+  moveNoteToNotebook: async (id, notebookId) => {
+    const updated = await withSaveGuard(() => ipc.moveNote(id, notebookId));
+    set((s) => ({ notes: s.notes.map((n) => (n.id === id ? updated : n)) }));
+  },
+
+  /* ------------------------------------------------------ notebook actions */
+
+  addNotebook: async (input) => {
+    const created = await withSaveGuard(() => ipc.createNotebook(input));
+    set((s) => ({ notebooks: [...s.notebooks, created] }));
+    return created;
+  },
+
+  renameNotebook: async (id, name) => {
+    const current = get().notebooks.find((n) => n.id === id);
+    if (!current) return;
+    const updated = await withSaveGuard(() => ipc.updateNotebook({ ...current, name }));
+    set((s) => ({ notebooks: s.notebooks.map((n) => (n.id === id ? updated : n)) }));
+  },
+
+  deleteNotebook: async (id) => {
+    const result = await withSaveGuard(() => ipc.deleteNotebook(id));
+    const cleared = new Set(result.clearedNoteIds);
+    set((s) => ({
+      // Mirror the backend cleanup (ADR-0008): the notebook's notes survive,
+      // their notebookId rewritten to null on disk — they become Unfiled.
+      notebooks: s.notebooks.filter((n) => n.id !== id),
+      notes: s.notes.map((n) => (cleared.has(n.id) ? { ...n, notebookId: null } : n)),
     }));
   },
 

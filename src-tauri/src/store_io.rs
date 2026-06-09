@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AppError, AppResult};
-use crate::model::{Goal, Note, Task};
+use crate::model::{Goal, Note, Notebook, Task};
 
 /// The kind of entity, used to derive subfolder + extension.
 #[derive(Debug, Clone, Copy)]
@@ -22,6 +22,7 @@ pub enum EntityKind {
     Task,
     Goal,
     Note,
+    Notebook,
 }
 
 impl EntityKind {
@@ -30,12 +31,13 @@ impl EntityKind {
             EntityKind::Task => "tasks",
             EntityKind::Goal => "goals",
             EntityKind::Note => "notes",
+            EntityKind::Notebook => "notebooks",
         }
     }
 
     fn extension(self) -> &'static str {
         match self {
-            EntityKind::Task | EntityKind::Goal => "json",
+            EntityKind::Task | EntityKind::Goal | EntityKind::Notebook => "json",
             EntityKind::Note => "md",
         }
     }
@@ -108,6 +110,11 @@ pub fn write_goal(vault: &Path, goal: &Goal) -> AppResult<()> {
     write_json(vault, EntityKind::Goal, &goal.id, goal)
 }
 
+/// Serialize a notebook to pretty 2-space JSON and write it atomically.
+pub fn write_notebook(vault: &Path, notebook: &Notebook) -> AppResult<()> {
+    write_json(vault, EntityKind::Notebook, &notebook.id, notebook)
+}
+
 fn write_json<T: Serialize>(
     vault: &Path,
     kind: EntityKind,
@@ -135,6 +142,10 @@ struct Frontmatter {
     context: crate::model::Context,
     /// Empty string == no goal; serialized verbatim so the file stays clean.
     goal_id: String,
+    /// Empty string == Unfiled. `#[serde(default)]` so notes written before
+    /// notebooks existed still parse (ADR-0008).
+    #[serde(default)]
+    notebook_id: String,
     created: String,
     updated: String,
 }
@@ -146,25 +157,32 @@ impl Frontmatter {
             title: note.title.clone(),
             context: note.context,
             goal_id: note.goal_id.clone().unwrap_or_default(),
+            notebook_id: note.notebook_id.clone().unwrap_or_default(),
             created: note.created.clone(),
             updated: note.updated.clone(),
         }
     }
 
     fn into_note(self) -> Note {
-        let goal_id = if self.goal_id.trim().is_empty() {
-            None
-        } else {
-            Some(self.goal_id)
-        };
         Note {
             id: self.id,
             title: self.title,
             context: self.context,
-            goal_id,
+            goal_id: none_if_blank(self.goal_id),
+            notebook_id: none_if_blank(self.notebook_id),
             created: self.created,
             updated: self.updated,
         }
+    }
+}
+
+/// A frontmatter pointer field is stored as an empty string for the null case;
+/// map blank back to `None`.
+fn none_if_blank(value: String) -> Option<String> {
+    if value.trim().is_empty() {
+        None
+    } else {
+        Some(value)
     }
 }
 
@@ -252,6 +270,12 @@ pub fn read_task(vault: &Path, id: &str) -> AppResult<Task> {
     read_json(&entity_path(vault, EntityKind::Task, id))
 }
 
+/// Read a single notebook from disk.
+#[cfg_attr(not(test), allow(dead_code))]
+pub fn read_notebook(vault: &Path, id: &str) -> AppResult<Notebook> {
+    read_json(&entity_path(vault, EntityKind::Notebook, id))
+}
+
 /* ----------------------------------------------------------------- load_all */
 
 /// List the `*.json` files in a vault subfolder. Returns an empty list if the
@@ -277,6 +301,11 @@ pub fn load_tasks(vault: &Path) -> Vec<Task> {
 /// Read every goal in the vault, resilient to individual bad files.
 pub fn load_goals(vault: &Path) -> Vec<Goal> {
     load_collection(vault, EntityKind::Goal, read_json)
+}
+
+/// Read every notebook in the vault, resilient to individual bad files.
+pub fn load_notebooks(vault: &Path) -> Vec<Notebook> {
+    load_collection(vault, EntityKind::Notebook, read_json)
 }
 
 /// Read every note's *metadata* in the vault (bodies are lazy), resilient to
@@ -364,6 +393,17 @@ mod tests {
             title: "Findings".to_string(),
             context: Context::Personal,
             goal_id: goal_id.map(String::from),
+            notebook_id: None,
+            created: "2026-06-03T09:12:00Z".to_string(),
+            updated: "2026-06-04T11:00:00Z".to_string(),
+        }
+    }
+
+    fn sample_notebook(id: &str) -> Notebook {
+        Notebook {
+            id: id.to_string(),
+            name: "Reading".to_string(),
+            context: Context::Personal,
             created: "2026-06-03T09:12:00Z".to_string(),
             updated: "2026-06-04T11:00:00Z".to_string(),
         }
@@ -451,6 +491,67 @@ mod tests {
 
         let meta = read_note_meta(&vault, "note-2").unwrap();
         assert_eq!(meta.goal_id, None);
+    }
+
+    #[test]
+    fn notebook_json_round_trips() {
+        let vault = temp_vault();
+        let notebook = sample_notebook("nb-1");
+        write_notebook(&vault, &notebook).unwrap();
+
+        let raw =
+            fs::read_to_string(entity_path(&vault, EntityKind::Notebook, "nb-1")).unwrap();
+        assert!(raw.contains("\"context\": \"personal\""));
+        assert!(raw.contains("\"name\": \"Reading\""));
+
+        let loaded = read_notebook(&vault, "nb-1").unwrap();
+        assert_eq!(loaded, notebook);
+    }
+
+    #[test]
+    fn note_round_trips_notebook_id() {
+        let vault = temp_vault();
+        let note = Note {
+            notebook_id: Some("nb-7".to_string()),
+            ..sample_note("note-nb", None)
+        };
+        write_note(&vault, &note, "body").unwrap();
+
+        let raw =
+            fs::read_to_string(entity_path(&vault, EntityKind::Note, "note-nb")).unwrap();
+        assert!(raw.contains("notebookId: nb-7"));
+
+        let meta = read_note_meta(&vault, "note-nb").unwrap();
+        assert_eq!(meta.notebook_id.as_deref(), Some("nb-7"));
+    }
+
+    #[test]
+    fn note_without_notebook_id_field_defaults_to_unfiled() {
+        // A note written before notebooks existed (no `notebookId` in YAML)
+        // must still load, as Unfiled.
+        let vault = temp_vault();
+        let legacy = "---\nid: legacy-note\ntitle: Old note\ncontext: office\ngoalId: ''\ncreated: 2026-06-03T09:12:00Z\nupdated: 2026-06-04T11:00:00Z\n---\nbody\n";
+        fs::write(entity_path(&vault, EntityKind::Note, "legacy-note"), legacy).unwrap();
+
+        let meta = read_note_meta(&vault, "legacy-note").unwrap();
+        assert_eq!(meta.notebook_id, None);
+    }
+
+    #[test]
+    fn rewriting_notebook_id_preserves_body() {
+        // The storage guarantee `move_note` relies on: change metadata, keep body.
+        let vault = temp_vault();
+        let note = sample_note("note-move", None);
+        write_note(&vault, &note, "the precious body").unwrap();
+
+        let mut meta = read_note_meta(&vault, "note-move").unwrap();
+        meta.notebook_id = Some("nb-dest".to_string());
+        let body = read_note_body(&vault, "note-move").unwrap();
+        write_note(&vault, &meta, &body).unwrap();
+
+        let after = read_note_meta(&vault, "note-move").unwrap();
+        assert_eq!(after.notebook_id.as_deref(), Some("nb-dest"));
+        assert_eq!(read_note_body(&vault, "note-move").unwrap(), "the precious body");
     }
 
     #[test]

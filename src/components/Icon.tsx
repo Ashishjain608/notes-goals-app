@@ -12,6 +12,7 @@ export type IconName =
   | "today"
   | "tasks"
   | "notes"
+  | "notebook"
   | "goals"
   | "search"
   | "plus"
@@ -59,6 +60,13 @@ const paths: Record<IconName, JSX.Element> = {
       <path d="M6 4h8l4 4v12H6z" {...stroke} />
       <path d="M14 4v4h4" {...stroke} />
       <path d="M9 13h6M9 16.5h4" {...stroke} />
+    </>
+  ),
+  notebook: (
+    // A bound notebook — distinct from the folded-corner `notes` document.
+    <>
+      <rect x="5" y="4" width="13" height="16" rx="1.6" {...stroke} />
+      <path d="M8.5 4v16M11 9h4M11 12.5h4" {...stroke} />
     </>
   ),
   goals: (

@@ -57,6 +57,25 @@ export interface Note {
   title: string;
   context: Context;
   goalId: string | null;
+  /**
+   * The Notebook this note is filed in, or null when Unfiled. Virtual — the
+   * .md file stays flat in notes/ (docs/adr/0008). A notebookId that resolves
+   * to no notebook, or to a notebook of a different context, renders as Unfiled.
+   */
+  notebookId: string | null;
+  created: IsoDateTime;
+  updated: IsoDateTime;
+}
+
+/**
+ * A Notebook: a context-scoped, single-level container that groups Notes
+ * (CONTEXT.md, docs/adr/0008). Its note list is never stored — it is computed
+ * live by matching notebookId. Context is fixed at creation (rename only).
+ */
+export interface Notebook {
+  id: string;
+  name: string;
+  context: Context;
   created: IsoDateTime;
   updated: IsoDateTime;
 }
@@ -87,8 +106,15 @@ export interface CreateNoteInput {
   title: string;
   context: Context;
   goalId?: string | null;
+  /** The notebook to file the new note in (defaults to Unfiled). */
+  notebookId?: string | null;
   /** Initial markdown body (defaults to empty). */
   body?: string;
+}
+
+export interface CreateNotebookInput {
+  name: string;
+  context: Context;
 }
 
 export interface CreateGoalInput {
@@ -105,10 +131,16 @@ export interface StoreSnapshot {
   tasks: Task[];
   notes: Note[];
   goals: Goal[];
+  notebooks: Notebook[];
 }
 
 /** Result of deleting a goal: which linked entities had goalId cleared (docs/adr/0003). */
 export interface GoalDeletionResult {
   clearedTaskIds: string[];
+  clearedNoteIds: string[];
+}
+
+/** Result of deleting a notebook: which notes had notebookId cleared (→ Unfiled). */
+export interface NotebookDeletionResult {
   clearedNoteIds: string[];
 }

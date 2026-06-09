@@ -9,10 +9,11 @@ The **task is the source of truth**, not a daily page. **Today** is a live query
 Your data lives in a folder ("vault") you pick on first launch:
 
 ```
-<vault>/tasks/<uuid>.json     one file per task
-<vault>/notes/<uuid>.md       YAML frontmatter + markdown body
-<vault>/goals/<uuid>.json     one file per goal
-<vault>/.atlas/trash/         deleted files (never hard-unlinked)
+<vault>/tasks/<uuid>.json      one file per task
+<vault>/notes/<uuid>.md        YAML frontmatter + markdown body
+<vault>/goals/<uuid>.json      one file per goal
+<vault>/notebooks/<uuid>.json  one file per notebook (groups notes; ADR-0008)
+<vault>/.atlas/trash/          deleted files (never hard-unlinked)
 ```
 
 Plain files mean it's portable and git/Dropbox/iCloud-friendly — point the folder wherever you like; that's your call, not the app's.

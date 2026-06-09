@@ -9,7 +9,7 @@
  * and docs/IMPLEMENTATION_PLAN.md §6.
  */
 
-import type { ContextFilter, Goal, IsoDate, Note, Task, TaskStatus } from "@/types";
+import type { ContextFilter, Goal, IsoDate, Note, Notebook, Task, TaskStatus } from "@/types";
 import { ageInDays, isCompletedToday, isSnoozed, toLocalDateKeyFromIso } from "@/lib/dates";
 
 /* ---------------------------------------------------------------- utilities */
@@ -274,4 +274,100 @@ export function selectNotes(notes: Note[], filter: ContextFilter, query: string)
       return true;
     })
     .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
+}
+
+/* ---------------------------------------------------------------- NOTEBOOKS */
+
+/** Notebooks within the context filter, ordered alphabetically by name (ADR-0008). */
+export function selectNotebooks(notebooks: Notebook[], filter: ContextFilter): Notebook[] {
+  return notebooks
+    .filter((nb) => matchesFilter(nb.context, filter))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+}
+
+export interface NotebookGroup {
+  notebook: Notebook;
+  notes: Note[];
+}
+
+export interface NotesByNotebook {
+  /** One entry per shown notebook (alphabetical), each with its notes. */
+  groups: NotebookGroup[];
+  /** Notes belonging to no visible same-context notebook (the Unfiled group). */
+  unfiled: Note[];
+  /** True while a search query is narrowing the results. */
+  searching: boolean;
+}
+
+/**
+ * Group notes by notebook for the Notes list (ADR-0008). A note is filed under a
+ * notebook only when its notebookId resolves to a visible notebook of the *same*
+ * context; a dangling or context-mismatched pointer falls into Unfiled. Notes
+ * keep the shared most-recently-updated order within each group.
+ *
+ * Search matches notebooks AND notes: a notebook whose *name* matches surfaces
+ * with all of its notes; a notebook that merely *contains* title-matching notes
+ * surfaces with just those; non-matching notebooks are dropped. Matching Unfiled
+ * notes appear in `unfiled`.
+ */
+export function selectNotesByNotebook(
+  notes: Note[],
+  notebooks: Notebook[],
+  filter: ContextFilter,
+  query: string,
+): NotesByNotebook {
+  const needle = query.trim().toLowerCase();
+  const searching = needle.length > 0;
+  const titleMatches = (n: Note): boolean => !searching || n.title.toLowerCase().includes(needle);
+
+  const books = selectNotebooks(notebooks, filter);
+  const booksById = new Map(books.map((b) => [b.id, b] as const));
+
+  // All in-context notes, most-recently-updated first, partitioned by notebook.
+  const inContext = notes
+    .filter((n) => matchesFilter(n.context, filter))
+    .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
+
+  const filed = new Map<string, Note[]>();
+  const unfiledAll: Note[] = [];
+  for (const note of inContext) {
+    const book = note.notebookId ? booksById.get(note.notebookId) : undefined;
+    if (book && book.context === note.context) {
+      const list = filed.get(book.id);
+      if (list) list.push(note);
+      else filed.set(book.id, [note]);
+    } else {
+      unfiledAll.push(note);
+    }
+  }
+
+  const groups: NotebookGroup[] = [];
+  for (const notebook of books) {
+    const all = filed.get(notebook.id) ?? [];
+    if (!searching) {
+      groups.push({ notebook, notes: all });
+    } else if (notebook.name.toLowerCase().includes(needle)) {
+      groups.push({ notebook, notes: all }); // name hit → surface the whole notebook
+    } else {
+      const hits = all.filter(titleMatches);
+      if (hits.length > 0) groups.push({ notebook, notes: hits });
+    }
+  }
+
+  const unfiled = searching ? unfiledAll.filter(titleMatches) : unfiledAll;
+
+  return { groups, unfiled, searching };
+}
+
+/**
+ * Enforce the notebook context invariant on a single note (ADR-0008): a note may
+ * only stay filed in a notebook of its own context. If the note's notebook no
+ * longer exists or its context diverged, return the note unfiled; otherwise
+ * return it unchanged. Pure — used by the store before persisting an edit.
+ */
+export function reconcileNoteNotebook(note: Note, notebooks: Notebook[]): Note {
+  if (note.notebookId === null) return note;
+  const nb = notebooks.find((n) => n.id === note.notebookId);
+  if (nb && nb.context === note.context) return note;
+  return { ...note, notebookId: null };
 }

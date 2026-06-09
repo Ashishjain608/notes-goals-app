@@ -90,6 +90,26 @@ pub struct Note {
     pub title: String,
     pub context: Context,
     pub goal_id: Option<String>,
+    /// The notebook this note is filed in, or `None` when Unfiled. Virtual —
+    /// the `.md` file stays flat in `notes/` (ADR-0008). Defaults to `None` so
+    /// notes written before this field existed still load (ADR-0006).
+    #[serde(default)]
+    pub notebook_id: Option<String>,
+    /// UTC `Z`.
+    pub created: String,
+    /// UTC `Z`.
+    pub updated: String,
+}
+
+/// A context-scoped, single-level container that groups Notes (CONTEXT.md,
+/// ADR-0008). Its note list is computed live by matching `notebookId`; it is
+/// never stored. Context is fixed at creation. Stored as `notebooks/<id>.json`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Notebook {
+    pub id: String,
+    pub name: String,
+    pub context: Context,
     /// UTC `Z`.
     pub created: String,
     /// UTC `Z`.
@@ -139,9 +159,20 @@ pub struct CreateNoteInput {
     pub context: Context,
     #[serde(default)]
     pub goal_id: Option<String>,
+    /// The notebook to file the new note in (defaults to Unfiled).
+    #[serde(default)]
+    pub notebook_id: Option<String>,
     /// Initial markdown body (defaults to empty).
     #[serde(default)]
     pub body: Option<String>,
+}
+
+/// Payload for `create_notebook`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateNotebookInput {
+    pub name: String,
+    pub context: Context,
 }
 
 /// Payload for `create_goal`.
@@ -165,6 +196,7 @@ pub struct StoreSnapshot {
     pub tasks: Vec<Task>,
     pub notes: Vec<Note>,
     pub goals: Vec<Goal>,
+    pub notebooks: Vec<Notebook>,
 }
 
 /// Result of deleting a goal: which linked entities had `goalId` cleared
@@ -173,5 +205,13 @@ pub struct StoreSnapshot {
 #[serde(rename_all = "camelCase")]
 pub struct GoalDeletionResult {
     pub cleared_task_ids: Vec<String>,
+    pub cleared_note_ids: Vec<String>,
+}
+
+/// Result of deleting a notebook: which notes had `notebookId` cleared so they
+/// fell back to Unfiled (ADR-0008, ADR-0003 cleanup — not a cascade delete).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotebookDeletionResult {
     pub cleared_note_ids: Vec<String>,
 }

@@ -14,21 +14,22 @@
 
 import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
 import { EditorContent, type Editor } from "@tiptap/react";
-import type { Context, Note } from "@/types";
+import type { Context, Note, Notebook } from "@/types";
 import { ageInDays } from "@/lib/dates";
 import {
   goalsById,
-  selectNotes,
+  selectNotesByNotebook,
   useStore,
   type AppState,
 } from "@/store";
 import { ContextDot, EmptyState, GoalChip, Icon } from "@/components";
-import { excerptFromMarkdown, EXCERPT_PLACEHOLDER } from "./excerpt";
+import { NoteList } from "./NoteList";
 import { useNoteEditor, type NoteEditorStore } from "./useNoteEditor";
 
 /* ----------------------------------------------------------- store selectors */
 
 const selectNotesList = (s: AppState): Note[] => s.notes;
+const selectNotebooksList = (s: AppState): Notebook[] => s.notebooks;
 const selectContextFilter = (s: AppState): AppState["contextFilter"] => s.contextFilter;
 const selectGoals = (s: AppState): AppState["goals"] => s.goals;
 
@@ -37,6 +38,7 @@ const selectGoals = (s: AppState): AppState["goals"] => s.goals;
 /** The Notes screen entry component. */
 export default function Notes(): JSX.Element {
   const notes = useStore(selectNotesList);
+  const notebooks = useStore(selectNotebooksList);
   const contextFilter = useStore(selectContextFilter);
   const goals = useStore(selectGoals);
 
@@ -47,24 +49,54 @@ export default function Notes(): JSX.Element {
   const selectedId = useStore((s) => s.selectedNoteId);
   const selectNote = useStore((s) => s.selectNote);
   const navigate = useStore((s) => s.navigate);
+  const addNotebook = useStore((s) => s.addNotebook);
+  const renameNotebook = useStore((s) => s.renameNotebook);
+  const deleteNotebook = useStore((s) => s.deleteNotebook);
+  const moveNoteToNotebook = useStore((s) => s.moveNoteToNotebook);
 
   const [query, setQuery] = useState("");
 
-  const visible = useMemo(
-    () => selectNotes(notes, contextFilter, query),
-    [notes, contextFilter, query],
+  const data = useMemo(
+    () => selectNotesByNotebook(notes, notebooks, contextFilter, query),
+    [notes, notebooks, contextFilter, query],
+  );
+
+  // Whether this context has any notebooks at all (independent of search) — a
+  // notebook-less context renders as a plain flat list, like before notebooks.
+  const contextHasNotebooks = useMemo(
+    () => notebooks.some((n) => contextFilter === "all" || n.context === contextFilter),
+    [notebooks, contextFilter],
+  );
+
+  // Flat list of currently-visible notes for selection seeding, body prefetch,
+  // and delete fallback (the grouped structure is purely presentational).
+  const visibleNotes = useMemo(
+    () => [...data.groups.flatMap((g) => g.notes), ...data.unfiled],
+    [data],
   );
 
   // Seed the selection to the first visible note, and re-seed when the active
   // filter/search drops the current selection from view.
   useEffect(() => {
-    const stillVisible = visible.some((n) => n.id === selectedId);
-    if (!stillVisible) selectNote(visible[0]?.id ?? null);
-  }, [visible, selectedId, selectNote]);
+    const stillVisible = visibleNotes.some((n) => n.id === selectedId);
+    if (!stillVisible) selectNote(visibleNotes[0]?.id ?? null);
+  }, [visibleNotes, selectedId, selectNote]);
 
   const selectedNote = useMemo(
     () => notes.find((n) => n.id === selectedId) ?? null,
     [notes, selectedId],
+  );
+
+  // The selected note's notebook, only when it resolves to a same-context
+  // notebook (a mismatched/dangling pointer reads as Unfiled — ADR-0008).
+  const selectedNotebook = useMemo(
+    () =>
+      selectedNote && selectedNote.notebookId
+        ? notebooks.find(
+            (n) => n.id === selectedNote.notebookId && n.context === selectedNote.context,
+          ) ?? null
+        : null,
+    [selectedNote, notebooks],
   );
 
   const goalIndex = useMemo(() => goalsById(goals), [goals]);
@@ -85,7 +117,7 @@ export default function Notes(): JSX.Element {
   // Fetch bodies for visible notes once, to render real excerpts in the list.
   useEffect(() => {
     let cancelled = false;
-    const missing = visible.filter((n) => bodies[n.id] === undefined);
+    const missing = visibleNotes.filter((n) => bodies[n.id] === undefined);
     if (missing.length === 0) return;
     void Promise.all(
       missing.map(async (n) => [n.id, await getNoteBody(n.id)] as const),
@@ -101,12 +133,23 @@ export default function Notes(): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [visible, bodies, getNoteBody]);
+  }, [visibleNotes, bodies, getNoteBody]);
 
-  /** Create a fresh note in the active context and select it. */
+  /** Create a fresh Unfiled note in the active context and select it. */
   const handleNewNote = async (): Promise<void> => {
     const context: Context = contextFilter === "all" ? "personal" : contextFilter;
     const created = await addNote({ title: "Untitled", context });
+    setBodies((prev) => ({ ...prev, [created.id]: "" }));
+    selectNote(created.id);
+  };
+
+  /** Create a fresh note filed in `notebook` (inheriting its context) and select it. */
+  const handleNewNoteInNotebook = async (notebook: Notebook): Promise<void> => {
+    const created = await addNote({
+      title: "Untitled",
+      context: notebook.context,
+      notebookId: notebook.id,
+    });
     setBodies((prev) => ({ ...prev, [created.id]: "" }));
     selectNote(created.id);
   };
@@ -115,9 +158,19 @@ export default function Notes(): JSX.Element {
   const handleDelete = async (note: Note): Promise<void> => {
     const ok = window.confirm(`Delete "${note.title || "Untitled"}"? This cannot be undone.`);
     if (!ok) return;
-    const fallback = visible.find((n) => n.id !== note.id)?.id ?? null;
+    const fallback = visibleNotes.find((n) => n.id !== note.id)?.id ?? null;
     await deleteNote(note.id);
     selectNote(fallback);
+  };
+
+  /** Confirm + delete a notebook; its notes survive as Unfiled (ADR-0008). */
+  const handleDeleteNotebook = async (notebook: Notebook): Promise<void> => {
+    const count = data.groups.find((g) => g.notebook.id === notebook.id)?.notes.length ?? 0;
+    const tail = count
+      ? ` Its ${count} note${count === 1 ? "" : "s"} will be moved to Unfiled.`
+      : "";
+    if (!window.confirm(`Delete notebook "${notebook.name}"?${tail}`)) return;
+    await deleteNotebook(notebook.id);
   };
 
   const openGoal = (goalId: string): void => navigate("goal", goalId);
@@ -125,16 +178,24 @@ export default function Notes(): JSX.Element {
   return (
     <div className="flex h-full">
       <NoteList
-        notes={visible}
+        data={data}
+        contextFilter={contextFilter}
+        contextHasNotebooks={contextHasNotebooks}
         selectedId={selectedId}
         query={query}
         bodies={bodies}
         onQueryChange={setQuery}
         onSelect={selectNote}
         onNewNote={handleNewNote}
+        onNewNoteInNotebook={handleNewNoteInNotebook}
+        onCreateNotebook={(name, context) => void addNotebook({ name, context })}
+        onRenameNotebook={(id, name) => void renameNotebook(id, name)}
+        onDeleteNotebook={handleDeleteNotebook}
+        onMoveNote={(id, notebookId) => void moveNoteToNotebook(id, notebookId)}
       />
       <NoteEditorPane
         note={selectedNote}
+        notebook={selectedNotebook}
         goal={selectedNote?.goalId ? goalIndex[selectedNote.goalId] ?? null : null}
         store={noteStore}
         onBody={rememberBody}
@@ -145,112 +206,11 @@ export default function Notes(): JSX.Element {
   );
 }
 
-/* ---------------------------------------------------------------- left pane */
-
-interface NoteListProps {
-  notes: Note[];
-  selectedId: string | null;
-  query: string;
-  bodies: Record<string, string>;
-  onQueryChange: (q: string) => void;
-  onSelect: (id: string) => void;
-  onNewNote: () => void;
-}
-
-/** Searchable, scrollable list of note cards (left pane). */
-function NoteList({
-  notes,
-  selectedId,
-  query,
-  bodies,
-  onQueryChange,
-  onSelect,
-  onNewNote,
-}: NoteListProps): JSX.Element {
-  return (
-    <div className="scroll w-80 flex-shrink-0 border-r border-line py-7 pb-16">
-      <div className="mb-4 px-[22px]">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-[0.1em] text-accent-ink">
-            Notes
-          </div>
-          <button
-            type="button"
-            onClick={onNewNote}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-ink-2 transition-colors duration-150 hover:bg-raise hover:text-ink"
-          >
-            <Icon name="plus" size={14} />
-            New note
-          </button>
-        </div>
-        <div className="flex items-center gap-2 rounded-md bg-surface-2 px-[11px] py-2">
-          <Icon name="search" size={16} className="text-ink-3" />
-          <input
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
-            placeholder="Search notes"
-            className="flex-1 border-none bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
-          />
-        </div>
-      </div>
-
-      <div className="px-3">
-        {notes.length === 0 ? (
-          <div className="px-3 py-6 text-sm italic text-ink-3">
-            {query ? "No notes match your search." : "No notes in this context yet."}
-          </div>
-        ) : (
-          notes.map((note) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              active={note.id === selectedId}
-              body={bodies[note.id]}
-              onClick={() => onSelect(note.id)}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface NoteCardProps {
-  note: Note;
-  active: boolean;
-  body: string | undefined;
-  onClick: () => void;
-}
-
-/** A single note card: context dot + title, excerpt, and relative edit age. */
-function NoteCard({ note, active, body, onClick }: NoteCardProps): JSX.Element {
-  const excerpt = body === undefined ? EXCERPT_PLACEHOLDER : excerptFromMarkdown(body);
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`mb-0.5 block w-full rounded-lg px-3 py-3 text-left transition-colors duration-150 ${
-        active ? "bg-raise" : "hover:bg-surface-2"
-      }`}
-    >
-      <div className="mb-1 flex items-center gap-[7px]">
-        <ContextDot context={note.context} size={6} />
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-[-0.01em] text-ink">
-          {note.title || "Untitled"}
-        </span>
-      </div>
-      <div className="line-clamp-2 font-serif text-[13.5px] leading-snug text-ink-2">
-        {excerpt}
-      </div>
-      <div className="mt-1.5 text-[11.5px] text-ink-3">{ageInDays(note.updated)}d ago</div>
-    </button>
-  );
-}
-
 /* --------------------------------------------------------------- right pane */
 
 interface NoteEditorPaneProps {
   note: Note | null;
+  notebook: Notebook | null;
   goal: Parameters<typeof GoalChip>[0]["goal"];
   store: NoteEditorStore;
   onBody: (id: string, markdown: string) => void;
@@ -295,6 +255,7 @@ function ContextSwitcher({
 /** The editor pane: title, toolbar, body, metadata, and delete affordance. */
 function NoteEditorPane({
   note,
+  notebook,
   goal,
   store,
   onBody,
@@ -325,6 +286,15 @@ function NoteEditorPane({
 
         <div className="mb-3 mt-1 flex items-center gap-2.5 text-[12.5px] text-ink-2">
           <ContextSwitcher value={context} onChange={setContext} />
+          {notebook && (
+            <>
+              <span className="text-ink-3">·</span>
+              <span className="inline-flex items-center gap-1 text-ink-2" title={`In ${notebook.name}`}>
+                <Icon name="notebook" size={13} />
+                {notebook.name}
+              </span>
+            </>
+          )}
           {goal && (
             <>
               <span className="text-ink-3">·</span>

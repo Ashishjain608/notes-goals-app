@@ -5,16 +5,19 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { Goal, Note, Task } from "@/types";
+import type { Goal, Note, Notebook, Task } from "@/types";
 import {
   goalsById,
+  reconcileNoteNotebook,
   selectBacklog,
   selectDayActivity,
   selectGoalNotes,
   selectGoalProgress,
   selectGoalTasks,
   selectGoalsOverview,
+  selectNotebooks,
   selectNotes,
+  selectNotesByNotebook,
   selectToday,
 } from "./selectors";
 import { toLocalDateKey } from "@/lib/dates";
@@ -51,6 +54,19 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     title: `Note ${seq}`,
     context: "office",
     goalId: null,
+    notebookId: null,
+    created: "2026-06-01T09:00:00Z",
+    updated: "2026-06-01T09:00:00Z",
+    ...overrides,
+  };
+}
+
+function makeNotebook(overrides: Partial<Notebook> = {}): Notebook {
+  seq += 1;
+  return {
+    id: `nb${seq}`,
+    name: `Notebook ${seq}`,
+    context: "office",
     created: "2026-06-01T09:00:00Z",
     updated: "2026-06-01T09:00:00Z",
     ...overrides,
@@ -342,6 +358,119 @@ describe("selectNotes", () => {
     const a = makeNote({ id: "a" });
     const res = selectNotes([a], "all", "");
     expect(res.map((n) => n.id)).toEqual(["a"]);
+  });
+});
+
+/* ----------------------------------------------------------------- notebooks */
+
+describe("selectNotebooks", () => {
+  it("filters by context and sorts alphabetically (case-insensitive)", () => {
+    const work = makeNotebook({ id: "w", name: "work", context: "office" });
+    const archive = makeNotebook({ id: "a", name: "Archive", context: "office" });
+    const home = makeNotebook({ id: "h", name: "Home", context: "personal" });
+
+    expect(selectNotebooks([work, archive, home], "office").map((n) => n.id)).toEqual(["a", "w"]);
+    expect(selectNotebooks([work, archive, home], "all").map((n) => n.id)).toEqual(["a", "h", "w"]);
+  });
+});
+
+describe("selectNotesByNotebook", () => {
+  it("groups notes under their notebook and leaves the rest Unfiled", () => {
+    const work = makeNotebook({ id: "work", name: "Work", context: "office" });
+    const filed = makeNote({ id: "f", notebookId: "work", context: "office" });
+    const loose = makeNote({ id: "l", notebookId: null, context: "office" });
+
+    const res = selectNotesByNotebook([filed, loose], [work], "office", "");
+    expect(res.searching).toBe(false);
+    expect(res.groups.map((g) => g.notebook.id)).toEqual(["work"]);
+    expect(res.groups[0]?.notes.map((n) => n.id)).toEqual(["f"]);
+    expect(res.unfiled.map((n) => n.id)).toEqual(["l"]);
+  });
+
+  it("treats a context-mismatched or dangling notebookId as Unfiled (ADR-0008)", () => {
+    const officeBook = makeNotebook({ id: "ob", name: "Work", context: "office" });
+    // Note claims a notebook of a different context.
+    const mismatched = makeNote({ id: "m", notebookId: "ob", context: "personal" });
+    // Note points at a notebook that doesn't exist.
+    const dangling = makeNote({ id: "d", notebookId: "ghost", context: "personal" });
+
+    const res = selectNotesByNotebook([mismatched, dangling], [officeBook], "personal", "");
+    expect(res.groups).toEqual([]); // no personal notebooks visible
+    expect(res.unfiled.map((n) => n.id).sort()).toEqual(["d", "m"]);
+  });
+
+  it("keeps empty notebooks as empty groups", () => {
+    const empty = makeNotebook({ id: "e", name: "Empty", context: "office" });
+    const res = selectNotesByNotebook([], [empty], "office", "");
+    expect(res.groups.map((g) => g.notebook.id)).toEqual(["e"]);
+    expect(res.groups[0]?.notes).toEqual([]);
+  });
+
+  it("search by note title surfaces the containing notebook with only matching notes", () => {
+    const work = makeNotebook({ id: "work", name: "Work", context: "office" });
+    const hit = makeNote({ id: "h", title: "RTSP notes", notebookId: "work" });
+    const miss = makeNote({ id: "x", title: "Groceries", notebookId: "work" });
+
+    const res = selectNotesByNotebook([hit, miss], [work], "office", "rtsp");
+    expect(res.searching).toBe(true);
+    expect(res.groups.map((g) => g.notebook.id)).toEqual(["work"]);
+    expect(res.groups[0]?.notes.map((n) => n.id)).toEqual(["h"]);
+    expect(res.unfiled).toEqual([]);
+  });
+
+  it("search by notebook name surfaces the whole notebook (all its notes)", () => {
+    const work = makeNotebook({ id: "work", name: "Work log", context: "office" });
+    const reading = makeNotebook({ id: "rd", name: "Reading", context: "office" });
+    const a = makeNote({ id: "a", title: "Groceries", notebookId: "work" });
+    const b = makeNote({ id: "b", title: "Standup", notebookId: "work" });
+    // Title matches "work" but lives in a non-name-matching notebook.
+    const c = makeNote({ id: "c", title: "Worksheet", notebookId: "rd" });
+
+    const res = selectNotesByNotebook([a, b, c], [work, reading], "office", "work");
+    const workGroup = res.groups.find((g) => g.notebook.id === "work");
+    const readingGroup = res.groups.find((g) => g.notebook.id === "rd");
+    // Name hit → all of Work log's notes, even non-title-matching ones.
+    expect(workGroup?.notes.map((n) => n.id).sort()).toEqual(["a", "b"]);
+    // Reading didn't name-match but contains a title hit → just that note.
+    expect(readingGroup?.notes.map((n) => n.id)).toEqual(["c"]);
+  });
+
+  it("shows an empty name-matched notebook so it can be navigated", () => {
+    const work = makeNotebook({ id: "w", name: "Work", context: "office" });
+    const res = selectNotesByNotebook([], [work], "office", "work");
+    expect(res.groups.map((g) => g.notebook.id)).toEqual(["w"]);
+    expect(res.groups[0]?.notes).toEqual([]);
+  });
+
+  it("matches Unfiled notes by title while searching", () => {
+    const loose = makeNote({ id: "l", title: "RTSP loose", notebookId: null });
+    const res = selectNotesByNotebook([loose], [], "office", "rtsp");
+    expect(res.searching).toBe(true);
+    expect(res.unfiled.map((n) => n.id)).toEqual(["l"]);
+  });
+});
+
+describe("reconcileNoteNotebook", () => {
+  const work = makeNotebook({ id: "work", name: "Work", context: "office" });
+
+  it("keeps a note filed in a same-context notebook", () => {
+    const note = makeNote({ notebookId: "work", context: "office" });
+    expect(reconcileNoteNotebook(note, [work])).toBe(note);
+  });
+
+  it("unfiles a note whose context diverged from its notebook", () => {
+    const note = makeNote({ notebookId: "work", context: "personal" });
+    expect(reconcileNoteNotebook(note, [work]).notebookId).toBeNull();
+  });
+
+  it("unfiles a note whose notebook no longer exists", () => {
+    const note = makeNote({ notebookId: "ghost", context: "office" });
+    expect(reconcileNoteNotebook(note, [work]).notebookId).toBeNull();
+  });
+
+  it("leaves an already-unfiled note untouched", () => {
+    const note = makeNote({ notebookId: null });
+    expect(reconcileNoteNotebook(note, [work])).toBe(note);
   });
 });
 

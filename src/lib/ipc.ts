@@ -11,10 +11,13 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   CreateGoalInput,
   CreateNoteInput,
+  CreateNotebookInput,
   CreateTaskInput,
   Goal,
   GoalDeletionResult,
   Note,
+  Notebook,
+  NotebookDeletionResult,
   StoreSnapshot,
   Task,
 } from "@/types";
@@ -50,6 +53,18 @@ export const createNote = (input: CreateNoteInput): Promise<Note> => invoke("cre
 export const updateNote = (note: Note, body: string): Promise<Note> =>
   invoke("update_note", { note, body });
 export const deleteNote = (id: string): Promise<void> => invoke("delete_note", { id });
+/** File a note into a notebook (or null to unfile). Metadata-only; body preserved. */
+export const moveNote = (id: string, notebookId: string | null): Promise<Note> =>
+  invoke("move_note", { id, notebookId });
+
+/* ---------------------------------------------------------------- Notebooks */
+
+export const createNotebook = (input: CreateNotebookInput): Promise<Notebook> =>
+  invoke("create_notebook", { input });
+export const updateNotebook = (notebook: Notebook): Promise<Notebook> =>
+  invoke("update_notebook", { notebook });
+export const deleteNotebook = (id: string): Promise<NotebookDeletionResult> =>
+  invoke("delete_notebook", { id });
 
 /* -------------------------------------------------------------------- Goals */
 

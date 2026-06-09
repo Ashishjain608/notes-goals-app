@@ -12,8 +12,9 @@ use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
 use crate::model::{
-    CreateGoalInput, CreateNoteInput, CreateTaskInput, Goal, GoalDeletionResult, GoalStatus, Note,
-    StoreSnapshot, Task, TaskStatus,
+    CreateGoalInput, CreateNoteInput, CreateNotebookInput, CreateTaskInput, Goal,
+    GoalDeletionResult, GoalStatus, Note, Notebook, NotebookDeletionResult, StoreSnapshot, Task,
+    TaskStatus,
 };
 use crate::store_io::{self, EntityKind};
 use crate::vault;
@@ -71,6 +72,7 @@ pub fn load_all(app: AppHandle) -> AppResult<StoreSnapshot> {
         tasks: store_io::load_tasks(&vault),
         notes: store_io::load_notes(&vault),
         goals: store_io::load_goals(&vault),
+        notebooks: store_io::load_notebooks(&vault),
     })
 }
 
@@ -153,6 +155,7 @@ pub fn create_note(app: AppHandle, input: CreateNoteInput) -> AppResult<Note> {
         title: input.title,
         context: input.context,
         goal_id: input.goal_id,
+        notebook_id: input.notebook_id,
         created: now.clone(),
         updated: now,
     };
@@ -177,6 +180,78 @@ pub fn update_note(app: AppHandle, mut note: Note, body: String) -> AppResult<No
 pub fn delete_note(app: AppHandle, id: String) -> AppResult<()> {
     let vault = vault::require_vault(&app)?;
     store_io::move_to_trash(&vault, EntityKind::Note, &id)
+}
+
+/// File a note into a notebook (or `None` to unfile). Metadata-only: reloads
+/// the note's current body, rewrites the `.md` with the new `notebookId`, bumps
+/// `updated`, and returns the updated metadata (ADR-0008). Validating that the
+/// notebook's context matches is the frontend's job; the read side already
+/// treats a context-mismatched pointer as Unfiled.
+#[tauri::command]
+pub fn move_note(app: AppHandle, id: String, notebook_id: Option<String>) -> AppResult<Note> {
+    let vault = vault::require_vault(&app)?;
+    let mut note = store_io::read_note_meta(&vault, &id)?;
+    let body = store_io::read_note_body(&vault, &id)?;
+    note.notebook_id = notebook_id;
+    note.updated = now_utc();
+    store_io::write_note(&vault, &note, &body)?;
+    Ok(note)
+}
+
+/* ---------------------------------------------------------------- Notebooks */
+
+/// Create a notebook: Rust owns id and `created == updated == now`. Its context
+/// is fixed here and never changes afterward (ADR-0008).
+#[tauri::command]
+pub fn create_notebook(app: AppHandle, input: CreateNotebookInput) -> AppResult<Notebook> {
+    let vault = vault::require_vault(&app)?;
+    let now = now_utc();
+    let notebook = Notebook {
+        id: new_id(),
+        name: input.name,
+        context: input.context,
+        created: now.clone(),
+        updated: now,
+    };
+    store_io::write_notebook(&vault, &notebook)?;
+    Ok(notebook)
+}
+
+/// Persist an edited notebook (rename): bump `updated`, rewrite, return. Context
+/// is immutable by convention (ADR-0008), so only the name is expected to change.
+#[tauri::command]
+pub fn update_notebook(app: AppHandle, mut notebook: Notebook) -> AppResult<Notebook> {
+    let vault = vault::require_vault(&app)?;
+    notebook.updated = now_utc();
+    store_io::write_notebook(&vault, &notebook)?;
+    Ok(notebook)
+}
+
+/// Delete a notebook: clear the `notebookId` pointer on every note filed in it
+/// (preserving each body so the note survives as Unfiled), move the notebook
+/// file to trash, and report which notes were unfiled. Notes are never deleted
+/// with the notebook (ADR-0008 / ADR-0003 cleanup, not a cascade).
+#[tauri::command]
+pub fn delete_notebook(app: AppHandle, id: String) -> AppResult<NotebookDeletionResult> {
+    let vault = vault::require_vault(&app)?;
+    let cleared_note_ids = clear_notebook_notes(&vault, &id)?;
+    store_io::move_to_trash(&vault, EntityKind::Notebook, &id)?;
+    Ok(NotebookDeletionResult { cleared_note_ids })
+}
+
+/// Rewrite every note whose `notebookId == notebook_id` with no notebook,
+/// preserving its body, returning the unfiled note ids.
+fn clear_notebook_notes(vault: &Path, notebook_id: &str) -> AppResult<Vec<String>> {
+    let mut cleared = Vec::new();
+    for mut note in store_io::load_notes(vault) {
+        if note.notebook_id.as_deref() == Some(notebook_id) {
+            let body = store_io::read_note_body(vault, &note.id)?;
+            note.notebook_id = None;
+            store_io::write_note(vault, &note, &body)?;
+            cleared.push(note.id);
+        }
+    }
+    Ok(cleared)
 }
 
 /* -------------------------------------------------------------------- Goals */
@@ -355,6 +430,7 @@ mod tests {
             title: "linked note".into(),
             context: Context::Office,
             goal_id: Some("g1".into()),
+            notebook_id: None,
             created: "2026-06-02T00:00:00Z".into(),
             updated: "2026-06-02T00:00:00Z".into(),
         };
@@ -380,6 +456,57 @@ mod tests {
         // Goal moved to trash.
         assert!(!store_io::entity_path(&vault, EntityKind::Goal, "g1").exists());
         assert!(vault.join(".atlas/trash/g1.json").exists());
+    }
+
+    #[test]
+    fn delete_notebook_unfiles_notes_and_preserves_them() {
+        let vault = temp_vault();
+
+        let notebook = Notebook {
+            id: "nb1".into(),
+            name: "Work".into(),
+            context: Context::Office,
+            created: "2026-06-01T00:00:00Z".into(),
+            updated: "2026-06-01T00:00:00Z".into(),
+        };
+        store_io::write_notebook(&vault, &notebook).unwrap();
+
+        let member = Note {
+            id: "n1".into(),
+            title: "filed".into(),
+            context: Context::Office,
+            goal_id: None,
+            notebook_id: Some("nb1".into()),
+            created: "2026-06-02T00:00:00Z".into(),
+            updated: "2026-06-02T00:00:00Z".into(),
+        };
+        store_io::write_note(&vault, &member, "keep me").unwrap();
+
+        // A note in a different notebook must be left untouched.
+        let other = Note {
+            id: "n2".into(),
+            notebook_id: Some("other".into()),
+            ..member.clone()
+        };
+        store_io::write_note(&vault, &other, "other body").unwrap();
+
+        let cleared = clear_notebook_notes(&vault, "nb1").unwrap();
+        store_io::move_to_trash(&vault, EntityKind::Notebook, "nb1").unwrap();
+
+        assert_eq!(cleared, vec!["n1".to_string()]);
+
+        // Member unfiled, body preserved.
+        let n1 = store_io::read_note_meta(&vault, "n1").unwrap();
+        assert_eq!(n1.notebook_id, None);
+        assert_eq!(store_io::read_note_body(&vault, "n1").unwrap(), "keep me");
+
+        // Note in another notebook untouched.
+        let n2 = store_io::read_note_meta(&vault, "n2").unwrap();
+        assert_eq!(n2.notebook_id.as_deref(), Some("other"));
+
+        // Notebook moved to trash.
+        assert!(!store_io::entity_path(&vault, EntityKind::Notebook, "nb1").exists());
+        assert!(vault.join(".atlas/trash/nb1.json").exists());
     }
 
     /// Test helper mirroring `delete_goal`'s logic without an `AppHandle`.

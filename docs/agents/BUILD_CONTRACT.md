@@ -113,6 +113,7 @@ interface AppState {
   tasks: Task[];
   notes: Note[];          // metadata only; bodies fetched via getNoteBody
   goals: Goal[];
+  notebooks: Notebook[];  // context-scoped note containers (ADR-0008)
   // ui
   contextFilter: ContextFilter;     // "all" | "office" | "personal"
   theme: "light" | "dark";
@@ -149,10 +150,16 @@ interface AppState {
   deleteTask: (id: string) => Promise<void>;             // hard delete (→ trash)
 
   // note actions
-  addNote: (input: CreateNoteInput) => Promise<Note>;
-  saveNote: (note: Note, body: string) => Promise<void>; // bumps updated
+  addNote: (input: CreateNoteInput) => Promise<Note>;    // input.notebookId optional
+  saveNote: (note: Note, body: string) => Promise<void>; // bumps updated; reconciles notebook vs context
   getNoteBody: (id: string) => Promise<string>;          // lazy body fetch
   deleteNote: (id: string) => Promise<void>;
+  moveNoteToNotebook: (id: string, notebookId: string | null) => Promise<void>; // file/unfile (ADR-0008)
+
+  // notebook actions (ADR-0008)
+  addNotebook: (input: CreateNotebookInput) => Promise<Notebook>;
+  renameNotebook: (id: string, name: string) => Promise<void>;
+  deleteNotebook: (id: string) => Promise<void>;         // notes survive as Unfiled (clears notebookId)
 
   // goal actions
   addGoal: (input: CreateGoalInput) => Promise<Goal>;
@@ -195,6 +202,18 @@ function selectGoalsOverview(goals: Goal[], filter: ContextFilter): { live: Goal
 // synchronously and let the Notes view do body search via getNoteBody if needed.
 function selectNotes(notes: Note[], filter: ContextFilter, query: string): Note[];
 
+// NOTEBOOKS (ADR-0008): context-scoped containers (alphabetical) and the grouped
+// notes view (filed groups + Unfiled). A note files under a notebook only when
+// same-context; mismatched/dangling → Unfiled. Search matches notebook NAMES and
+// note titles: a name-matched notebook surfaces all its notes; one merely
+// containing title hits surfaces just those; non-matching notebooks drop out.
+function selectNotebooks(notebooks: Notebook[], filter: ContextFilter): Notebook[];
+interface NotebookGroup { notebook: Notebook; notes: Note[]; }
+interface NotesByNotebook { groups: NotebookGroup[]; unfiled: Note[]; searching: boolean; }
+function selectNotesByNotebook(notes: Note[], notebooks: Notebook[], filter: ContextFilter, query: string): NotesByNotebook;
+// Pure invariant helper used by saveNote: unfile a note whose context no longer matches its notebook.
+function reconcileNoteNotebook(note: Note, notebooks: Notebook[]): Note;
+
 // ACTIVITY: a read-only day lens — tasks created and completed on a local day key
 // (ADR-0004), each chronological; context filter applies. Same task may appear in both.
 interface DayActivity { created: Task[]; completed: Task[]; }
@@ -218,7 +237,9 @@ Frozen entry exports (default export from the folder's `index.tsx`):
 - `src/views/Activity/` → `Activity` — read-only day lens (date stepper + Completed/Created
   sections); uses `selectDayActivity`. A retrospective sibling of Today, not a stored page.
 - `src/views/Notes/` → `Notes` — two-pane list + TipTap editor (`buildNoteExtensions`);
-  full-text search; autosave (~800ms, flush on blur/switch) via `saveNote`; delete.
+  full-text search; autosave (~800ms, flush on blur/switch) via `saveNote`; delete. The
+  list groups notes into collapsible **Notebook** sections + an Unfiled group with
+  drag-and-drop filing (`NoteList.tsx`, ADR-0008).
 - `src/views/Goals/` → `GoalsOverview` (grid + Closed section) and
   `src/views/Goals/GoalPage.tsx` → `GoalPage` — **split layout** (content + sticky sidebar
   with progress card + linked notes; live linked-task list).
