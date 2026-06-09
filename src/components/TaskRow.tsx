@@ -16,6 +16,7 @@ import { DueChip } from "./DueChip";
 import { SubtaskMeta } from "./SubtaskMeta";
 import { GoalChip } from "./GoalChip";
 import { AgeTag } from "./AgeTag";
+import { Icon } from "./Icon";
 
 export interface TaskRowProps {
   task: Task;
@@ -27,6 +28,8 @@ export interface TaskRowProps {
   onToggle?: (id: string) => void;
   onOpen?: (id: string) => void;
   onOpenGoal?: (goalId: string) => void;
+  /** When provided, the trailing flag becomes a quick priority toggle. */
+  onTogglePriority?: (id: string) => void;
 }
 
 /** Render one task row. */
@@ -39,6 +42,7 @@ export function TaskRow({
   onToggle,
   onOpen,
   onOpenGoal,
+  onTogglePriority,
 }: TaskRowProps): JSX.Element {
   const done = task.status === "done";
   const dropped = task.status === "dropped";
@@ -49,7 +53,13 @@ export function TaskRow({
     done && task.completed != null && Date.now() - new Date(task.completed).getTime() < 2500;
 
   // Tint only applies to open (non-muted) rows; hover always wins over the tint.
-  const tint = !muted && a.tintClass ? a.tintClass : "bg-transparent";
+  // A priority flag highlights the row in accent, overriding the aging tint.
+  const tint =
+    !muted && task.priority
+      ? "bg-accent-soft"
+      : !muted && a.tintClass
+        ? a.tintClass
+        : "bg-transparent";
   const padding = dense ? "py-2 pl-4 pr-3.5" : "py-[11px] pl-4 pr-3.5";
   const showBar = a.barW > 0 && !muted && a.barColorClass;
 
@@ -94,7 +104,30 @@ export function TaskRow({
       </div>
 
       {!muted && (
-        <div className="flex items-center gap-2.5 pt-px">
+        <div className="flex items-center gap-2 pt-px">
+          {onTogglePriority ? (
+            <button
+              type="button"
+              aria-label={task.priority ? "Remove priority" : "Mark as priority"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePriority(task.id);
+              }}
+              className={`rounded p-0.5 transition-all duration-150 ${
+                task.priority
+                  ? "text-accent"
+                  : "text-ink-3 opacity-0 hover:text-accent group-hover:opacity-100"
+              }`}
+            >
+              <Icon name="flag" size={14} />
+            </button>
+          ) : (
+            task.priority && (
+              <span className="text-accent">
+                <Icon name="flag" size={14} />
+              </span>
+            )
+          )}
           <AgeTag task={task} mode={mode} />
         </div>
       )}

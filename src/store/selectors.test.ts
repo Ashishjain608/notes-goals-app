@@ -39,6 +39,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     goalId: null,
     subtasks: [],
     details: "",
+    priority: false,
     ...overrides,
   };
 }
@@ -394,5 +395,19 @@ describe("selectDayActivity", () => {
     const late = makeTask({ created: isoAt(2026, 5, 8, 20) });
     const res = selectDayActivity([late, early], "all", dayKey(2026, 5, 8));
     expect(res.created.map((t) => t.id)).toEqual([early.id, late.id]);
+  });
+});
+
+/* ------------------------------------------------- active-list ordering */
+
+describe("priority → due → age ordering", () => {
+  it("floats priority first, then soonest due, then oldest; undated last", () => {
+    const flagged = makeTask({ id: "p", priority: true, created: "2026-06-06T09:00:00Z" });
+    const dueSoon = makeTask({ id: "soon", due: "2026-06-08", created: "2026-06-06T09:00:00Z" });
+    const dueLater = makeTask({ id: "later", due: "2026-06-20", created: "2026-06-01T09:00:00Z" });
+    const undated = makeTask({ id: "old", created: "2026-05-01T09:00:00Z" });
+
+    const view = selectToday([undated, dueLater, dueSoon, flagged], "office", NOW);
+    expect(view.office.map((t) => t.id)).toEqual(["p", "soon", "later", "old"]);
   });
 });

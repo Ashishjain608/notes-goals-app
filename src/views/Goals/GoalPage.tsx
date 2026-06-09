@@ -77,6 +77,7 @@ interface TaskListProps {
   onToggle: (id: string) => void;
   onOpen: (id: string) => void;
   onOpenGoal: (goalId: string) => void;
+  onTogglePriority: (id: string) => void;
 }
 
 /** Inline quick-add that creates a task already linked to this goal. */
@@ -108,7 +109,15 @@ function GoalQuickAdd({ onAdd }: { onAdd: (title: string) => void }): JSX.Elemen
 }
 
 /** The linked-task list: open tasks, then a dense done group (or an empty hint). */
-function LinkedTasks({ open, done, total, onToggle, onOpen, onOpenGoal }: TaskListProps): JSX.Element {
+function LinkedTasks({
+  open,
+  done,
+  total,
+  onToggle,
+  onOpen,
+  onOpenGoal,
+  onTogglePriority,
+}: TaskListProps): JSX.Element {
   if (total === 0) {
     return (
       <EmptyState
@@ -128,6 +137,7 @@ function LinkedTasks({ open, done, total, onToggle, onOpen, onOpenGoal }: TaskLi
           onToggle={onToggle}
           onOpen={onOpen}
           onOpenGoal={onOpenGoal}
+          onTogglePriority={onTogglePriority}
         />
       ))}
       {done.length > 0 && (
@@ -224,6 +234,7 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
   const notes = useStore((s) => s.notes);
   const navigate = useStore((s) => s.navigate);
   const toggleTaskStatus = useStore((s) => s.toggleTaskStatus);
+  const toggleTaskPriority = useStore((s) => s.toggleTaskPriority);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const addTask = useStore((s) => s.addTask);
 
@@ -274,6 +285,7 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
                 onToggle={toggleTaskStatus}
                 onOpen={openTaskDetail}
                 onOpenGoal={openGoal}
+                onTogglePriority={toggleTaskPriority}
               />
             </div>
           </div>

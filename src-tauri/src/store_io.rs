@@ -341,6 +341,7 @@ mod tests {
                 status: SubtaskStatus::Done,
             }],
             details: "Some **details** for this task.".to_string(),
+            priority: true,
         }
     }
 
@@ -404,6 +405,7 @@ mod tests {
 
         let loaded = read_task(&vault, "legacy").unwrap();
         assert_eq!(loaded.details, "");
+        assert!(!loaded.priority);
     }
 
     #[test]

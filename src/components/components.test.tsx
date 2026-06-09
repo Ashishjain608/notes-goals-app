@@ -28,6 +28,7 @@ function task(over: Partial<Task> = {}): Task {
     goalId: null,
     subtasks: [],
     details: "",
+    priority: false,
     ...over,
   };
 }

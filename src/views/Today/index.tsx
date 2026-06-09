@@ -25,6 +25,7 @@ interface RowHandlers {
   onToggle: (id: string) => void;
   onOpen: (id: string) => void;
   onOpenGoal: (goalId: string) => void;
+  onTogglePriority: (id: string) => void;
 }
 
 /** Today's date as the prototype's serif headline string, e.g. "Sunday, June 7". */
@@ -129,6 +130,7 @@ function ColumnTasks({
           onToggle={handlers.onToggle}
           onOpen={handlers.onOpen}
           onOpenGoal={handlers.onOpenGoal}
+          onTogglePriority={handlers.onTogglePriority}
         />
       ))}
     </div>
@@ -229,6 +231,7 @@ export default function Today(): JSX.Element {
   const goals = useStore((s) => s.goals);
   const contextFilter = useStore((s) => s.contextFilter);
   const toggleTaskStatus = useStore((s) => s.toggleTaskStatus);
+  const toggleTaskPriority = useStore((s) => s.toggleTaskPriority);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const navigate = useStore((s) => s.navigate);
 
@@ -239,6 +242,7 @@ export default function Today(): JSX.Element {
     onToggle: (id) => void toggleTaskStatus(id),
     onOpen: (id) => openTaskDetail(id),
     onOpenGoal: (goalId) => navigate("goal", goalId),
+    onTogglePriority: (id) => void toggleTaskPriority(id),
   };
 
   const isAll = contextFilter === "all";

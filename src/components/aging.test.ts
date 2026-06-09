@@ -21,6 +21,7 @@ function taskCreatedDaysAgo(daysAgo: number): Task {
     goalId: null,
     subtasks: [],
     details: "",
+    priority: false,
   };
 }
 

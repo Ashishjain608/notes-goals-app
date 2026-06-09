@@ -58,6 +58,7 @@ export default function Backlog(): JSX.Element {
   const goals = useStore((s) => s.goals);
   const contextFilter = useStore((s) => s.contextFilter);
   const toggleTaskStatus = useStore((s) => s.toggleTaskStatus);
+  const toggleTaskPriority = useStore((s) => s.toggleTaskPriority);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const navigate = useStore((s) => s.navigate);
 
@@ -170,6 +171,7 @@ export default function Backlog(): JSX.Element {
                 onToggle={toggleTaskStatus}
                 onOpen={openTaskDetail}
                 onOpenGoal={(goalId) => navigate("goal", goalId)}
+                onTogglePriority={toggleTaskPriority}
               />
             ))
           )}

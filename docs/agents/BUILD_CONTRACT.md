@@ -79,6 +79,7 @@ function TaskRow(props: {
   onToggle?: (id: string) => void;
   onOpen?: (id: string) => void;
   onOpenGoal?: (goalId: string) => void;
+  onTogglePriority?: (id: string) => void;   // present → trailing flag toggles priority
 }): JSX.Element;
 
 // Small shared bits used by multiple views:
@@ -141,7 +142,8 @@ interface AppState {
   addTask: (input: CreateTaskInput) => Promise<Task>;
   toggleTaskStatus: (id: string) => Promise<void>;       // open <-> done
   setTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
-  patchTask: (id: string, patch: Partial<Pick<Task,"title"|"details"|"due"|"snoozeUntil"|"goalId"|"subtasks">>) => Promise<void>;
+  patchTask: (id: string, patch: Partial<Pick<Task,"title"|"details"|"due"|"snoozeUntil"|"goalId"|"subtasks"|"priority">>) => Promise<void>;
+  toggleTaskPriority: (id: string) => Promise<void>;     // flip the priority flag
   deleteTask: (id: string) => Promise<void>;             // hard delete (→ trash)
 
   // note actions
@@ -165,8 +167,9 @@ Frozen selectors in `src/store/selectors.ts` (pure functions of state slices; vi
 // goal lookup map
 function goalsById(goals: Goal[]): Record<string, Goal>;
 
-// TODAY (ADR-0004): open + un-snoozed within filter, grouped by context, oldest-created first;
-// plus tasks done today (tucked). Dropped-today is excluded.
+// TODAY (ADR-0004): open + un-snoozed within filter, grouped by context, ordered
+// priority-flagged → soonest-due (undated last) → oldest-created; plus tasks done
+// today (tucked). Dropped-today is excluded. Backlog + goal open lists share this order.
 interface TodayView {
   office: Task[]; personal: Task[]; completedToday: Task[];
   openCount: number; oldestAgeDays: number;

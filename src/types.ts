@@ -44,6 +44,8 @@ export interface Task {
   subtasks: Subtask[];
   /** Free-form notes/details for the task (markdown-ish plain text; "" when empty). */
   details: string;
+  /** User-flagged "do this now" priority — floats to the top and is highlighted. */
+  priority: boolean;
 }
 
 /**

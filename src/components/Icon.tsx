@@ -32,7 +32,8 @@ export type IconName =
   | "dot"
   | "flame"
   | "command"
-  | "trash";
+  | "trash"
+  | "flag";
 
 /** Shared stroke attributes for every line glyph. */
 const stroke = {
@@ -151,6 +152,13 @@ const paths: Record<IconName, JSX.Element> = {
     <>
       <path d="M5 7h14M10 4.5h4M9 7l.6 12h4.8L15 7" {...stroke} />
       <path d="M10.5 10.5v5.5M13.5 10.5v5.5" {...stroke} />
+    </>
+  ),
+  // Priority marker: a pennant flag on a pole.
+  flag: (
+    <>
+      <path d="M6.5 21V4" {...stroke} />
+      <path d="M6.5 4.5h11l-2.4 3.1 2.4 3.2h-11" {...stroke} />
     </>
   ),
 };

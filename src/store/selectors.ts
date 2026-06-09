@@ -26,6 +26,21 @@ function byCreatedAsc(a: { created: string }, b: { created: string }): number {
   return 0;
 }
 
+/**
+ * The active-list ordering: priority-flagged first, then soonest `due`
+ * (overdue → due-soon; undated last), then oldest-`created`. Due dates are bare
+ * 'YYYY-MM-DD', so a lexicographic compare is chronological.
+ */
+function byPriorityDueAge(a: Task, b: Task): number {
+  if (a.priority !== b.priority) return a.priority ? -1 : 1;
+  if (a.due !== b.due) {
+    if (a.due === null) return 1; // undated sinks below anything dated
+    if (b.due === null) return -1;
+    return a.due < b.due ? -1 : 1;
+  }
+  return byCreatedAsc(a, b);
+}
+
 /* -------------------------------------------------------------- goal lookup */
 
 /** Index goals by id for O(1) resolution from tasks/notes. */
@@ -68,8 +83,8 @@ export function selectToday(tasks: Task[], filter: ContextFilter, now: Date = ne
     }
   }
 
-  office.sort(byCreatedAsc);
-  personal.sort(byCreatedAsc);
+  office.sort(byPriorityDueAge);
+  personal.sort(byPriorityDueAge);
   completedToday.sort(byCreatedAsc);
 
   const open = [...office, ...personal];
@@ -121,7 +136,7 @@ export function selectBacklog(
     return true;
   });
 
-  return result.sort(byCreatedAsc);
+  return result.sort(byPriorityDueAge);
 }
 
 /* ------------------------------------------------------------------ GOAL(s) */
@@ -163,7 +178,7 @@ export function selectGoalTasks(goalId: string, tasks: Task[]): { open: Task[]; 
     else if (task.status === "done") done.push(task);
   }
 
-  open.sort(byCreatedAsc);
+  open.sort(byPriorityDueAge);
   done.sort(byCreatedAsc);
   return { open, done };
 }

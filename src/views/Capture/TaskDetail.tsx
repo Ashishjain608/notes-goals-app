@@ -254,6 +254,31 @@ function Details({
   );
 }
 
+/** A one-tap toggle that flags the task as priority (floats it + highlights it). */
+function PriorityToggle({ on, onToggle }: { on: boolean; onToggle: () => void }): JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`flex w-full items-center gap-3 rounded-md px-3 py-[11px] text-left transition-colors duration-100 ${
+        on ? "bg-accent-soft" : "hover:bg-raise"
+      }`}
+    >
+      <span className={on ? "text-accent" : "text-ink-3"}>
+        <Icon name="flag" size={17} />
+      </span>
+      <span className={`flex-1 text-sm ${on ? "text-ink" : "text-ink-3"}`}>
+        {on ? "Priority — surfaced on top" : "Mark as priority"}
+      </span>
+      {on && (
+        <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-white">
+          On
+        </span>
+      )}
+    </button>
+  );
+}
+
 /** The confirmed delete control, distinct from the "dropped" status. */
 function DeleteAction({ onDelete }: { onDelete: () => void }): JSX.Element {
   return (
@@ -310,6 +335,8 @@ export function TaskDetail(): JSX.Element | null {
     if (details !== task.details) void patchTask(task.id, { details });
   };
 
+  const togglePriority = (): void => void patchTask(task.id, { priority: !task.priority });
+
   const toggleSubtask = (subtaskId: string): void => {
     const subtasks = task.subtasks.map((s) =>
       s.id === subtaskId
@@ -364,6 +391,8 @@ export function TaskDetail(): JSX.Element | null {
           <StatusControl status={task.status} onSet={(s) => void setTaskStatus(task.id, s)} />
 
           <Divider />
+
+          <PriorityToggle on={task.priority} onToggle={togglePriority} />
 
           <DetailRow
             icon="calendar"

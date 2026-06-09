@@ -75,6 +75,9 @@ pub struct Task {
     /// written before this field existed still load (ADR-0006 resilience).
     #[serde(default)]
     pub details: String,
+    /// User-flagged priority. Defaults to false for files written before it existed.
+    #[serde(default)]
+    pub priority: bool,
 }
 
 /// Note metadata — the markdown body lives in the `.md` file and is loaded

@@ -66,8 +66,11 @@ export interface AppState {
   setTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
   patchTask: (
     id: string,
-    patch: Partial<Pick<Task, "title" | "details" | "due" | "snoozeUntil" | "goalId" | "subtasks">>,
+    patch: Partial<
+      Pick<Task, "title" | "details" | "due" | "snoozeUntil" | "goalId" | "subtasks" | "priority">
+    >,
   ) => Promise<void>;
+  toggleTaskPriority: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
 
   // note actions
@@ -273,6 +276,15 @@ export const useStore = create<AppState>((set, get) => ({
     if (!current) return;
     const merged: Task = { ...current, ...patch };
     const updated = await withSaveGuard(() => ipc.updateTask(merged));
+    set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? updated : t)) }));
+  },
+
+  toggleTaskPriority: async (id) => {
+    const current = get().tasks.find((t) => t.id === id);
+    if (!current) return;
+    const updated = await withSaveGuard(() =>
+      ipc.updateTask({ ...current, priority: !current.priority }),
+    );
     set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? updated : t)) }));
   },
 

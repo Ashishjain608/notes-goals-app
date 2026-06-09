@@ -53,6 +53,10 @@ _Avoid_: journal (implies writing — see Note), daily log page, history.
 **Age**:
 How long a Task has been open, measured as `today − created`. Surfaced as a subtle cue so rotting Tasks become visible.
 
+**Priority**:
+A boolean flag marking a Task as "do this now". A priority Task is highlighted and floats to the top of the active lists (Today, All Tasks, a Goal's tasks). Ordering stays derived — priority first, then soonest **due** date (undated last), then oldest **Age** — never a manual drag order.
+_Avoid_: urgent (a near due date conveys that), important, star, P1/P2.
+
 **Subtask**:
 A single-level checklist item under a Task — `{ id, title, status }` with status `open` | `done`. Subtasks do not nest.
 _Avoid_: child task, nested task.
