@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { useStore } from "@/store";
 import { NavRail } from "@/shell/NavRail";
 import { TitleBar } from "@/shell/TitleBar";
+import { SidebarToggle } from "@/shell/SidebarToggle";
 import { VaultGate } from "@/shell/VaultGate";
 import { CommandPalette, TaskDetail } from "@/views/Capture";
 import Today from "@/views/Today";
@@ -43,6 +44,8 @@ export default function App(): JSX.Element {
   const status = useStore((s) => s.status);
   const init = useStore((s) => s.init);
   const reload = useStore((s) => s.reload);
+  const navCollapsed = useStore((s) => s.navCollapsed);
+  const toggleNav = useStore((s) => s.toggleNav);
 
   // Boot: load config + vault + data.
   useEffect(() => {
@@ -55,6 +58,10 @@ export default function App(): JSX.Element {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         useStore.getState().openPalette();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        useStore.getState().toggleNav();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -74,7 +81,8 @@ export default function App(): JSX.Element {
     <div className="flex h-screen flex-col bg-bg text-ink">
       <TitleBar />
       <div className="flex min-h-0 flex-1">
-        <NavRail />
+        <NavRail expanded={!navCollapsed} />
+        <SidebarToggle collapsed={navCollapsed} onToggle={toggleNav} />
         <main className="flex min-w-0 flex-1 flex-col">
           <div className="min-h-0 flex-1">
             <CurrentView />

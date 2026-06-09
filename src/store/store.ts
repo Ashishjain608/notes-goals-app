@@ -38,6 +38,7 @@ export interface AppState {
   // ui
   contextFilter: ContextFilter;
   theme: Theme;
+  navCollapsed: boolean;
   route: { screen: Screen; goalId: string | null };
   detailTaskId: string | null;
   paletteOpen: boolean;
@@ -53,6 +54,7 @@ export interface AppState {
   setContextFilter: (c: ContextFilter) => void;
   setTheme: (t: Theme) => void;
   toggleTheme: () => void;
+  toggleNav: () => void;
   navigate: (screen: Screen, goalId?: string | null) => void;
   openTaskDetail: (id: string) => void;
   closeTaskDetail: () => void;
@@ -110,6 +112,19 @@ function applyTheme(theme: Theme): void {
   }
 }
 
+/* ----------------------------------------------------------- nav config --- */
+
+const NAV_KEY = "ng-nav-collapsed";
+
+/** Read the persisted sidebar-collapsed state. Safe when localStorage is absent. */
+function readNavCollapsed(): boolean {
+  try {
+    return localStorage.getItem(NAV_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 /* ----------------------------------------------------------- save guard ---
    Module-level so a window-focus reload can tell whether a mutation is mid-
    flight and skip itself rather than overwrite the optimistic local state. */
@@ -139,6 +154,7 @@ export const useStore = create<AppState>((set, get) => ({
   // ui
   contextFilter: "all",
   theme: "light",
+  navCollapsed: readNavCollapsed(),
   route: { screen: "today", goalId: null },
   detailTaskId: null,
   paletteOpen: false,
@@ -233,6 +249,16 @@ export const useStore = create<AppState>((set, get) => ({
     const next: Theme = get().theme === "dark" ? "light" : "dark";
     applyTheme(next);
     set({ theme: next });
+  },
+
+  toggleNav: () => {
+    const next = !get().navCollapsed;
+    try {
+      localStorage.setItem(NAV_KEY, next ? "1" : "0");
+    } catch {
+      // ignore: storage may be unavailable
+    }
+    set({ navCollapsed: next });
   },
 
   navigate: (screen, goalId = null) => set({ route: { screen, goalId } }),

@@ -116,6 +116,7 @@ interface AppState {
   // ui
   contextFilter: ContextFilter;     // "all" | "office" | "personal"
   theme: "light" | "dark";
+  navCollapsed: boolean;            // false = labelled rail (default), true = icon-only; persisted
   route: { screen: Screen; goalId: string | null };
   detailTaskId: string | null;
   paletteOpen: boolean;
@@ -131,6 +132,7 @@ interface AppState {
   setContextFilter: (c: ContextFilter) => void;
   setTheme: (t: "light" | "dark") => void;
   toggleTheme: () => void;
+  toggleNav: () => void;            // collapse/expand the sidebar
   navigate: (screen: Screen, goalId?: string | null) => void;
   openTaskDetail: (id: string) => void;
   closeTaskDetail: () => void;
