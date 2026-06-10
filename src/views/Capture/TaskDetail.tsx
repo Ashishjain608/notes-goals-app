@@ -8,7 +8,7 @@
  * blur, an Open/Done/Dropped segmented control, collapsible due / snooze / goal
  * rows, single-level subtasks, and a confirmed Delete (distinct from "dropped").
  */
-import { useState, type JSX, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type JSX, type ReactNode } from "react";
 import type { Goal, IsoDate, Subtask, Task, TaskStatus } from "@/types";
 import { useStore } from "@/store";
 import { ageInDays, dueLabel, formatShortDate } from "@/lib/dates";
@@ -33,7 +33,51 @@ function createdLabel(createdIso: string): string {
 
 /** A thin horizontal divider matching the prototype's section separators. */
 function Divider(): JSX.Element {
-  return <div className="mx-3 my-3.5 h-px bg-line" />;
+  return <div className="mx-3 my-2.5 h-px bg-line" />;
+}
+
+/**
+ * A textarea that grows to fit its content (no inner scrollbar), so the title
+ * and details use the panel's vertical space instead of a cramped fixed box.
+ * Uncontrolled: seeded from `defaultValue`, saved on blur, re-measured when the
+ * task changes (keyed on `taskId`).
+ */
+function GrowTextarea({
+  taskId,
+  defaultValue,
+  onBlur,
+  placeholder,
+  className,
+}: {
+  taskId: string;
+  defaultValue: string;
+  onBlur: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+}): JSX.Element {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  const fit = (): void => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
+
+  useLayoutEffect(fit, [taskId]);
+
+  return (
+    <textarea
+      key={taskId}
+      ref={ref}
+      defaultValue={defaultValue}
+      onInput={fit}
+      onBlur={(e) => onBlur(e.target.value)}
+      placeholder={placeholder}
+      rows={1}
+      className={className}
+    />
+  );
 }
 
 /** A collapsible option row: a summary button plus an expandable body. */
@@ -60,12 +104,12 @@ function DetailRow({
       <button
         type="button"
         onClick={onToggle}
-        className={`flex w-full items-center gap-3 rounded-md px-3 py-[11px] text-left transition-colors duration-100 hover:bg-raise ${
+        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-100 hover:bg-raise ${
           open ? "bg-raise" : ""
         }`}
       >
         <span className={iconColor}>
-          <Icon name={icon} size={17} />
+          <Icon name={icon} size={16} />
         </span>
         <span className={`flex-1 text-sm ${value ? "text-ink" : "text-ink-3"}`}>
           {value || placeholder}
@@ -242,13 +286,12 @@ function Details({
       <div className="mb-2 text-[11.5px] font-semibold uppercase tracking-[.07em] text-ink-3">
         Details
       </div>
-      <textarea
-        key={taskId}
+      <GrowTextarea
+        taskId={taskId}
         defaultValue={details}
-        onBlur={(e) => onSave(e.target.value)}
+        onBlur={onSave}
         placeholder="Add notes, links, or anything worth remembering…"
-        rows={3}
-        className="min-h-[76px] w-full resize-y rounded-md bg-surface-2 px-3 py-2.5 text-[13.5px] leading-[1.55] text-ink outline-none placeholder:text-ink-3"
+        className="min-h-[180px] w-full resize-none rounded-lg border border-line bg-surface-2 px-3.5 py-3 text-[14px] leading-[1.6] text-ink outline-none placeholder:text-ink-3"
       />
     </div>
   );
@@ -260,12 +303,12 @@ function PriorityToggle({ on, onToggle }: { on: boolean; onToggle: () => void })
     <button
       type="button"
       onClick={onToggle}
-      className={`flex w-full items-center gap-3 rounded-md px-3 py-[11px] text-left transition-colors duration-100 ${
+      className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-100 ${
         on ? "bg-accent-soft" : "hover:bg-raise"
       }`}
     >
       <span className={on ? "text-accent" : "text-ink-3"}>
-        <Icon name="flag" size={17} />
+        <Icon name="flag" size={16} />
       </span>
       <span className={`flex-1 text-sm ${on ? "text-ink" : "text-ink-3"}`}>
         {on ? "Priority — surfaced on top" : "Mark as priority"}
@@ -285,9 +328,9 @@ function DeleteAction({ onDelete }: { onDelete: () => void }): JSX.Element {
     <button
       type="button"
       onClick={onDelete}
-      className="flex w-full items-center gap-3 rounded-md px-3 py-[11px] text-left text-sm text-ink-3 transition-colors duration-100 hover:bg-raise hover:text-accent-ink"
+      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-ink-3 transition-colors duration-100 hover:bg-raise hover:text-accent-ink"
     >
-      <Icon name="trash" size={17} />
+      <Icon name="trash" size={16} />
       <span className="flex-1">Delete task</span>
     </button>
   );
@@ -374,19 +417,18 @@ export function TaskDetail(): JSX.Element | null {
       />
       <aside
         style={{ colorScheme: theme }}
-        className="animate-panelIn fixed bottom-0 right-0 top-0 z-[41] flex w-[440px] max-w-[92vw] flex-col border-l border-line bg-surface shadow"
+        className="animate-panelIn fixed bottom-0 right-0 top-0 z-[41] flex w-[460px] max-w-[92vw] flex-col border-l border-line bg-surface shadow"
       >
         <DetailHeader task={task} onClose={closeTaskDetail} />
 
-        <div className="scroll flex-1 px-4 pb-10 pt-5">
-          <textarea
-            key={task.id}
+        <div className="scroll flex-1 px-4 pb-8 pt-4">
+          <GrowTextarea
+            taskId={task.id}
             defaultValue={task.title}
-            onBlur={(e) => saveTitle(e.target.value.trim())}
-            rows={2}
-            className={`mb-1.5 w-full resize-none border-none bg-transparent px-3 text-[21px] font-medium leading-[1.3] tracking-[-.015em] outline-none ${titleColor} ${titleStrike}`}
+            onBlur={(v) => saveTitle(v.trim())}
+            className={`mb-1 w-full resize-none border-none bg-transparent px-3 text-[21px] font-medium leading-[1.3] tracking-[-.015em] outline-none ${titleColor} ${titleStrike}`}
           />
-          <div className="mb-4 px-3 text-[12.5px] text-ink-3">Created {createdLabel(task.created)}</div>
+          <div className="mb-3.5 px-3 text-[12.5px] text-ink-3">Created {createdLabel(task.created)}</div>
 
           <StatusControl status={task.status} onSet={(s) => void setTaskStatus(task.id, s)} />
 
