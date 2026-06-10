@@ -18,6 +18,16 @@ Your data lives in a folder ("vault") you pick on first launch:
 
 Plain files mean it's portable and git/Dropbox/iCloud-friendly — point the folder wherever you like; that's your call, not the app's.
 
+## Highlights
+
+- **Today** — a live view of open, un-snoozed tasks; carry-forward is automatic, there's no daily page.
+- **Tasks** — priority flags, due dates, snooze, single-level subtasks, and a slide-in detail panel.
+- **Notes** — a WYSIWYG editor (headings, lists, checkboxes, quotes, a divider, links that open in your browser on ⌘-click, and smart `--`→— / `...`→…), organized into **context-scoped notebooks** with drag-and-drop filing.
+- **Goals** — progress computed live from linked tasks, plus notes you can **add and edit in place** (they also appear in Notes).
+- **Activity** — a read-only look back at the tasks you created and completed on any chosen day.
+- **Scratchpad** — a floating, draggable brain-dump pad (⌘J) that lives only on your device, never in the vault.
+- An **Office / Personal** context filter across every view, light + dark themes, and a ⌘K command palette.
+
 ## Tech stack
 
 - **[Tauri 2](https://tauri.app)** → a real native macOS `.app`
@@ -39,7 +49,7 @@ npm install          # install frontend deps
 npm run tauri:dev    # launch the app (first Rust build takes a few minutes)
 ```
 
-On first launch, choose a data folder. The app creates the `tasks/`, `notes/`, `goals/`, and `.atlas/` subfolders for you.
+On first launch, choose a data folder. The app creates the `tasks/`, `notes/`, `goals/`, `notebooks/`, and `.atlas/` subfolders for you.
 
 ## Build a distributable app
 
@@ -65,8 +75,8 @@ src/
   lib/         dates (local-day math), ipc (typed Rust commands), markdown
   components/   presentational, store-free component library
   store/        Zustand store + pure selectors (the live "queries")
-  views/        Today, Backlog, Notes, Goals, Capture (quick-add/palette/detail)
-  shell/        nav rail, top chrome, vault gate
+  views/        Today, Backlog, Activity, Notes, Goals, Capture (quick-add/palette/detail)
+  shell/        title bar, nav rail, sidebar toggle, scratchpad, vault gate
 src-tauri/     Rust backend: model, vault, store_io, commands
 ```
 
