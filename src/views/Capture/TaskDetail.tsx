@@ -8,7 +8,7 @@
  * blur, an Open/Done/Dropped segmented control, collapsible due / snooze / goal
  * rows, single-level subtasks, and a confirmed Delete (distinct from "dropped").
  */
-import { useLayoutEffect, useRef, useState, type JSX, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type JSX, type ReactNode } from "react";
 import type { Goal, IsoDate, Subtask, Task, TaskStatus } from "@/types";
 import { useStore } from "@/store";
 import { ageInDays, dueLabel, formatShortDate } from "@/lib/dates";
@@ -18,6 +18,9 @@ import { dateKeyDaysAhead } from "./dueDates";
 
 /** Which collapsible option menu is currently expanded. */
 type Menu = "due" | "snooze" | "goal" | null;
+
+/** Slightly longer than the slide-out (0.24s) so the panel unmounts after it finishes. */
+const PANEL_EXIT_MS = 260;
 
 /** Status segments, paired with their glyph; values are the lowercase domain enum. */
 const STATUS_SEGMENTS: ReadonlyArray<{ value: TaskStatus; label: string; icon: IconName }> = [
@@ -349,7 +352,32 @@ export function TaskDetail(): JSX.Element | null {
 
   const [menu, setMenu] = useState<Menu>(null);
 
-  const task = detailTaskId ? tasks.find((t) => t.id === detailTaskId) : undefined;
+  const liveTask = detailTaskId ? tasks.find((t) => t.id === detailTaskId) : undefined;
+  const open = liveTask != null;
+
+  // Stay mounted through the slide-out so closing is animated, not abrupt.
+  const [mounted, setMounted] = useState(open);
+  const [closing, setClosing] = useState(false);
+  const lastTaskRef = useRef<Task | undefined>(liveTask);
+  if (liveTask) lastTaskRef.current = liveTask;
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      setClosing(false);
+      return;
+    }
+    setClosing(true);
+    const timer = setTimeout(() => {
+      setMounted(false);
+      setClosing(false);
+    }, PANEL_EXIT_MS);
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  if (!mounted) return null;
+  // While closing, keep rendering the task that was open until the slide finishes.
+  const task = liveTask ?? lastTaskRef.current;
   if (!task) return null;
 
   const toggleMenu = (next: Exclude<Menu, null>): void =>
@@ -413,11 +441,15 @@ export function TaskDetail(): JSX.Element | null {
     <>
       <div
         onClick={closeTaskDetail}
-        className="animate-overlayIn fixed inset-0 z-40 bg-[rgba(20,18,15,.18)]"
+        className={`fixed inset-0 z-40 bg-[rgba(20,18,15,.18)] ${
+          closing ? "ng-overlay-out" : "ng-overlay-in"
+        }`}
       />
       <aside
         style={{ colorScheme: theme }}
-        className="animate-panelIn fixed bottom-0 right-0 top-0 z-[41] flex w-[460px] max-w-[92vw] flex-col border-l border-line bg-surface shadow"
+        className={`fixed bottom-0 right-0 top-0 z-[41] flex w-[460px] max-w-[92vw] flex-col border-l border-line bg-surface shadow ${
+          closing ? "ng-panel-out" : "ng-panel-in"
+        }`}
       >
         <DetailHeader task={task} onClose={closeTaskDetail} />
 

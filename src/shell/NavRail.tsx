@@ -34,7 +34,9 @@ function ThemeToggle({ expanded }: { expanded: boolean }): JSX.Element {
         className="flex w-full items-center gap-3 rounded-lg px-3 py-[9px] text-left text-ink-2 transition-colors hover:bg-raise"
       >
         <Icon name={icon} size={18} />
-        <span className="text-[14px] font-medium">{theme === "light" ? "Dark mode" : "Light mode"}</span>
+        <span className="whitespace-nowrap text-[14px] font-medium">
+          {theme === "light" ? "Dark mode" : "Light mode"}
+        </span>
       </button>
     );
   }
@@ -64,7 +66,7 @@ function ScratchToggle({ expanded }: { expanded: boolean }): JSX.Element {
         }`}
       >
         <Icon name="scratch" size={18} />
-        <span className="flex-1 text-[14px] font-medium">Scratchpad</span>
+        <span className="flex-1 whitespace-nowrap text-[14px] font-medium">Scratchpad</span>
         <span className="text-[11px] tabular-nums text-ink-3">⌘J</span>
       </button>
     );
@@ -105,7 +107,7 @@ export function NavRail({ expanded }: { expanded: boolean }): JSX.Element {
 
   return (
     <nav
-      className={`flex shrink-0 flex-col gap-1 bg-bg py-4 ${
+      className={`flex shrink-0 flex-col gap-1 overflow-hidden bg-bg py-4 transition-[width,padding] duration-[260ms] ease-[cubic-bezier(.4,0,.2,1)] ${
         expanded ? "w-[228px] px-3" : "w-[66px] items-center"
       }`}
     >
@@ -142,7 +144,7 @@ export function NavRail({ expanded }: { expanded: boolean }): JSX.Element {
               <Icon name={n.icon} size={19} />
             </span>
             <span
-              className={`flex-1 text-[14px] tracking-[-.005em] ${
+              className={`flex-1 whitespace-nowrap text-[14px] tracking-[-.005em] ${
                 on ? "font-semibold text-ink" : "font-medium text-ink-2"
               }`}
             >

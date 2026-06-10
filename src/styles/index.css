@@ -112,3 +112,27 @@
     animation: none;
   }
 }
+
+/* Task detail drawer — slides in/out from the right; the backdrop cross-fades. */
+@keyframes ng-panel-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes ng-panel-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+.ng-panel-in { animation: ng-panel-in 0.28s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.ng-panel-out { animation: ng-panel-out 0.24s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards; }
+@keyframes ng-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ng-overlay-out { from { opacity: 1; } to { opacity: 0; } }
+.ng-overlay-in { animation: ng-overlay-in 0.28s ease; }
+.ng-overlay-out { animation: ng-overlay-out 0.24s ease forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .ng-panel-in,
+  .ng-panel-out,
+  .ng-overlay-in,
+  .ng-overlay-out {
+    animation: none;
+  }
+}
