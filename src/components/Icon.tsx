@@ -37,7 +37,9 @@ export type IconName =
   | "flag"
   | "listBullet"
   | "quote"
-  | "rule";
+  | "rule"
+  | "scratch"
+  | "copy";
 
 /** Shared stroke attributes for every line glyph. */
 const stroke = {
@@ -193,6 +195,20 @@ const paths: Record<IconName, JSX.Element> = {
     <>
       <path d="M4 12h6M14 12h6" {...stroke} />
       <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  // Scratchpad: a pad with text lines and a pencil writing across it.
+  scratch: (
+    <>
+      <path d="M4.5 7h7M4.5 11h4.5" {...stroke} />
+      <path d="M13.5 16.5l1-3 5.5-5.5 2 2-5.5 5.5-3 1z" {...stroke} />
+    </>
+  ),
+  // Copy: two overlapping cards.
+  copy: (
+    <>
+      <rect x="8" y="8" width="11" height="11" rx="2" {...stroke} />
+      <path d="M5 15.5V6a1.5 1.5 0 0 1 1.5-1.5H15" {...stroke} />
     </>
   ),
 };

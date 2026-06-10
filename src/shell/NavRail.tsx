@@ -50,6 +50,39 @@ function ThemeToggle({ expanded }: { expanded: boolean }): JSX.Element {
   );
 }
 
+/** Toggles the floating scratchpad — sits beside the theme toggle. */
+function ScratchToggle({ expanded }: { expanded: boolean }): JSX.Element {
+  const open = useStore((s) => s.scratchOpen);
+  const toggleScratch = useStore((s) => s.toggleScratch);
+  if (expanded) {
+    return (
+      <button
+        type="button"
+        onClick={toggleScratch}
+        className={`flex w-full items-center gap-3 rounded-lg px-3 py-[9px] text-left transition-colors hover:bg-raise ${
+          open ? "text-accent" : "text-ink-2"
+        }`}
+      >
+        <Icon name="scratch" size={18} />
+        <span className="flex-1 text-[14px] font-medium">Scratchpad</span>
+        <span className="text-[11px] tabular-nums text-ink-3">⌘J</span>
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      title="Scratchpad (⌘J)"
+      onClick={toggleScratch}
+      className={`grid h-[34px] w-[34px] place-items-center rounded-md transition-colors hover:bg-raise ${
+        open ? "text-accent" : "text-ink-2"
+      }`}
+    >
+      <Icon name="scratch" size={18} />
+    </button>
+  );
+}
+
 export function NavRail({ expanded }: { expanded: boolean }): JSX.Element {
   const screen = useStore((s) => s.route.screen);
   const navigate = useStore((s) => s.navigate);
@@ -122,7 +155,8 @@ export function NavRail({ expanded }: { expanded: boolean }): JSX.Element {
         );
       })}
 
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col gap-1">
+        <ScratchToggle expanded={expanded} />
         <ThemeToggle expanded={expanded} />
       </div>
     </nav>

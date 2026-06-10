@@ -47,6 +47,7 @@ export interface AppState {
   detailTaskId: string | null;
   paletteOpen: boolean;
   selectedNoteId: string | null;
+  scratchOpen: boolean;
 
   // lifecycle
   init: () => Promise<void>;
@@ -65,6 +66,8 @@ export interface AppState {
   openPalette: () => void;
   closePalette: () => void;
   selectNote: (id: string | null) => void;
+  toggleScratch: () => void;
+  closeScratch: () => void;
 
   // task actions
   addTask: (input: CreateTaskInput) => Promise<Task>;
@@ -171,6 +174,7 @@ export const useStore = create<AppState>((set, get) => ({
   detailTaskId: null,
   paletteOpen: false,
   selectedNoteId: null,
+  scratchOpen: false,
 
   /* ------------------------------------------------------------- lifecycle */
 
@@ -286,6 +290,9 @@ export const useStore = create<AppState>((set, get) => ({
   closePalette: () => set({ paletteOpen: false }),
 
   selectNote: (id) => set({ selectedNoteId: id }),
+
+  toggleScratch: () => set((s) => ({ scratchOpen: !s.scratchOpen })),
+  closeScratch: () => set({ scratchOpen: false }),
 
   /* ---------------------------------------------------------- task actions */
 

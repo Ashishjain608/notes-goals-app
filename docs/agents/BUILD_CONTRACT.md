@@ -122,6 +122,7 @@ interface AppState {
   detailTaskId: string | null;
   paletteOpen: boolean;
   selectedNoteId: string | null;
+  scratchOpen: boolean;            // floating scratchpad overlay (ephemeral; text in localStorage)
 
   // lifecycle
   init: () => Promise<void>;                 // load config → vault → load_all; sets status
@@ -140,6 +141,8 @@ interface AppState {
   openPalette: () => void;
   closePalette: () => void;
   selectNote: (id: string | null) => void;
+  toggleScratch: () => void;        // open/close the floating scratchpad
+  closeScratch: () => void;
 
   // task actions  (persist via ipc; Rust owns id/created/completed + the completed rule)
   addTask: (input: CreateTaskInput) => Promise<Task>;
