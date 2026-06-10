@@ -22,6 +22,7 @@ import {
 } from "@/store";
 import { TaskRow, ProgressBar, ContextDot, Icon, EmptyState } from "@/components";
 import { formatShortDate } from "@/lib/dates";
+import { NoteEditorDrawer } from "./NoteEditorDrawer";
 
 export interface GoalPageProps {
   /** The route's goal id (passed by the shell as `route.goalId`). */
@@ -183,27 +184,51 @@ function ProgressCard({ done, total, pct }: ProgressCardProps): JSX.Element {
   );
 }
 
-/** Sidebar notes list: title + excerpt cards for the goal's owned notes. */
-function GoalNotes({ notes }: { notes: Note[] }): JSX.Element {
+/** Sidebar notes list: an Add button + clickable cards for the goal's notes. */
+function GoalNotes({
+  notes,
+  onAdd,
+  onOpen,
+}: {
+  notes: Note[];
+  onAdd: () => void;
+  onOpen: (id: string) => void;
+}): JSX.Element {
   return (
     <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-[.07em] text-ink-3">
-        Notes · {notes.length}
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-[.07em] text-ink-3">
+          Notes · {notes.length}
+        </span>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[12px] font-medium text-ink-2 transition-colors hover:bg-raise hover:text-ink"
+        >
+          <Icon name="plus" size={14} /> Add
+        </button>
       </div>
       {notes.length === 0 ? (
-        <p className="text-[13.5px] italic text-ink-3">This goal owns no notes yet.</p>
+        <p className="text-[13.5px] italic text-ink-3">
+          No notes yet — add one to capture thinking for this goal.
+        </p>
       ) : (
         <div className="grid gap-2">
           {notes.map((note) => (
-            <div key={note.id} className="rounded-[11px] border border-line bg-surface px-[15px] py-[13px]">
+            <button
+              key={note.id}
+              type="button"
+              onClick={() => onOpen(note.id)}
+              className="rounded-[11px] border border-line bg-surface px-[15px] py-[13px] text-left transition-colors hover:border-line-2 hover:bg-raise"
+            >
               <div className="mb-1 flex items-center gap-2">
                 <ContextDot context={note.context} size={6} />
                 <span className="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-[-.01em] text-ink">
-                  {note.title}
+                  {note.title || "Untitled"}
                 </span>
               </div>
               <div className="text-[12px] text-ink-3">Edited {formatShortDate(note.updated)}</div>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -237,12 +262,16 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
   const toggleTaskPriority = useStore((s) => s.toggleTaskPriority);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const addTask = useStore((s) => s.addTask);
+  const addNote = useStore((s) => s.addNote);
+
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [createdNew, setCreatedNew] = useState(false);
 
   const goal = useMemo(() => goals.find((g) => g.id === goalId), [goals, goalId]);
 
   const progress = useMemo(() => selectGoalProgress(goalId, tasks), [goalId, tasks]);
   const linkedTasks = useMemo(() => selectGoalTasks(goalId, tasks), [goalId, tasks]);
-  const linkedNotes = useMemo(() => selectGoalNotes(goalId, notes), [goalId, notes]);
+  const linkedNotes = useMemo(() => (goal ? selectGoalNotes(goal, notes) : []), [goal, notes]);
 
   const goBack = (): void => navigate("goals");
   const openGoal = (id: string): void => navigate("goal", id);
@@ -253,8 +282,21 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
     void addTask({ title, context: goal.context, goalId: goal.id });
   };
 
+  /** Create an empty note linked to this goal and open it in the drawer. */
+  const addLinkedNote = async (): Promise<void> => {
+    const created = await addNote({ title: "", context: goal.context, goalId: goal.id });
+    setCreatedNew(true);
+    setEditingNoteId(created.id);
+  };
+
+  const openNote = (id: string): void => {
+    setCreatedNew(false);
+    setEditingNoteId(id);
+  };
+
   return (
-    <div className="scroll h-full pt-10 pb-[120px]">
+    <>
+      <div className="scroll h-full pt-10 pb-[120px]">
       <div className="mx-auto max-w-[900px] px-10">
         <BackButton onBack={goBack} />
 
@@ -293,11 +335,22 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
           {/* sticky sidebar */}
           <aside className="sticky top-0 grid gap-[26px]">
             <ProgressCard done={progress.done} total={progress.total} pct={progress.pct} />
-            <GoalNotes notes={linkedNotes} />
+            <GoalNotes
+              notes={linkedNotes}
+              onAdd={() => void addLinkedNote()}
+              onOpen={openNote}
+            />
           </aside>
         </div>
       </div>
-    </div>
+      </div>
+      <NoteEditorDrawer
+        noteId={editingNoteId}
+        createdNew={createdNew}
+        goalTitle={goal.title}
+        onClose={() => setEditingNoteId(null)}
+      />
+    </>
   );
 }
 

@@ -24,7 +24,7 @@ import type {
   TaskStatus,
 } from "@/types";
 import * as ipc from "@/lib/ipc";
-import { reconcileNoteNotebook } from "./selectors";
+import { reconcileNoteGoal, reconcileNoteNotebook } from "./selectors";
 
 export type AppStatus = "loading" | "needs-vault" | "ready" | "error";
 export type Screen = "today" | "tasks" | "notes" | "goals" | "goal" | "activity";
@@ -354,10 +354,13 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   saveNote: async (note, body) => {
-    // A notebook only holds notes of its own context; if an edit (e.g. a
-    // context switch) has left the note pointing at a notebook it can no longer
-    // belong to, unfile it before persisting (ADR-0008).
-    const reconciled = reconcileNoteNotebook(note, get().notebooks);
+    // A notebook/goal only holds notes of its own context; if an edit (e.g. a
+    // context switch) left the note pointing at a notebook or goal it can no
+    // longer belong to, unfile/unlink it before persisting (ADR-0008 / ADR-0003).
+    const reconciled = reconcileNoteGoal(
+      reconcileNoteNotebook(note, get().notebooks),
+      get().goals,
+    );
     const updated = await withSaveGuard(() => ipc.updateNote(reconciled, body));
     set((s) => ({ notes: s.notes.map((n) => (n.id === updated.id ? updated : n)) }));
   },

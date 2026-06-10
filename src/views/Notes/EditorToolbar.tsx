@@ -14,7 +14,9 @@ import { Icon } from "@/components";
 
 export interface EditorToolbarProps {
   editor: Editor | null;
-  onDelete: () => void;
+  /** When provided, a trailing trash button deletes the note. Omitted by hosts
+   *  (e.g. the goal drawer) that surface delete through their own menu. */
+  onDelete?: () => void;
 }
 
 /** The full editor toolbar + bubble menu + link popover. */
@@ -122,15 +124,17 @@ export function EditorToolbar({ editor, onDelete }: EditorToolbarProps): JSX.Ele
 
       <span className="ml-auto flex items-center gap-3">
         <span className="text-[11.5px] italic text-ink-3">No markdown — just write</span>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label="Delete note"
-          title="Delete note"
-          className="grid h-[30px] w-8 place-items-center rounded-md text-ink-3 transition-colors duration-150 hover:bg-warn-soft hover:text-warn-ink"
-        >
-          <Icon name="trash" size={15} />
-        </button>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="Delete note"
+            title="Delete note"
+            className="grid h-[30px] w-8 place-items-center rounded-md text-ink-3 transition-colors duration-150 hover:bg-warn-soft hover:text-warn-ink"
+          >
+            <Icon name="trash" size={15} />
+          </button>
+        )}
       </span>
 
       {editor && (

@@ -13,19 +13,17 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
-import { EditorContent } from "@tiptap/react";
 import type { Context, Note, Notebook } from "@/types";
-import { ageInDays } from "@/lib/dates";
 import {
   goalsById,
   selectNotesByNotebook,
   useStore,
   type AppState,
 } from "@/store";
-import { ContextDot, EmptyState, GoalChip, Icon } from "@/components";
+import { EmptyState, GoalChip, Icon } from "@/components";
 import { NoteList } from "./NoteList";
-import { EditorToolbar } from "./EditorToolbar";
-import { useNoteEditor, type NoteEditorStore } from "./useNoteEditor";
+import { NoteEditor } from "./NoteEditor";
+import type { NoteEditorStore } from "./useNoteEditor";
 
 /* ----------------------------------------------------------- store selectors */
 
@@ -219,41 +217,8 @@ interface NoteEditorPaneProps {
   onDelete: (note: Note) => void;
 }
 
-const NOTE_CONTEXTS: ReadonlyArray<{ value: Context; label: string }> = [
-  { value: "office", label: "Office" },
-  { value: "personal", label: "Personal" },
-];
-
-/** A compact Office / Personal toggle for switching a note's context inline. */
-function ContextSwitcher({
-  value,
-  onChange,
-}: {
-  value: Context;
-  onChange: (context: Context) => void;
-}): JSX.Element {
-  return (
-    <div className="flex gap-0.5 rounded-md bg-surface-2 p-0.5">
-      {NOTE_CONTEXTS.map((c) => {
-        const active = value === c.value;
-        return (
-          <button
-            key={c.value}
-            type="button"
-            onClick={() => onChange(c.value)}
-            className={`flex items-center gap-1.5 rounded-[5px] px-2 py-[3px] text-[12px] font-medium transition-colors duration-150 ${
-              active ? "bg-surface text-ink shadow-sm" : "bg-transparent text-ink-3 hover:text-ink-2"
-            }`}
-          >
-            <ContextDot context={c.value} size={6} /> {c.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/** The editor pane: title, toolbar, body, metadata, and delete affordance. */
+/** The editor pane: the shared NoteEditor wrapped with the Notes-screen chrome
+ *  (a switchable context + notebook/goal chips), or an empty state. */
 function NoteEditorPane({
   note,
   notebook,
@@ -263,12 +228,6 @@ function NoteEditorPane({
   onOpenGoal,
   onDelete,
 }: NoteEditorPaneProps): JSX.Element {
-  const { editor, title, setTitle, context, setContext, loadingBody } = useNoteEditor(
-    note,
-    store,
-    { onBody },
-  );
-
   if (!note) {
     return (
       <div className="grid flex-1 place-items-center">
@@ -280,175 +239,33 @@ function NoteEditorPane({
     );
   }
 
-  return (
-    <div className="flex h-full min-w-0 flex-1 flex-col">
-      <div className="mx-auto flex h-full w-full max-w-[1000px] flex-col px-8">
-        <EditorToolbar editor={editor} onDelete={() => onDelete(note)} />
-
-        <div className="mb-3 mt-1 flex items-center gap-2.5 text-[12.5px] text-ink-2">
-          <ContextSwitcher value={context} onChange={setContext} />
-          {notebook && (
-            <>
-              <span className="text-ink-3">·</span>
-              <span className="inline-flex items-center gap-1 text-ink-2" title={`In ${notebook.name}`}>
-                <Icon name="notebook" size={13} />
-                {notebook.name}
-              </span>
-            </>
-          )}
-          {goal && (
-            <>
-              <span className="text-ink-3">·</span>
-              <GoalChip goal={goal} onOpen={onOpenGoal} />
-            </>
-          )}
-          <span className="ml-auto text-xs text-ink-3">
-            Edited {ageInDays(note.updated)}d ago
+  const metaExtra = (
+    <>
+      {notebook && (
+        <>
+          <span className="text-ink-3">·</span>
+          <span className="inline-flex items-center gap-1 text-ink-2" title={`In ${notebook.name}`}>
+            <Icon name="notebook" size={13} />
+            {notebook.name}
           </span>
-        </div>
+        </>
+      )}
+      {goal && (
+        <>
+          <span className="text-ink-3">·</span>
+          <GoalChip goal={goal} onOpen={onOpenGoal} />
+        </>
+      )}
+    </>
+  );
 
-        {/* Title and body share one bordered frame — a border only, same background
-            as the page — split by a hairline so the two regions read as distinct.
-            The frame fills the pane; Enter in the title drops into the body. */}
-        <div className="mb-6 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-line">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                editor?.commands.focus("start");
-              }
-            }}
-            placeholder="Untitled"
-            aria-label="Note title"
-            className="w-full border-none bg-transparent px-7 pb-4 pt-5 font-serif text-[30px] font-medium leading-[1.15] tracking-[-0.015em] text-ink outline-none placeholder:text-ink-3"
-          />
-          <div className="h-px bg-line" />
-          {loadingBody ? (
-            <div className="px-7 py-5 font-serif text-[18px] italic text-ink-3">Loading…</div>
-          ) : (
-            <div
-              className="scroll min-h-0 flex-1 cursor-text"
-              onClick={() => editor?.commands.focus()}
-            >
-              <EditorContent editor={editor} className="note-prose px-7 py-6" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <EditorStyles />
-    </div>
+  return (
+    <NoteEditor
+      note={note}
+      store={store}
+      onBody={onBody}
+      onDelete={() => onDelete(note)}
+      metaExtra={metaExtra}
+    />
   );
 }
-
-/* ------------------------------------------------------------- editor styles
-   Scoped ProseMirror styling for the serif WYSIWYG body. Lives here (the only
-   editable folder) rather than the global stylesheet, keyed off `.note-prose`. */
-
-/** Inject the scoped editor stylesheet once. */
-function EditorStyles(): JSX.Element {
-  return <style>{NOTE_PROSE_CSS}</style>;
-}
-
-const NOTE_PROSE_CSS = `
-.note-prose {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-.note-prose .ProseMirror {
-  flex: 1;
-  font-family: var(--serif);
-  font-size: 18px;
-  line-height: 1.62;
-  color: var(--ink);
-  letter-spacing: .002em;
-  outline: none;
-  min-height: 240px;
-}
-.note-prose .ProseMirror > * + * { margin-top: 14px; }
-.note-prose .ProseMirror p { margin: 0; }
-.note-prose .ProseMirror h1,
-.note-prose .ProseMirror h2,
-.note-prose .ProseMirror h3 {
-  font-family: var(--sans);
-  font-weight: 600;
-  letter-spacing: .01em;
-  color: var(--ink);
-  margin: 26px 0 10px;
-}
-.note-prose .ProseMirror h1 { font-size: 22px; }
-.note-prose .ProseMirror h2 { font-size: 18px; }
-.note-prose .ProseMirror h3 {
-  font-size: 14px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-}
-.note-prose .ProseMirror ul,
-.note-prose .ProseMirror ol { padding-left: 1.5em; }
-/* Tailwind's preflight resets list-style to none; restore real markers here.
-   The taskList rule below is more specific, so checklists stay marker-less. */
-.note-prose .ProseMirror ul { list-style: disc; }
-.note-prose .ProseMirror ol { list-style: decimal; }
-.note-prose .ProseMirror ul ul { list-style: circle; }
-.note-prose .ProseMirror ul ul ul { list-style: square; }
-.note-prose .ProseMirror li { margin: 4px 0; }
-.note-prose .ProseMirror li > p { margin: 0; }
-.note-prose .ProseMirror ul[data-type="taskList"] {
-  list-style: none;
-  padding-left: 0;
-}
-.note-prose .ProseMirror ul[data-type="taskList"] li {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-.note-prose .ProseMirror ul[data-type="taskList"] li > label {
-  margin-top: 4px;
-  user-select: none;
-}
-.note-prose .ProseMirror ul[data-type="taskList"] li > div { flex: 1; }
-.note-prose .ProseMirror blockquote {
-  border-left: 3px solid var(--accent-line);
-  padding-left: 14px;
-  color: var(--ink-2);
-}
-.note-prose .ProseMirror code {
-  font-family: var(--mono);
-  font-size: .86em;
-  background: var(--surface-2);
-  border-radius: 5px;
-  padding: 1px 5px;
-}
-.note-prose .ProseMirror pre {
-  font-family: var(--mono);
-  font-size: 13.5px;
-  background: var(--surface-2);
-  border-radius: 9px;
-  padding: 12px 14px;
-  overflow-x: auto;
-}
-.note-prose .ProseMirror pre code { background: none; padding: 0; }
-.note-prose .ProseMirror a {
-  color: var(--accent-ink);
-  text-decoration: underline;
-  text-decoration-color: var(--accent-line);
-  cursor: pointer;
-}
-.note-prose .ProseMirror hr {
-  border: none;
-  border-top: 1px solid var(--line);
-  margin: 22px 0;
-}
-/* Placeholder text in an empty body (TipTap Placeholder extension). */
-.note-prose .ProseMirror p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder);
-  color: var(--ink-3);
-  float: left;
-  height: 0;
-  pointer-events: none;
-}
-`;

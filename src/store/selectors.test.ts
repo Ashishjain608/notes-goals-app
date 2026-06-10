@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import type { Goal, Note, Notebook, Task } from "@/types";
 import {
   goalsById,
+  reconcileNoteGoal,
   reconcileNoteNotebook,
   selectBacklog,
   selectDayActivity,
@@ -301,13 +302,47 @@ describe("selectGoalTasks", () => {
 });
 
 describe("selectGoalNotes", () => {
+  const goal = makeGoal({ id: "g", context: "office" });
+
   it("returns linked notes most-recently-updated first", () => {
     const notes = [
       makeNote({ id: "older", goalId: "g", updated: "2026-06-01T09:00:00Z" }),
       makeNote({ id: "newer", goalId: "g", updated: "2026-06-05T09:00:00Z" }),
       makeNote({ id: "other", goalId: "x", updated: "2026-06-09T09:00:00Z" }),
     ];
-    expect(selectGoalNotes("g", notes).map((n) => n.id)).toEqual(["newer", "older"]);
+    expect(selectGoalNotes(goal, notes).map((n) => n.id)).toEqual(["newer", "older"]);
+  });
+
+  it("excludes a linked note whose context no longer matches the goal", () => {
+    const notes = [
+      makeNote({ id: "match", goalId: "g", context: "office" }),
+      makeNote({ id: "mismatch", goalId: "g", context: "personal" }),
+    ];
+    expect(selectGoalNotes(goal, notes).map((n) => n.id)).toEqual(["match"]);
+  });
+});
+
+describe("reconcileNoteGoal", () => {
+  const goal = makeGoal({ id: "g", context: "office" });
+
+  it("keeps a note linked to a same-context goal", () => {
+    const note = makeNote({ goalId: "g", context: "office" });
+    expect(reconcileNoteGoal(note, [goal])).toBe(note);
+  });
+
+  it("unlinks a note whose context diverged from its goal", () => {
+    const note = makeNote({ goalId: "g", context: "personal" });
+    expect(reconcileNoteGoal(note, [goal]).goalId).toBeNull();
+  });
+
+  it("leaves a dangling goal link untouched (ADR-0003 resilience)", () => {
+    const note = makeNote({ goalId: "ghost", context: "office" });
+    expect(reconcileNoteGoal(note, [goal]).goalId).toBe("ghost");
+  });
+
+  it("leaves an already-unlinked note untouched", () => {
+    const note = makeNote({ goalId: null });
+    expect(reconcileNoteGoal(note, [goal])).toBe(note);
   });
 });
 

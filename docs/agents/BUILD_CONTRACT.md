@@ -196,7 +196,9 @@ function selectBacklog(tasks: Task[], filter: ContextFilter, f: BacklogFilters, 
 interface GoalProgress { done: number; total: number; pct: number; }
 function selectGoalProgress(goalId: string, tasks: Task[]): GoalProgress;
 function selectGoalTasks(goalId: string, tasks: Task[]): { open: Task[]; done: Task[] };
-function selectGoalNotes(goalId: string, notes: Note[]): Note[];
+function selectGoalNotes(goal: Goal, notes: Note[]): Note[]; // only notes whose context matches the goal's
+// Pure invariant helper used by saveNote: unlink a note whose context no longer matches its goal (dangling links left as-is per ADR-0003).
+function reconcileNoteGoal(note: Note, goals: Goal[]): Note;
 
 // GOALS overview: active+onhold (by target asc, nulls last) and a collapsed closed[] (done+dropped).
 function selectGoalsOverview(goals: Goal[], filter: ContextFilter): { live: Goal[]; closed: Goal[] };

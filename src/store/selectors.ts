@@ -183,10 +183,14 @@ export function selectGoalTasks(goalId: string, tasks: Task[]): { open: Task[]; 
   return { open, done };
 }
 
-/** Live linked notes for a goal, most-recently-updated first. */
-export function selectGoalNotes(goalId: string, notes: Note[]): Note[] {
+/**
+ * Live linked notes for a goal, most-recently-updated first. A note counts only
+ * when its context also matches the goal's — a context-mismatched link reads as
+ * unlinked (symmetric to the notebook rule, ADR-0008).
+ */
+export function selectGoalNotes(goal: Goal, notes: Note[]): Note[] {
   return notes
-    .filter((note) => note.goalId === goalId)
+    .filter((note) => note.goalId === goal.id && note.context === goal.context)
     .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
 }
 
@@ -370,4 +374,17 @@ export function reconcileNoteNotebook(note: Note, notebooks: Notebook[]): Note {
   const nb = notebooks.find((n) => n.id === note.notebookId);
   if (nb && nb.context === note.context) return note;
   return { ...note, notebookId: null };
+}
+
+/**
+ * Enforce the note↔goal context invariant: a note may only stay linked to a goal
+ * of its own context. If the linked goal's context diverged, return the note
+ * unlinked; a *missing* goal is left dangling (ADR-0003 resilience — only an
+ * in-app goal deletion clears that). Pure — used by the store before saving.
+ */
+export function reconcileNoteGoal(note: Note, goals: Goal[]): Note {
+  if (note.goalId === null) return note;
+  const goal = goals.find((g) => g.id === note.goalId);
+  if (!goal || goal.context === note.context) return note;
+  return { ...note, goalId: null };
 }

@@ -87,6 +87,14 @@ export interface UseNoteEditorResult {
   setContext: (next: Context) => void;
   /** True while the selected note's body is being fetched for the first time. */
   loadingBody: boolean;
+  /** Persist any pending edit immediately (e.g. before closing a drawer). */
+  flush: () => void;
+  /** Cancel a pending autosave without persisting (discard an empty draft). */
+  discard: () => void;
+  /** The editor's current markdown body (for a host that writes its own patch). */
+  getBody: () => string;
+  /** True when the working title and body are both blank (an empty draft). */
+  isEmpty: () => boolean;
 }
 
 /** tiptap-markdown augments `editor.storage.markdown`; read it through here. */
@@ -151,6 +159,25 @@ export function useNoteEditor(
       body,
     );
   }, [editor, store]);
+
+  /** Cancel a pending autosave + clear the pending target (no write happens). */
+  const discard = useCallback((): void => {
+    if (saveTimer.current !== null) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    pendingNoteRef.current = null;
+  }, []);
+
+  /** The editor's current markdown body. */
+  const getBody = useCallback((): string => (editor ? getMarkdown(editor) : ""), [editor]);
+
+  /** True when the working title and the editor body are both blank. */
+  const isEmpty = useCallback((): boolean => {
+    const blankTitle = (titleRef.current ?? "").trim() === "";
+    const blankBody = editor ? getMarkdown(editor).trim() === "" : true;
+    return blankTitle && blankBody;
+  }, [editor]);
 
   /** Arm (or re-arm) the ~800ms debounce against the currently loaded note. */
   const scheduleSave = useCallback(() => {
@@ -252,7 +279,7 @@ export function useNoteEditor(
   // Flush any pending save when the component unmounts.
   useEffect(() => () => flush(), [flush]);
 
-  return { editor, title, setTitle, context, setContext, loadingBody };
+  return { editor, title, setTitle, context, setContext, loadingBody, flush, discard, getBody, isEmpty };
 }
 
 /** Replace the editor's content with markdown without emitting an `update`. */

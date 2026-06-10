@@ -77,7 +77,7 @@ _Avoid_: database, library, store (those refer to the in-memory representation);
 
 - Every **Task**, **Note**, and **Goal** belongs to exactly one **Context** (`office` | `personal`).
 - A **Task** links to **at most one Goal**; a **Goal** has many Tasks (computed live by matching `goalId`).
-- A **Note** links to **at most one Goal**; a **Goal** has many Notes (computed live by matching `goalId`).
+- A **Note** links to **at most one Goal**; a **Goal** has many Notes (computed live by matching `goalId`). A Note's **Context must match its linked Goal's** — changing the Note's Context unlinks it from the Goal (symmetric to the Notebook rule). Notes are added/edited from the Goal in place and also appear in the Notes module.
 - A **Task** has zero or more single-level **Subtasks**.
 - **Today** is a query over **Tasks** — it owns no data of its own.
 - A **Goal**'s progress is `done ÷ non-dropped` over its linked **Tasks** (dropped Tasks excluded entirely, snoozed Tasks still count, Subtasks do not contribute). A Goal's own **Status** is independent of this progress — the user may mark a Goal done while leaving stragglers open.
