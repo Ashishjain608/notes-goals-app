@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
-import { EditorContent, type Editor } from "@tiptap/react";
+import { EditorContent } from "@tiptap/react";
 import type { Context, Note, Notebook } from "@/types";
 import { ageInDays } from "@/lib/dates";
 import {
@@ -24,6 +24,7 @@ import {
 } from "@/store";
 import { ContextDot, EmptyState, GoalChip, Icon } from "@/components";
 import { NoteList } from "./NoteList";
+import { EditorToolbar } from "./EditorToolbar";
 import { useNoteEditor, type NoteEditorStore } from "./useNoteEditor";
 
 /* ----------------------------------------------------------- store selectors */
@@ -282,7 +283,7 @@ function NoteEditorPane({
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
       <div className="mx-auto flex h-full w-full max-w-[1000px] flex-col px-8">
-        <Toolbar editor={editor} onDelete={() => onDelete(note)} />
+        <EditorToolbar editor={editor} onDelete={() => onDelete(note)} />
 
         <div className="mb-3 mt-1 flex items-center gap-2.5 text-[12.5px] text-ink-2">
           <ContextSwitcher value={context} onChange={setContext} />
@@ -342,119 +343,6 @@ function NoteEditorPane({
   );
 }
 
-/* ------------------------------------------------------------------ toolbar */
-
-interface ToolbarProps {
-  editor: Editor | null;
-  onDelete: () => void;
-}
-
-/** Light WYSIWYG toolbar wired to TipTap commands (matches the prototype). */
-function Toolbar({ editor, onDelete }: ToolbarProps): JSX.Element {
-  const promptLink = (): void => {
-    if (!editor) return;
-    const previous = (editor.getAttributes("link").href as string | undefined) ?? "";
-    const url = window.prompt("Link URL", previous);
-    if (url === null) return; // cancelled
-    const chain = editor.chain().focus().extendMarkRange("link");
-    if (url.trim() === "") chain.unsetLink().run();
-    else chain.setLink({ href: url.trim() }).run();
-  };
-
-  const disabled = !editor;
-
-  return (
-    <div className="sticky top-0 z-10 flex items-center gap-0.5 bg-bg pb-3 pt-4">
-      <ToolbarButton
-        label="Bold"
-        active={editor?.isActive("bold") ?? false}
-        disabled={disabled}
-        onClick={() => editor?.chain().focus().toggleBold().run()}
-      >
-        <span className="font-bold">B</span>
-      </ToolbarButton>
-      <ToolbarButton
-        label="Italic"
-        active={editor?.isActive("italic") ?? false}
-        disabled={disabled}
-        onClick={() => editor?.chain().focus().toggleItalic().run()}
-      >
-        <span className="font-serif italic">I</span>
-      </ToolbarButton>
-      <ToolbarButton
-        label="Heading"
-        active={editor?.isActive("heading", { level: 2 }) ?? false}
-        disabled={disabled}
-        onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-      >
-        <span className="text-[13.5px] font-semibold">H</span>
-      </ToolbarButton>
-      <ToolbarButton
-        label="Checklist"
-        active={editor?.isActive("taskList") ?? false}
-        disabled={disabled}
-        onClick={() => editor?.chain().focus().toggleTaskList().run()}
-      >
-        <Icon name="check" size={15} />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Link"
-        active={editor?.isActive("link") ?? false}
-        disabled={disabled}
-        onClick={promptLink}
-      >
-        <Icon name="link" size={15} />
-      </ToolbarButton>
-
-      <span className="ml-auto flex items-center gap-3">
-        <span className="text-[11.5px] italic text-ink-3">No markdown — just write</span>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label="Delete note"
-          title="Delete note"
-          className="grid h-[30px] w-8 place-items-center rounded-md text-ink-3 transition-colors duration-150 hover:bg-warn-soft hover:text-warn-ink"
-        >
-          <Icon name="trash" size={15} />
-        </button>
-      </span>
-    </div>
-  );
-}
-
-interface ToolbarButtonProps {
-  label: string;
-  active: boolean;
-  disabled: boolean;
-  onClick: () => void;
-  children: JSX.Element;
-}
-
-/** One toolbar control; reflects active mark/node state. */
-function ToolbarButton({
-  label,
-  active,
-  disabled,
-  onClick,
-  children,
-}: ToolbarButtonProps): JSX.Element {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-pressed={active}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={`grid h-[30px] w-8 place-items-center rounded-md text-[14px] transition-colors duration-150 disabled:opacity-40 ${
-        active ? "bg-accent-soft text-accent-ink" : "text-ink-2 hover:bg-raise"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
 /* ------------------------------------------------------------- editor styles
    Scoped ProseMirror styling for the serif WYSIWYG body. Lives here (the only
    editable folder) rather than the global stylesheet, keyed off `.note-prose`. */
@@ -500,8 +388,15 @@ const NOTE_PROSE_CSS = `
   color: var(--ink-2);
 }
 .note-prose .ProseMirror ul,
-.note-prose .ProseMirror ol { padding-left: 1.4em; }
+.note-prose .ProseMirror ol { padding-left: 1.5em; }
+/* Tailwind's preflight resets list-style to none; restore real markers here.
+   The taskList rule below is more specific, so checklists stay marker-less. */
+.note-prose .ProseMirror ul { list-style: disc; }
+.note-prose .ProseMirror ol { list-style: decimal; }
+.note-prose .ProseMirror ul ul { list-style: circle; }
+.note-prose .ProseMirror ul ul ul { list-style: square; }
 .note-prose .ProseMirror li { margin: 4px 0; }
+.note-prose .ProseMirror li > p { margin: 0; }
 .note-prose .ProseMirror ul[data-type="taskList"] {
   list-style: none;
   padding-left: 0;
@@ -542,5 +437,18 @@ const NOTE_PROSE_CSS = `
   text-decoration: underline;
   text-decoration-color: var(--accent-line);
   cursor: pointer;
+}
+.note-prose .ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 22px 0;
+}
+/* Placeholder text in an empty body (TipTap Placeholder extension). */
+.note-prose .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--ink-3);
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
 `;

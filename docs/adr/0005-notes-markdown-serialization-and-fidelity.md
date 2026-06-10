@@ -2,7 +2,9 @@
 
 Notes are authored WYSIWYG in TipTap (ProseMirror) but stored as Markdown with YAML frontmatter. TipTap has no native Markdown I/O, so we adopt the **`tiptap-markdown`** extension (markdown-it under the hood) for both parse and serialize, targeting **GitHub-Flavored Markdown** (GFM) so task-list checkboxes (`- [ ]`) and strikethrough stay readable in other markdown tools.
 
-**Supported, round-trip-stable feature set:** headings (H1–H3), paragraphs, bold, italic, strikethrough, inline code, bullet + ordered lists, task-list checkboxes, blockquote, code block, links. Images, tables, and embeds are deferred past v1.
+**Supported, round-trip-stable feature set:** headings (H1–H3), paragraphs, bold, italic, strikethrough, inline code, bullet + ordered lists, task-list checkboxes, blockquote, code block, horizontal rule (`---`), links. Images, tables, and embeds are deferred past v1.
+
+**Smart-typography input transforms (amended):** as you type, `--` becomes an em-dash (—) and `...` becomes an ellipsis (…). These are the only auto-substitutions; curly/smart quotes are **deliberately disabled** so the stored markdown stays plain ASCII and portable. The transforms run on input only (they edit the literal characters that get serialized), so a note containing — or … round-trips as those characters, which is within GFM.
 
 **Deliberate fidelity ceiling:** round-trip is guaranteed *only* for the supported set. Obsidian-specific syntax — `[[wikilinks]]`, `#tags`, callouts, embeds — is not a recognized node and is preserved as plain text at best, not rendered. **This app is not a general Obsidian replacement for arbitrary markdown**; it round-trips its own feature set faithfully. The frontmatter stays Obsidian-compatible; the body is "our markdown."
 

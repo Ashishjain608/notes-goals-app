@@ -16,11 +16,49 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, type Editor } from "@tiptap/react";
+import type { EditorProps } from "@tiptap/pm/view";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import type { Context, Note } from "@/types";
 import { buildNoteExtensions } from "@/lib/markdown";
 
 /** ~800ms debounce window for autosave (ADR-0005). */
 const AUTOSAVE_DEBOUNCE_MS = 800;
+
+/** True for http(s) / mailto URLs we'd turn pasted text into a link for. */
+function isLinkableUrl(text: string): boolean {
+  return /^https?:\/\/\S+$/i.test(text) || /^mailto:\S+@\S+$/i.test(text);
+}
+
+/**
+ * ProseMirror-level editor behaviors that don't depend on React state:
+ * - Cmd/Ctrl-click a link opens it in the OS default browser (Tauri opener),
+ *   never navigating the webview itself. Plain click keeps editing the text.
+ * - Pasting a URL over a non-empty selection links the selection instead of
+ *   replacing it; anything else falls through to the default (markdown) paste.
+ */
+const NOTE_EDITOR_PROPS: EditorProps = {
+  handleDOMEvents: {
+    click: (_view, event) => {
+      const anchor = (event.target as HTMLElement | null)?.closest("a");
+      if (!anchor || !(event.metaKey || event.ctrlKey)) return false;
+      const href = anchor.getAttribute("href");
+      if (!href) return false;
+      event.preventDefault();
+      void openUrl(href);
+      return true;
+    },
+  },
+  handlePaste: (view, event) => {
+    const text = event.clipboardData?.getData("text/plain")?.trim() ?? "";
+    if (!isLinkableUrl(text)) return false;
+    const { from, to, empty } = view.state.selection;
+    if (empty) return false; // no selection → let the default (markdown) paste run
+    const linkMark = view.state.schema.marks.link;
+    if (!linkMark) return false;
+    view.dispatch(view.state.tr.addMark(from, to, linkMark.create({ href: text })));
+    return true;
+  },
+};
 
 /** The minimal store surface this hook needs (decoupled from the full store). */
 export interface NoteEditorStore {
@@ -67,7 +105,10 @@ export function useNoteEditor(
   options: UseNoteEditorOptions = {},
 ): UseNoteEditorResult {
   const extensions = useMemo(() => buildNoteExtensions(), []);
-  const editor = useEditor({ extensions, immediatelyRender: false }, []);
+  const editor = useEditor(
+    { extensions, immediatelyRender: false, editorProps: NOTE_EDITOR_PROPS },
+    [],
+  );
 
   const [title, setTitleState] = useState(note?.title ?? "");
   const [context, setContextState] = useState<Context>(note?.context ?? "office");

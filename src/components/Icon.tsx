@@ -34,7 +34,10 @@ export type IconName =
   | "flame"
   | "command"
   | "trash"
-  | "flag";
+  | "flag"
+  | "listBullet"
+  | "quote"
+  | "rule";
 
 /** Shared stroke attributes for every line glyph. */
 const stroke = {
@@ -167,6 +170,29 @@ const paths: Record<IconName, JSX.Element> = {
     <>
       <path d="M6.5 21V4" {...stroke} />
       <path d="M6.5 4.5h11l-2.4 3.1 2.4 3.2h-11" {...stroke} />
+    </>
+  ),
+  // Bullet list: dots + lines.
+  listBullet: (
+    <>
+      <path d="M9 7h11M9 12h11M9 17h11" {...stroke} />
+      <circle cx="4.6" cy="7" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="4.6" cy="12" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="4.6" cy="17" r="1.3" fill="currentColor" stroke="none" />
+    </>
+  ),
+  // Blockquote: a leading bar with text lines.
+  quote: (
+    <>
+      <path d="M5 6v12" {...stroke} />
+      <path d="M9 8h10M9 12h10M9 16h6" {...stroke} />
+    </>
+  ),
+  // Horizontal rule / divider: a line with a center dot.
+  rule: (
+    <>
+      <path d="M4 12h6M14 12h6" {...stroke} />
+      <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
     </>
   ),
 };
