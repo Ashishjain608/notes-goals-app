@@ -6,6 +6,18 @@ A calm, local-first, single-user macOS app unifying daily **Tasks**, **Notes**, 
 
 ---
 
+## Status — shipped, and evolved since this plan
+
+This is the **original v1 build plan**; the app shipped and has kept evolving. The authoritative current-state docs are [`CONTEXT.md`](../CONTEXT.md) (domain language) and [`docs/adr/`](./adr/) (locked decisions); per-session detail lives in the local `handoff/` folder. Notable additions beyond this plan:
+
+- **Notebooks** — context-scoped, single-level note containers with drag-and-drop filing (ADR-0008).
+- **Notes ↔ Goals** — add/edit notes in place from a goal (right-side drawer); a note's Context must match its goal's.
+- **Richer notes editor** — ⌘-click links open in the browser, bullet/ordered lists, blockquote, horizontal rule, a selection bubble menu, an inline link popover, smart typography, and a placeholder (ADR-0005 amended).
+- **Scratchpad** — a floating, draggable, on-device brain-dump pad (⌘J).
+- **Activity** day-retrospective view, a **task priority** flag, a collapsible **nav rail**, a custom **title bar**, and slide animations for the task drawer + nav.
+
+---
+
 ## 1. Tech stack (locked)
 
 | Layer | Choice |
