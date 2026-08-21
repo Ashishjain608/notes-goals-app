@@ -8,8 +8,8 @@
 import type { CSSProperties, JSX } from "react";
 import { Icon } from "./Icon";
 
-/** A festive, calm-leaning palette for the completion confetti. */
-const BURST_COLORS = ["#c2603f", "#e0a458", "#5a9e7a", "#5b86c2", "#a487cb", "#d96b8a"];
+/** Completion confetti — the Spectrum family (indigo / emerald / amber / red). */
+const BURST_COLORS = ["#4f46e5", "#059669", "#d97706", "#dc2626", "#818cf8", "#34d399"];
 
 /** Twelve confetti pieces radiating out from the checkbox centre (computed once). */
 const BURST: { color: string; style: CSSProperties }[] = Array.from({ length: 12 }, (_, i) => {

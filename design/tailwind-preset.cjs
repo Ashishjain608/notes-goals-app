@@ -4,9 +4,9 @@
  * future web app (see docs/adr/0007).
  *
  * Colors resolve to CSS custom properties whose VALUES live in ./tokens.css and
- * are swapped at runtime by the `[data-theme]` (light/dark) and `[data-accent]`
- * attributes. That is what makes runtime theme/accent switching possible while
- * keeping Tailwind's utility ergonomics.
+ * are swapped at runtime by the `[data-theme]` attribute (Spectrum light/dark).
+ * That is what makes runtime theme switching possible while keeping Tailwind's
+ * utility ergonomics.
  *
  * Token names mirror the design prototype exactly so the look stays pixel-true.
  */
@@ -36,6 +36,14 @@ module.exports = {
         // Warn (aging / due cues)
         "warn-soft": "var(--warn-soft)",
         "warn-ink": "var(--warn-ink)",
+        // Functional context colour (Spectrum): Office = indigo, Personal = emerald
+        "ctx-office": "var(--ctx-office)",
+        "ctx-personal": "var(--ctx-personal)",
+        // Heat-scale aging (Spectrum): amber (3–6d) → red (7+d). The stale-row
+        // tint is a gradient, so it lives as the .age-stale-tint utility, not here.
+        "age-aging-ink": "var(--age-aging-ink)",
+        "age-stale-ink": "var(--age-stale-ink)",
+        "age-stale-bar": "var(--age-stale-bar)",
       },
       fontFamily: {
         sans: ["Hanken Grotesk", "system-ui", "sans-serif"],

@@ -5,7 +5,8 @@
  * ports computeAging() from the design prototype (ui.jsx) but returns Tailwind
  * CLASS names instead of inline CSS-variable colors, so rows stay theme-driven.
  *
- * Tones:  fresh (<3d) → muted ink-3,  aging (≥3d) → warn,  stale (≥7d) → accent.
+ * Tones (Spectrum heat scale):  fresh (<3d) → grey ink-3,  aging (3–6d) → amber,
+ *        stale (≥7d) → red, with a warm red→amber gradient tint on stale rows.
  * Modes:  "subtle"     — muted label only (no tint, no bar).
  *         "noticeable" — toned label; faint accent tint when stale (v1 default).
  *         "escalating" — toned label + tint + a growing left bar (0–3px).
@@ -39,19 +40,19 @@ function toneFor(n: number): Tone {
 }
 
 const LABEL_COLOR: Record<Tone, string> = {
-  stale: "text-accent-ink",
-  aging: "text-warn-ink",
+  stale: "text-age-stale-ink",
+  aging: "text-age-aging-ink",
   fresh: "text-ink-3",
 };
 
 const BAR_COLOR: Record<Tone, string> = {
-  stale: "bg-accent",
-  aging: "bg-warn-ink",
+  stale: "bg-age-stale-bar",
+  aging: "bg-age-aging-ink",
   fresh: "bg-line-2",
 };
 
 const TINT: Record<Tone, string | null> = {
-  stale: "bg-accent-soft",
+  stale: "age-stale-tint", // gradient utility — see styles/index.css
   aging: "bg-warn-soft",
   fresh: null,
 };
@@ -81,12 +82,12 @@ export function computeAging(task: Task, mode: AgingMode): Aging {
     };
   }
 
-  // noticeable (default): toned label; faint accent tint only when stale.
+  // noticeable (default): toned label; warm heat tint only when stale.
   return {
     n,
     label,
     colorClass,
-    tintClass: tone === "stale" ? "bg-accent-soft" : null,
+    tintClass: tone === "stale" ? "age-stale-tint" : null,
     barColorClass: null,
     barW: 0,
   };

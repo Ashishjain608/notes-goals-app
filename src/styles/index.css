@@ -50,6 +50,13 @@
   text-decoration-color: var(--ink-3);
 }
 
+/* Stale-row heat tint (Spectrum, 7+ day tasks). It's a gradient, so set it as
+   background-IMAGE — that keeps the row's `hover:bg-raise` background-color
+   working underneath (the gradient's low alpha lets the hover wash show through). */
+.age-stale-tint {
+  background-image: var(--age-stale-tint);
+}
+
 /* Task completion flourish — a small in-place confetti burst, plus a box pop and
    a check draw-in. Applied by Checkbox only for freshly completed tasks (gated in
    TaskRow), so already-done tasks never animate on load or navigation. */

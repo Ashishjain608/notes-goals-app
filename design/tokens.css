@@ -1,15 +1,19 @@
 /**
  * Design token VALUES — the single source of color/typography for Notes & Goals.
  * Framework-agnostic; import this in any app that uses the Tailwind preset
- * (see docs/adr/0007). Values are copied verbatim from the design prototype.
+ * (see docs/adr/0007). Values are the Spectrum theme — hi-fi and final.
  *
  * Structure:
- *   :root                       theme-independent tokens (fonts)
- *   [data-theme="light|dark"]   neutral ramp, shadows, warn cues, + default accent
- *   [data-accent="…"]           optional accent overrides (terracotta is the default)
+ *   :root                          theme-independent tokens (fonts)
+ *   [data-theme="spectrum"]        Spectrum — light
+ *   [data-theme="spectrum-dark"]   Spectrum — dark
  *
- * Switch theme by setting `data-theme` on the root element; switch accent (future)
- * by setting `data-accent`.
+ * Switch mode by setting `data-theme` on the root element; the store maps its
+ * light/dark state onto these two attribute values, so the toggle is one swap.
+ *
+ * Spectrum's two ideas live in dedicated tokens, kept separate from --accent on
+ * purpose: --ctx-* (functional context colour — Office = indigo, Personal =
+ * emerald) and --age-* (heat-scale aging — grey → amber → red as a task ages).
  */
 
 :root {
@@ -18,88 +22,88 @@
   --mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* ----------------------------------------------------------------- LIGHT */
-[data-theme="light"] {
-  --bg: #faf9f7;
-  --surface: #ffffff;
-  --surface-2: #f3f1ec;
-  --raise: rgba(0, 0, 0, 0.025);
-  --ink: #2a2824;
-  --ink-2: #6c6760;
-  --ink-3: #a09a90;
-  --line: #ece9e3;
-  --line-2: #e1ddd4;
-  --shadow: 0 1px 2px rgba(40, 34, 26, 0.04), 0 12px 32px -12px rgba(40, 34, 26, 0.12);
-  --shadow-sm: 0 1px 2px rgba(40, 34, 26, 0.05);
-  --warn-soft: rgba(194, 120, 40, 0.12);
-  --warn-ink: #9a6418;
+/* ------------------------------------------------------------ SPECTRUM LIGHT */
+[data-theme="spectrum"] {
+  /* surfaces & ink */
+  --bg:         #f3f3f7;   /* app background (a soft tri-pastel wash is optional — see --bg-gradient) */
+  --surface:    #ffffff;   /* cards, panels, fields */
+  --surface-2:  #eceef4;   /* insets: segmented tracks, search fields */
+  --raise:      rgba(40,40,90,0.03);   /* row hover */
+  --ink:        #1c2230;   /* primary text */
+  --ink-2:      #586273;   /* secondary text */
+  --ink-3:      #9aa3b2;   /* tertiary text, placeholders, fresh age */
+  --line:       #e7e9f0;   /* hairline borders */
+  --line-2:     #d9dce4;   /* stronger borders, dividers */
 
-  /* default accent: terracotta (light) */
-  --accent: #c2603f;
-  --accent-ink: #a44e30;
-  --accent-soft: rgba(194, 96, 63, 0.1);
-  --accent-line: rgba(194, 96, 63, 0.32);
-}
+  /* primary accent (indigo) */
+  --accent:      #4f46e5;
+  --accent-ink:  #4038c4;  /* accent text on light surfaces (eyebrows, links) */
+  --accent-soft: rgba(79,70,229,0.10);  /* accent tints, selection */
+  --accent-line: rgba(79,70,229,0.32);  /* accent borders */
 
-/* ------------------------------------------------------------------ DARK */
-[data-theme="dark"] {
-  --bg: #1a1917;
-  --surface: #222120;
-  --surface-2: #2b2926;
-  --raise: rgba(255, 255, 255, 0.03);
-  --ink: #ece9e3;
-  --ink-2: #a8a39a;
-  --ink-3: #756f68;
-  --line: #312f2d;
-  --line-2: #3b3835;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 40px -14px rgba(0, 0, 0, 0.55);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --warn-soft: rgba(214, 160, 90, 0.14);
-  --warn-ink: #d6a35f;
+  /* elevation */
+  --shadow:    0 1px 2px rgba(40,40,90,0.05), 0 16px 38px -16px rgba(40,40,90,0.18);
+  --shadow-sm: 0 1px 2px rgba(40,40,90,0.06);
 
-  /* default accent: terracotta (dark) */
-  --accent: #d6805f;
-  --accent-ink: #e0916f;
-  --accent-soft: rgba(214, 128, 95, 0.18);
-  --accent-line: rgba(214, 128, 95, 0.32);
+  /* warn (mid-temperature) */
+  --warn-soft: rgba(245,158,11,0.12);
+  --warn-ink:  #d97706;
+
+  /* FUNCTIONAL CONTEXT COLOUR */
+  --ctx-office:   #4f46e5;  /* indigo  */
+  --ctx-personal: #059669;  /* emerald */
+
+  /* HEAT-SCALE AGING */
+  --age-aging-ink: #d97706;  /* 3–6 days — amber  */
+  --age-stale-ink: #dc2626;  /* 7+ days  — red    */
+  --age-stale-bar: #dc2626;  /* left accent bar on stale rows */
+  --age-stale-tint: linear-gradient(90deg, rgba(220,38,38,0.13), rgba(245,158,11,0.05)); /* stale row background */
+
+  /* optional background gradient (apply to the app root if you want the wash) */
+  --bg-gradient: linear-gradient(135deg, #fef1f6 0%, #eef1ff 46%, #ecfdf7 100%);
 }
 
-/* ------------------------------------------------- ACCENT OVERRIDES (opt-in)
-   v1 ships terracotta only (no picker UI), but the full palette is tokenized
-   so a future setting can flip `data-accent` with zero component changes. */
+/* ------------------------------------------------------------- SPECTRUM DARK */
+[data-theme="spectrum-dark"] {
+  /* surfaces & ink */
+  --bg:         #0d0f16;
+  --surface:    #181b26;
+  --surface-2:  #21252f;
+  --raise:      rgba(150,160,220,0.05);
+  --ink:        #e8eaf2;
+  --ink-2:      #9aa3b4;
+  --ink-3:      #616c7e;
+  --line:       #262b38;
+  --line-2:     #353c4b;
 
-[data-theme="light"][data-accent="slate"] {
-  --accent: #3a6ea5; --accent-ink: #2f5d8f;
-  --accent-soft: rgba(58, 110, 165, 0.1); --accent-line: rgba(58, 110, 165, 0.32);
-}
-[data-theme="dark"][data-accent="slate"] {
-  --accent: #6d9fd1; --accent-ink: #8fb6dd;
-  --accent-soft: rgba(109, 159, 209, 0.18); --accent-line: rgba(109, 159, 209, 0.32);
-}
+  /* primary accent (brighter indigo) */
+  --accent:      #818cf8;
+  --accent-ink:  #a3adff;
+  --accent-soft: rgba(129,140,248,0.18);
+  --accent-line: rgba(129,140,248,0.32);
 
-[data-theme="light"][data-accent="moss"] {
-  --accent: #3f7d5c; --accent-ink: #33684b;
-  --accent-soft: rgba(63, 125, 92, 0.1); --accent-line: rgba(63, 125, 92, 0.32);
-}
-[data-theme="dark"][data-accent="moss"] {
-  --accent: #6aa884; --accent-ink: #84bb9c;
-  --accent-soft: rgba(106, 168, 132, 0.18); --accent-line: rgba(106, 168, 132, 0.32);
-}
+  /* elevation */
+  --shadow:    0 1px 2px rgba(0,0,0,0.5), 0 18px 44px -16px rgba(0,0,0,0.7);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
 
-[data-theme="light"][data-accent="violet"] {
-  --accent: #7a5ba6; --accent-ink: #664a8d;
-  --accent-soft: rgba(122, 91, 166, 0.1); --accent-line: rgba(122, 91, 166, 0.32);
-}
-[data-theme="dark"][data-accent="violet"] {
-  --accent: #a487cb; --accent-ink: #b8a0d8;
-  --accent-soft: rgba(164, 135, 203, 0.18); --accent-line: rgba(164, 135, 203, 0.32);
-}
+  /* warn (mid-temperature) */
+  --warn-soft: rgba(251,191,36,0.12);
+  --warn-ink:  #fbbf24;
 
-[data-theme="light"][data-accent="ink"] {
-  --accent: #46433d; --accent-ink: #2a2824;
-  --accent-soft: rgba(70, 67, 61, 0.1); --accent-line: rgba(70, 67, 61, 0.32);
-}
-[data-theme="dark"][data-accent="ink"] {
-  --accent: #cfccc4; --accent-ink: #e6e3db;
-  --accent-soft: rgba(207, 204, 196, 0.18); --accent-line: rgba(207, 204, 196, 0.32);
+  /* FUNCTIONAL CONTEXT COLOUR */
+  --ctx-office:   #818cf8;  /* indigo-400  */
+  --ctx-personal: #34d399;  /* emerald-400 */
+
+  /* HEAT-SCALE AGING */
+  --age-aging-ink: #fbbf24;  /* amber-400 */
+  --age-stale-ink: #f87171;  /* red-400   */
+  --age-stale-bar: #f87171;
+  --age-stale-tint: linear-gradient(90deg, rgba(248,113,113,0.16), rgba(251,191,36,0.05));
+
+  /* optional background gradient — a deep slate nebula echoing the indigo/
+     emerald/heat zones */
+  --bg-gradient: radial-gradient(58% 62% at 8% 4%, #211a33 0%, rgba(33,26,51,0) 58%),
+                 radial-gradient(50% 56% at 96% 12%, #122036 0%, rgba(18,32,54,0) 56%),
+                 radial-gradient(60% 64% at 80% 108%, #0d2620 0%, rgba(13,38,32,0) 56%),
+                 #0d0f16;
 }

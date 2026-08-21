@@ -35,17 +35,17 @@ describe("computeAging", () => {
     expect(a.barW).toBe(0);
   });
 
-  it("uses warn ink for aging tasks (>=3d) in noticeable mode, no tint", () => {
+  it("uses amber ink for aging tasks (>=3d) in noticeable mode, no tint", () => {
     const a = computeAging(taskCreatedDaysAgo(4), "noticeable");
     expect(a.label).toBe("4d");
-    expect(a.colorClass).toBe("text-warn-ink");
+    expect(a.colorClass).toBe("text-age-aging-ink");
     expect(a.tintClass).toBeNull();
   });
 
-  it("uses accent ink + accent tint for stale tasks (>=7d) in noticeable mode", () => {
+  it("uses red ink + heat tint for stale tasks (>=7d) in noticeable mode", () => {
     const a = computeAging(taskCreatedDaysAgo(9), "noticeable");
-    expect(a.colorClass).toBe("text-accent-ink");
-    expect(a.tintClass).toBe("bg-accent-soft");
+    expect(a.colorClass).toBe("text-age-stale-ink");
+    expect(a.tintClass).toBe("age-stale-tint");
     expect(a.barColorClass).toBeNull();
     expect(a.barW).toBe(0);
   });
@@ -64,11 +64,11 @@ describe("computeAging", () => {
     expect(computeAging(taskCreatedDaysAgo(8), "escalating").barW).toBe(2);
     const old = computeAging(taskCreatedDaysAgo(40), "escalating");
     expect(old.barW).toBe(3);
-    expect(old.barColorClass).toBe("bg-accent");
-    expect(old.tintClass).toBe("bg-accent-soft");
+    expect(old.barColorClass).toBe("bg-age-stale-bar");
+    expect(old.tintClass).toBe("age-stale-tint");
 
     const aging = computeAging(taskCreatedDaysAgo(4), "escalating");
-    expect(aging.barColorClass).toBe("bg-warn-ink");
+    expect(aging.barColorClass).toBe("bg-age-aging-ink");
     expect(aging.tintClass).toBe("bg-warn-soft");
   });
 });

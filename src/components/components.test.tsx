@@ -62,12 +62,12 @@ describe("ContextDot", () => {
   it("renders a bordered square for office", () => {
     const html = renderToStaticMarkup(<ContextDot context="office" />);
     expect(html).toContain('title="Office"');
-    expect(html).toContain("border-ink-3");
+    expect(html).toContain("border-ctx-office");
   });
-  it("renders a filled accent circle for personal", () => {
+  it("renders a filled emerald circle for personal", () => {
     const html = renderToStaticMarkup(<ContextDot context="personal" />);
     expect(html).toContain('title="Personal"');
-    expect(html).toContain("bg-accent");
+    expect(html).toContain("bg-ctx-personal");
     expect(html).toContain("rounded-full");
   });
 });

@@ -1,8 +1,9 @@
 /**
  * ContextDot — a tiny glyph distinguishing a task/note's context.
  *
- * Office is a hollow rounded square (neutral ink); Personal is a filled accent
- * circle. The shape difference keeps the two readable without relying on color.
+ * Spectrum gives each context a hue: Office is a hollow indigo square
+ * (`--ctx-office`); Personal is a filled emerald circle (`--ctx-personal`). The
+ * shape difference keeps the two readable without relying on color alone.
  */
 import type { JSX } from "react";
 import type { Context } from "@/types";
@@ -19,7 +20,7 @@ export function ContextDot({ context, size = 7 }: ContextDotProps): JSX.Element 
     return (
       <span
         title="Office"
-        className="inline-block flex-shrink-0 rounded-sm border-[1.5px] border-ink-3"
+        className="inline-block flex-shrink-0 rounded-sm border-[1.5px] border-ctx-office"
         style={{ width: size, height: size }}
       />
     );
@@ -27,7 +28,7 @@ export function ContextDot({ context, size = 7 }: ContextDotProps): JSX.Element 
   return (
     <span
       title="Personal"
-      className="inline-block flex-shrink-0 rounded-full bg-accent"
+      className="inline-block flex-shrink-0 rounded-full bg-ctx-personal"
       style={{ width: size, height: size }}
     />
   );

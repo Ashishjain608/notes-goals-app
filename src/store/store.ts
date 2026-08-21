@@ -114,6 +114,9 @@ function readTheme(): Theme {
   }
 }
 
+/** The app's light/dark mode maps onto Spectrum's two `data-theme` values. */
+const DOM_THEME: Record<Theme, string> = { light: "spectrum", dark: "spectrum-dark" };
+
 /** Apply the theme to the document (the shell reads `data-theme`) + persist it. */
 function applyTheme(theme: Theme): void {
   try {
@@ -122,7 +125,7 @@ function applyTheme(theme: Theme): void {
     // ignore: storage may be unavailable (e.g. tests / privacy mode)
   }
   if (typeof document !== "undefined" && document.documentElement) {
-    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute("data-theme", DOM_THEME[theme]);
   }
 }
 
