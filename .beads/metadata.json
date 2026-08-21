@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "notes_goals_app",
+  "project_id": "4f2342b1-f549-4260-b231-2b04916bb7c6"
+}

@@ -87,3 +87,10 @@ coverage/
 
 # Local session handoff notes (not part of the codebase)
 handoff/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+*.gate.lock*
