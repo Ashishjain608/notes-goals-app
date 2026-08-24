@@ -143,3 +143,25 @@
     animation: none;
   }
 }
+
+/* Nav rail hover/focus flyout — the labelled list floating over the collapsed
+   icon rail. Transform + opacity only (no width/layout properties), so it never
+   forces a layout pass on the frames that matter. The "in" curve is the same
+   ease-out used by the task detail panel's slide-in (ng-panel-in); the "out"
+   curve reuses that panel's ease-in for a quick, symmetrical withdrawal. */
+@keyframes ng-nav-flyout-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes ng-nav-flyout-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-6px); }
+}
+.ng-nav-flyout-in { animation: ng-nav-flyout-in 0.16s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.ng-nav-flyout-out { animation: ng-nav-flyout-out 0.14s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .ng-nav-flyout-in,
+  .ng-nav-flyout-out {
+    animation: none;
+  }
+}

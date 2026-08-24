@@ -43,6 +43,10 @@ pub fn run() {
             commands::create_goal,
             commands::update_goal,
             commands::delete_goal,
+            commands::attach_files,
+            commands::attach_bytes,
+            commands::remove_attachment,
+            commands::open_attachment,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

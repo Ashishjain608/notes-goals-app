@@ -1,27 +1,59 @@
 /**
  * EditorToolbar — the formatting chrome for the note editor (docs/adr/0005).
  *
- * A sticky top toolbar (marks + block types + lists + link), a floating bubble
- * menu that appears on a text selection, and an inline link popover that
- * replaces the old window.prompt (opened from the toolbar/bubble Link button or
- * ⌘⇧K — ⌘K is the global palette). Link *opening* is handled in useNoteEditor
- * (Cmd-click → OS browser); this file only edits links.
+ * A sticky top toolbar (marks + block types + lists + link + attach), a
+ * floating bubble menu that appears on a text selection, and an inline link
+ * popover that replaces the old window.prompt (opened from the toolbar/bubble
+ * Link button or ⌘⇧K — ⌘K is the global palette). Link *opening* is handled in
+ * useNoteEditor (Cmd-click → OS browser or ipc.openAttachment). The Attach
+ * button only picks files and copies them into the vault — the caller
+ * (`onAttach`) owns adding the returned records to the note's attachment
+ * list and persisting (notes-goals-app-4di).
  */
 
 import { useEffect, useRef, useState, type JSX, type ReactNode } from "react";
 import { BubbleMenu, type Editor } from "@tiptap/react";
+import { open as openFilePicker } from "@tauri-apps/plugin-dialog";
 import { Icon } from "@/components";
+import { attachFiles } from "@/lib/ipc";
+import type { Attachment } from "@/types";
+
+/** Coerce a thrown value into a short user-facing message (mirrors the store's own convention). */
+function errorMessageOf(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "Something went wrong.";
+}
 
 export interface EditorToolbarProps {
   editor: Editor | null;
+  /** The note being edited — attachments are written under its id (notes-goals-app-3i5). */
+  noteId: string;
+  /** Receives the newly created attachment records after a successful pick. */
+  onAttach: (created: Attachment[]) => void;
   /** When provided, a trailing trash button deletes the note. Omitted by hosts
    *  (e.g. the goal drawer) that surface delete through their own menu. */
   onDelete?: () => void;
 }
 
 /** The full editor toolbar + bubble menu + link popover. */
-export function EditorToolbar({ editor, onDelete }: EditorToolbarProps): JSX.Element {
+export function EditorToolbar({ editor, noteId, onAttach, onDelete }: EditorToolbarProps): JSX.Element {
   const [linkOpen, setLinkOpen] = useState(false);
+
+  /** Pick one or more files, copy them into the vault, and hand the created
+   *  records to `onAttach`. */
+  const handleAttach = async (): Promise<void> => {
+    try {
+      const selection = await openFilePicker({ multiple: true });
+      if (!selection) return; // cancelled
+      const paths = Array.isArray(selection) ? selection : [selection];
+      if (paths.length === 0) return;
+      const created = await attachFiles(noteId, paths);
+      onAttach(created);
+    } catch (err) {
+      window.alert(`Couldn't attach the file: ${errorMessageOf(err)}`);
+    }
+  };
 
   // ⌘⇧K opens the link popover while the editor is focused (⌘K is the palette).
   useEffect(() => {
@@ -121,6 +153,9 @@ export function EditorToolbar({ editor, onDelete }: EditorToolbarProps): JSX.Ele
         </ToolbarButton>
         {linkOpen && editor && <LinkPopover editor={editor} onClose={() => setLinkOpen(false)} />}
       </div>
+      <ToolbarButton label="Attach file" active={false} disabled={disabled} onClick={() => void handleAttach()}>
+        <Icon name="notes" size={15} />
+      </ToolbarButton>
 
       <span className="ml-auto flex items-center gap-3">
         <span className="text-[11.5px] italic text-ink-3">No markdown — just write</span>

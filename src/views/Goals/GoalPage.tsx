@@ -1,16 +1,18 @@
 /**
  * Goal page (split layout) — the detail view for a single goal.
  *
- * Left/main column carries the editorial content: a meta row (context, a status
- * pill, target), the serif title and description, a divider, then the live list
- * of linked tasks (open first, then a dense done group). The right column is a
- * sticky sidebar with a live Progress card and the goal's owned notes.
+ * Left/main column carries the editorial content: the editable header
+ * (`GoalHeader` — context, status, target, the serif title and description,
+ * all editable in place), a divider, then the live list of linked tasks (open
+ * first, then a dense done group). The right column is a sticky sidebar with
+ * a live Progress card and the goal's owned notes.
  *
  * Resolves the goal from the store by `goalId`; renders a "Goal not found"
  * fallback (with a back button) when the id no longer matches — goal status
  * never cascades to its tasks/notes (ADR-0002), so the lists always render
- * regardless of the goal's status. Progress and links come from the pure
- * selectors; task mutations and navigation are delegated to store actions.
+ * regardless of the goal's status, and editing status here is a single-field
+ * write to the goal, never a bulk operation. Progress and links come from the
+ * pure selectors; task mutations and navigation are delegated to store actions.
  */
 import { useMemo, useState, type JSX } from "react";
 import type { Goal, Note, Task } from "@/types";
@@ -23,6 +25,7 @@ import {
 import { TaskRow, ProgressBar, ContextDot, Icon, EmptyState } from "@/components";
 import { formatShortDate } from "@/lib/dates";
 import { NoteEditorDrawer } from "./NoteEditorDrawer";
+import { GoalHeader } from "./GoalHeader";
 
 export interface GoalPageProps {
   /** The route's goal id (passed by the shell as `route.goalId`). */
@@ -42,32 +45,6 @@ function BackButton({ onBack }: { onBack: () => void }): JSX.Element {
       <Icon name="chevron" size={14} className="rotate-180" />
       Goals
     </button>
-  );
-}
-
-/** Meta row: context, a status pill, and an optional target date. */
-function GoalMeta({ goal }: { goal: Goal }): JSX.Element {
-  const target = formatShortDate(goal.target);
-  return (
-    <div className="mb-3 flex flex-wrap items-center gap-2.5 text-[13px] text-ink-2">
-      <span className="inline-flex items-center gap-1.5">
-        <ContextDot context={goal.context} />
-        {goal.context}
-      </span>
-      <span className="text-ink-3">·</span>
-      <span className="inline-flex items-center rounded-full bg-accent-soft px-[9px] py-[2px] text-xs font-semibold text-accent-ink">
-        {goal.status}
-      </span>
-      {target && (
-        <>
-          <span className="text-ink-3">·</span>
-          <span className="inline-flex items-center gap-[5px]">
-            <Icon name="calendar" size={13} />
-            Target {target}
-          </span>
-        </>
-      )}
-    </div>
   );
 }
 
@@ -263,6 +240,7 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const addTask = useStore((s) => s.addTask);
   const addNote = useStore((s) => s.addNote);
+  const saveGoal = useStore((s) => s.saveGoal);
 
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [createdNew, setCreatedNew] = useState(false);
@@ -277,6 +255,11 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
   const openGoal = (id: string): void => navigate("goal", id);
 
   if (!goal) return <GoalNotFound onBack={goBack} />;
+
+  /** Patch-and-persist: spreads onto the current goal so id/created/updated are never fabricated (ADR-0006). */
+  const savePatch = (patch: Partial<Goal>): void => {
+    void saveGoal({ ...goal, ...patch });
+  };
 
   const addLinkedTask = (title: string): void => {
     void addTask({ title, context: goal.context, goalId: goal.id });
@@ -303,15 +286,7 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
         <div className="grid grid-cols-[1fr_300px] items-start gap-11">
           {/* main / content column */}
           <div className="min-w-0">
-            <GoalMeta goal={goal} />
-            <h1 className="m-0 mb-3.5 font-serif text-[38px] font-medium leading-[1.08] tracking-[-.015em] text-ink">
-              {goal.title}
-            </h1>
-            {goal.description && (
-              <p className="m-0 mb-1.5 max-w-[600px] font-serif text-[18px] leading-[1.6] text-ink-2">
-                {goal.description}
-              </p>
-            )}
+            <GoalHeader goal={goal} onSave={savePatch} />
 
             <div className="mt-[28px] mb-[18px] h-px bg-line" />
 

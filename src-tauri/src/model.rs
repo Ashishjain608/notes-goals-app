@@ -51,6 +51,22 @@ pub struct Subtask {
     pub status: SubtaskStatus,
 }
 
+/// A file copied into the vault and linked to a task or a note. Stored under
+/// `attachments/<entityId>/<filename>` (vault-relative, POSIX separators) —
+/// see docs/agents' attachments contract and ADR-0006.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Attachment {
+    /// Vault-relative POSIX path, e.g. "attachments/<entityId>/report.pdf".
+    pub path: String,
+    /// Display filename.
+    pub name: String,
+    /// Size in bytes at attach time.
+    pub size: u64,
+    /// UTC `Z`.
+    pub added: String,
+}
+
 /// A single thing the user intends to do — the source of truth for what's
 /// outstanding. Stored as `tasks/<id>.json`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -78,6 +94,11 @@ pub struct Task {
     /// User-flagged priority. Defaults to false for files written before it existed.
     #[serde(default)]
     pub priority: bool,
+    /// Files copied into the vault and linked to this task. Defaults to empty
+    /// so task files written before this field existed still load (ADR-0006
+    /// resilience).
+    #[serde(default)]
+    pub attachments: Vec<Attachment>,
 }
 
 /// Note metadata — the markdown body lives in the `.md` file and is loaded
@@ -99,6 +120,13 @@ pub struct Note {
     pub created: String,
     /// UTC `Z`.
     pub updated: String,
+    /// Files copied into the vault and linked to this note, carried in the
+    /// `.md` file's YAML frontmatter (not the body — inline markdown links are
+    /// a separate, older mechanism this field doesn't replace). Defaults to
+    /// empty so notes written before this field existed still load (ADR-0006
+    /// resilience).
+    #[serde(default)]
+    pub attachments: Vec<Attachment>,
 }
 
 /// A context-scoped, single-level container that groups Notes (CONTEXT.md,

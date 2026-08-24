@@ -8,9 +8,9 @@
  * and navigates to the new goal's page. Esc / backdrop / Cancel dismiss it.
  */
 import { useEffect, useRef, useState, type JSX } from "react";
-import type { Context } from "@/types";
+import type { Context, IsoDate } from "@/types";
 import { useStore } from "@/store";
-import { ContextDot, Icon } from "@/components";
+import { ContextDot, DateField, Icon } from "@/components";
 
 /** Collapse the global filter to a concrete write context (`all` → office). */
 function defaultContext(filter: string): Context {
@@ -36,7 +36,7 @@ export function NewGoalDialog({ open, onClose }: NewGoalDialogProps): JSX.Elemen
 
   const [title, setTitle] = useState("");
   const [context, setContext] = useState<Context>(() => defaultContext(contextFilter));
-  const [target, setTarget] = useState("");
+  const [target, setTarget] = useState<IsoDate | null>(null);
   const [description, setDescription] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -45,7 +45,7 @@ export function NewGoalDialog({ open, onClose }: NewGoalDialogProps): JSX.Elemen
     if (!open) return;
     setTitle("");
     setDescription("");
-    setTarget("");
+    setTarget(null);
     setContext(defaultContext(contextFilter));
     inputRef.current?.focus();
   }, [open, contextFilter]);
@@ -60,7 +60,7 @@ export function NewGoalDialog({ open, onClose }: NewGoalDialogProps): JSX.Elemen
       title: trimmed,
       context,
       description: description.trim() || undefined,
-      target: target || null,
+      target,
     });
     onClose();
     navigate("goal", goal.id);
@@ -118,14 +118,18 @@ export function NewGoalDialog({ open, onClose }: NewGoalDialogProps): JSX.Elemen
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span className="w-[72px] text-[12.5px] font-medium text-ink-3">Target</span>
-            <input
-              type="date"
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] tabular-nums text-ink-2 outline-none"
-            />
+            <DateField value={target} onPick={setTarget} placeholder="No target date" />
+            {target && (
+              <button
+                type="button"
+                onClick={() => setTarget(null)}
+                className="text-[12.5px] font-medium text-ink-3 transition-colors hover:text-accent-ink"
+              >
+                Clear
+              </button>
+            )}
           </div>
 
           <textarea

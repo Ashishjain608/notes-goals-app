@@ -22,6 +22,7 @@ function taskCreatedDaysAgo(daysAgo: number): Task {
     subtasks: [],
     details: "",
     priority: false,
+    attachments: [],
   };
 }
 

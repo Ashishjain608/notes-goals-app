@@ -8,11 +8,12 @@ use std::path::Path;
 use chrono::{SecondsFormat, Utc};
 use tauri::AppHandle;
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_opener::OpenerExt;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
 use crate::model::{
-    CreateGoalInput, CreateNoteInput, CreateNotebookInput, CreateTaskInput, Goal,
+    Attachment, CreateGoalInput, CreateNoteInput, CreateNotebookInput, CreateTaskInput, Goal,
     GoalDeletionResult, GoalStatus, Note, Notebook, NotebookDeletionResult, StoreSnapshot, Task,
     TaskStatus,
 };
@@ -103,6 +104,7 @@ pub fn create_task(app: AppHandle, input: CreateTaskInput) -> AppResult<Task> {
         subtasks: Vec::new(),
         details: String::new(),
         priority: false,
+        attachments: Vec::new(),
     };
     store_io::write_task(&vault, &task)?;
     Ok(task)
@@ -135,11 +137,13 @@ fn apply_completed_rule(task: &mut Task) {
     }
 }
 
-/// Hard-delete a task by moving its file to trash (ADR-0003).
+/// Hard-delete a task by moving its file to trash (ADR-0003), taking its
+/// `attachments/<id>/` folder with it if one exists.
 #[tauri::command]
 pub fn delete_task(app: AppHandle, id: String) -> AppResult<()> {
     let vault = vault::require_vault(&app)?;
-    store_io::move_to_trash(&vault, EntityKind::Task, &id)
+    store_io::move_to_trash(&vault, EntityKind::Task, &id)?;
+    store_io::move_attachment_path_to_trash(&vault, &Path::new("attachments").join(&id))
 }
 
 /* -------------------------------------------------------------------- Notes */
@@ -158,6 +162,7 @@ pub fn create_note(app: AppHandle, input: CreateNoteInput) -> AppResult<Note> {
         notebook_id: input.notebook_id,
         created: now.clone(),
         updated: now,
+        attachments: Vec::new(),
     };
     let body = input.body.unwrap_or_default();
     store_io::write_note(&vault, &note, &body)?;
@@ -175,11 +180,15 @@ pub fn update_note(app: AppHandle, mut note: Note, body: String) -> AppResult<No
 }
 
 /// Hard-delete a note by moving its file to trash — the only removal path for
-/// notes (ADR-0003).
+/// notes (ADR-0003) — taking its `attachments/<id>/` folder with it if one
+/// exists. This is unconditional cleanup of the on-disk files under that
+/// folder; it doesn't consult the note's `attachments` list (nor does it need
+/// to — the note file itself, list included, is trashed in the same call).
 #[tauri::command]
 pub fn delete_note(app: AppHandle, id: String) -> AppResult<()> {
     let vault = vault::require_vault(&app)?;
-    store_io::move_to_trash(&vault, EntityKind::Note, &id)
+    store_io::move_to_trash(&vault, EntityKind::Note, &id)?;
+    store_io::move_attachment_path_to_trash(&vault, &Path::new("attachments").join(&id))
 }
 
 /// File a note into a notebook (or `None` to unfile). Metadata-only: reloads
@@ -332,6 +341,60 @@ fn clear_linked_notes(vault: &Path, goal_id: &str) -> AppResult<Vec<String>> {
     Ok(cleared)
 }
 
+/* -------------------------------------------------------------- Attachments */
+
+/// Copy each file at `paths` (absolute host paths picked via the native
+/// dialog) into `<vault>/attachments/<entity_id>/`, suffixing on filename
+/// collision, and return the created records in the same order as `paths`.
+#[tauri::command]
+pub fn attach_files(
+    app: AppHandle,
+    entity_id: String,
+    paths: Vec<String>,
+) -> AppResult<Vec<Attachment>> {
+    let vault = vault::require_vault(&app)?;
+    let now = now_utc();
+    paths
+        .iter()
+        .map(|p| store_io::copy_attachment(&vault, &entity_id, Path::new(p), &now))
+        .collect()
+}
+
+/// Attach clipboard-pasted bytes (no source path on disk) as a new
+/// attachment named `name`. `name` is untrusted and sanitized to a bare
+/// filename.
+#[tauri::command]
+pub fn attach_bytes(
+    app: AppHandle,
+    entity_id: String,
+    name: String,
+    bytes: Vec<u8>,
+) -> AppResult<Attachment> {
+    let vault = vault::require_vault(&app)?;
+    store_io::write_attachment(&vault, &entity_id, &name, &bytes, &now_utc())
+}
+
+/// Move an attachment file to trash — never unlinked (ADR-0003). `path` is
+/// untrusted and validated hard against path traversal.
+#[tauri::command]
+pub fn remove_attachment(app: AppHandle, path: String) -> AppResult<()> {
+    let vault = vault::require_vault(&app)?;
+    let absolute = store_io::resolve_attachment_path(&vault, &path)?;
+    let relative = absolute.strip_prefix(&vault).unwrap_or(&absolute);
+    store_io::move_attachment_path_to_trash(&vault, relative)
+}
+
+/// Open an attachment in the OS default app. `path` is untrusted and
+/// validated hard against path traversal.
+#[tauri::command]
+pub fn open_attachment(app: AppHandle, path: String) -> AppResult<()> {
+    let vault = vault::require_vault(&app)?;
+    let absolute = store_io::resolve_attachment_path(&vault, &path)?;
+    app.opener()
+        .open_path(absolute.to_string_lossy().to_string(), None::<&str>)
+        .map_err(|e| AppError::Io(std::io::Error::other(e.to_string())))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -364,6 +427,7 @@ mod tests {
             subtasks: vec![],
             details: String::new(),
             priority: false,
+            attachments: vec![],
         };
         apply_completed_rule(&mut t);
         assert!(t.completed.is_some(), "done should set completed");
@@ -415,6 +479,7 @@ mod tests {
             subtasks: vec![],
             details: String::new(),
             priority: false,
+            attachments: vec![],
         };
         store_io::write_task(&vault, &linked_task).unwrap();
 
@@ -433,6 +498,7 @@ mod tests {
             notebook_id: None,
             created: "2026-06-02T00:00:00Z".into(),
             updated: "2026-06-02T00:00:00Z".into(),
+            attachments: vec![],
         };
         store_io::write_note(&vault, &linked_note, "keep this body").unwrap();
 
@@ -479,6 +545,7 @@ mod tests {
             notebook_id: Some("nb1".into()),
             created: "2026-06-02T00:00:00Z".into(),
             updated: "2026-06-02T00:00:00Z".into(),
+            attachments: vec![],
         };
         store_io::write_note(&vault, &member, "keep me").unwrap();
 
@@ -518,5 +585,107 @@ mod tests {
             cleared_task_ids,
             cleared_note_ids,
         })
+    }
+
+    /// Test helper mirroring `delete_task`'s logic without an `AppHandle`.
+    fn delete_task_and_attachments(vault: &Path, id: &str) -> AppResult<()> {
+        store_io::move_to_trash(vault, EntityKind::Task, id)?;
+        store_io::move_attachment_path_to_trash(vault, &Path::new("attachments").join(id))
+    }
+
+    /// Test helper mirroring `delete_note`'s logic without an `AppHandle`.
+    fn delete_note_and_attachments(vault: &Path, id: &str) -> AppResult<()> {
+        store_io::move_to_trash(vault, EntityKind::Note, id)?;
+        store_io::move_attachment_path_to_trash(vault, &Path::new("attachments").join(id))
+    }
+
+    #[test]
+    fn delete_task_takes_its_attachments_folder_to_trash() {
+        let vault = temp_vault();
+        store_io::write_task(&vault, &sample_task_for_test("t1")).unwrap();
+        store_io::copy_attachment(
+            &vault,
+            "t1",
+            &write_source_file(&vault, "report.pdf", b"data"),
+            "2026-06-01T00:00:00Z",
+        )
+        .unwrap();
+
+        delete_task_and_attachments(&vault, "t1").unwrap();
+
+        assert!(!store_io::entity_path(&vault, EntityKind::Task, "t1").exists());
+        assert!(!vault.join("attachments/t1").exists());
+        assert!(vault
+            .join(".atlas/trash/attachments/t1/report.pdf")
+            .exists());
+    }
+
+    #[test]
+    fn delete_task_without_attachments_folder_still_succeeds() {
+        let vault = temp_vault();
+        store_io::write_task(&vault, &sample_task_for_test("t-no-attachments")).unwrap();
+        delete_task_and_attachments(&vault, "t-no-attachments").unwrap();
+        assert!(!store_io::entity_path(&vault, EntityKind::Task, "t-no-attachments").exists());
+    }
+
+    #[test]
+    fn delete_note_takes_its_attachments_folder_to_trash() {
+        let vault = temp_vault();
+        let note = Note {
+            id: "n1".into(),
+            title: "Note".into(),
+            context: Context::Office,
+            goal_id: None,
+            notebook_id: None,
+            created: "2026-06-01T00:00:00Z".into(),
+            updated: "2026-06-01T00:00:00Z".into(),
+            attachments: vec![],
+        };
+        store_io::write_note(&vault, &note, "see [report](attachments/n1/report.pdf)").unwrap();
+        store_io::copy_attachment(
+            &vault,
+            "n1",
+            &write_source_file(&vault, "report.pdf", b"data"),
+            "2026-06-01T00:00:00Z",
+        )
+        .unwrap();
+
+        delete_note_and_attachments(&vault, "n1").unwrap();
+
+        assert!(!store_io::entity_path(&vault, EntityKind::Note, "n1").exists());
+        assert!(!vault.join("attachments/n1").exists());
+        assert!(vault
+            .join(".atlas/trash/attachments/n1/report.pdf")
+            .exists());
+    }
+
+    /// A minimal, fully-populated `Task` for tests that don't care about its
+    /// fields beyond the id.
+    fn sample_task_for_test(id: &str) -> Task {
+        Task {
+            id: id.into(),
+            title: "x".into(),
+            context: Context::Office,
+            status: TaskStatus::Open,
+            created: "2026-06-01T00:00:00Z".into(),
+            due: None,
+            snooze_until: None,
+            completed: None,
+            goal_id: None,
+            subtasks: vec![],
+            details: String::new(),
+            priority: false,
+            attachments: vec![],
+        }
+    }
+
+    /// Write a scratch source file (outside the vault) for `copy_attachment`
+    /// tests to copy in.
+    fn write_source_file(vault: &Path, name: &str, bytes: &[u8]) -> PathBuf {
+        let dir = vault.join("_scratch_source");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(name);
+        std::fs::write(&path, bytes).unwrap();
+        path
     }
 }

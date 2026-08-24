@@ -76,7 +76,10 @@ export interface AppState {
   patchTask: (
     id: string,
     patch: Partial<
-      Pick<Task, "title" | "details" | "due" | "snoozeUntil" | "goalId" | "subtasks" | "priority">
+      Pick<
+        Task,
+        "title" | "details" | "due" | "snoozeUntil" | "goalId" | "subtasks" | "priority" | "attachments"
+      >
     >,
   ) => Promise<void>;
   toggleTaskPriority: (id: string) => Promise<void>;

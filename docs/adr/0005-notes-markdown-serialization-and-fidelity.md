@@ -10,6 +10,8 @@ Notes are authored WYSIWYG in TipTap (ProseMirror) but stored as Markdown with Y
 
 The note title lives in frontmatter only — the body never repeats it as an H1. Saves are debounced (~800ms) autosaves flushed on blur/navigation/quit; each bumps `updated` and never touches `created`.
 
+**Blank-line marker (amendment):** pressing Enter twice creates an empty TipTap paragraph, and `prosemirror-markdown`'s default paragraph serializer writes nothing for it — once serialized, that blank line is indistinguishable from no paragraph at all, and markdown-it drops it for good on the next parse. To keep the editor faithful to what was typed, an empty paragraph now serializes as a line containing `&nbsp;` instead of a bare blank line; on reload markdown-it decodes that back to a single NBSP character, and the paragraph serializer treats an NBSP-only paragraph the same as an empty one, so the marker reproduces itself unchanged on every subsequent save rather than degrading into a raw NBSP byte. This is a deliberate, narrow exception to "plain portable markdown": the marker is still a normal HTML entity any markdown renderer understands, it only appears on otherwise-blank lines, and it never touches code blocks (a blank line inside a fenced block stays a literal blank line, since code content isn't run through the paragraph serializer at all).
+
 ## Why record this
 
 `tiptap-markdown` + GFM is a tech choice with editor lock-in, and the fidelity ceiling is a scope boundary that will surprise a future "why doesn't my wikilink work?" reader. Both are expensive to reverse once notes exist on disk in this dialect.

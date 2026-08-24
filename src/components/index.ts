@@ -42,3 +42,9 @@ export type { SectionLabelProps } from "./SectionLabel";
 
 export { EmptyState } from "./EmptyState";
 export type { EmptyStateProps } from "./EmptyState";
+
+export { DatePicker, DateField, monthGrid, isDayDisabled } from "./DatePicker";
+export type { DatePickerProps, DateFieldProps, MonthDay } from "./DatePicker";
+
+export { AttachmentList, formatFileSize } from "./AttachmentList";
+export type { AttachmentListProps } from "./AttachmentList";

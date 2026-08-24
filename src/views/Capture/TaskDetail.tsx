@@ -9,12 +9,33 @@
  * rows, single-level subtasks, and a confirmed Delete (distinct from "dropped").
  */
 import { useEffect, useLayoutEffect, useRef, useState, type JSX, type ReactNode } from "react";
-import type { Goal, IsoDate, Subtask, Task, TaskStatus } from "@/types";
+import { open as openFilePicker } from "@tauri-apps/plugin-dialog";
+import type { Attachment, Goal, IsoDate, Subtask, Task, TaskStatus } from "@/types";
 import { useStore } from "@/store";
+import * as ipc from "@/lib/ipc";
 import { ageInDays, dueLabel, formatShortDate } from "@/lib/dates";
-import { Checkbox, ContextDot, Icon, type IconName } from "@/components";
+import { AttachmentList, Checkbox, ContextDot, DatePicker, Icon, type IconName } from "@/components";
 import { OptionRow } from "./OptionRow";
 import { dateKeyDaysAhead } from "./dueDates";
+
+/** Coerce a thrown value into a short user-facing message (mirrors the store's own convention). */
+function errorMessageOf(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "Something went wrong.";
+}
+
+/** Best-guess filename extension for a pasted file's MIME type (clipboard files often arrive unnamed). */
+function extensionForMime(mime: string): string {
+  const known: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+  };
+  return known[mime] ?? mime.split("/")[1] ?? "bin";
+}
 
 /** Which collapsible option menu is currently expanded. */
 type Menu = "due" | "snooze" | "goal" | null;
@@ -63,8 +84,16 @@ function GrowTextarea({
   const fit = (): void => {
     const el = ref.current;
     if (!el) return;
+    // Collapsing to "auto" before reading scrollHeight briefly shrinks the
+    // panel body, which clamps the `.scroll` ancestor's scrollTop — restoring
+    // the final height afterwards otherwise leaves the view jumped. Capture
+    // and restore it synchronously around the collapse so the user never sees
+    // the jump.
+    const scroller = el.closest<HTMLElement>(".scroll");
+    const scrollTop = scroller?.scrollTop;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
+    if (scroller && scrollTop !== undefined) scroller.scrollTop = scrollTop;
   };
 
   useLayoutEffect(fit, [taskId]);
@@ -247,33 +276,6 @@ function Subtasks({
   );
 }
 
-/** An inline native date picker for choosing an arbitrary due / snooze date. */
-function DatePickerRow({
-  value,
-  min,
-  onPick,
-}: {
-  value: IsoDate | null;
-  min?: IsoDate;
-  onPick: (date: IsoDate | null) => void;
-}): JSX.Element {
-  return (
-    <label className="flex cursor-pointer items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-[13.5px] text-ink transition-colors duration-100 hover:bg-raise">
-      <span className="text-ink-3">
-        <Icon name="calendar" size={15} />
-      </span>
-      <span className="flex-1">Pick a date…</span>
-      <input
-        type="date"
-        value={value ?? ""}
-        min={min}
-        onChange={(e) => onPick(e.target.value || null)}
-        className="bg-transparent text-[13px] tabular-nums text-ink-2 outline-none"
-      />
-    </label>
-  );
-}
-
 /** The free-form details section: a notes textarea saved on blur. */
 function Details({
   taskId,
@@ -296,6 +298,37 @@ function Details({
         placeholder="Add notes, links, or anything worth remembering…"
         className="min-h-[180px] w-full resize-none rounded-lg border border-line bg-surface-2 px-3.5 py-3 text-[14px] leading-[1.6] text-ink outline-none placeholder:text-ink-3"
       />
+    </div>
+  );
+}
+
+/** The attachments section: the current list plus an "Attach file" affordance. */
+function Attachments({
+  attachments,
+  onOpen,
+  onRemove,
+  onAttach,
+}: {
+  attachments: Attachment[];
+  onOpen: (attachment: Attachment) => void;
+  onRemove: (attachment: Attachment) => void;
+  onAttach: () => void;
+}): JSX.Element {
+  return (
+    <div className="px-3">
+      <div className="mb-2 text-[11.5px] font-semibold uppercase tracking-[.07em] text-ink-3">
+        Attachments
+        {attachments.length > 0 && <span className="text-ink-3"> · {attachments.length}</span>}
+      </div>
+      <AttachmentList attachments={attachments} onOpen={onOpen} onRemove={onRemove} />
+      <button
+        type="button"
+        onClick={onAttach}
+        className="mt-0.5 flex w-full items-center gap-2.5 rounded-md py-[5px] text-left text-[13.5px] text-ink-3 transition-colors duration-100 hover:text-ink"
+      >
+        <Icon name="plus" size={16} />
+        Attach file
+      </button>
     </div>
   );
 }
@@ -375,6 +408,61 @@ export function TaskDetail(): JSX.Element | null {
     return () => clearTimeout(timer);
   }, [open]);
 
+  // Escape closes the panel from anywhere, not just when focus is inside it.
+  // Listens on window so a click-away-then-Escape still works; the command
+  // palette owns Escape while it's open, and surfaces layered above (the
+  // scratchpad) stop the event before it reaches us.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== "Escape" || useStore.getState().paletteOpen) return;
+      e.preventDefault();
+      closeTaskDetail();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, closeTaskDetail]);
+
+  // Attach clipboard-pasted files one at a time, threading each new record through
+  // `patchTask` so a multi-file paste doesn't drop earlier files to a stale merge.
+  const attachPastedFiles = async (
+    entityId: string,
+    attachments: Attachment[],
+    files: File[],
+  ): Promise<void> => {
+    let acc = attachments;
+    for (const file of files) {
+      try {
+        const bytes = Array.from(new Uint8Array(await file.arrayBuffer()));
+        const name = file.name.trim() || `pasted-${Date.now()}.${extensionForMime(file.type)}`;
+        const created = await ipc.attachBytes(entityId, name, bytes);
+        acc = [...acc, created];
+        await patchTask(entityId, { attachments: acc });
+      } catch (err) {
+        window.alert(`Couldn't attach the pasted file: ${errorMessageOf(err)}`);
+      }
+    }
+  };
+
+  // Paste-to-attach: only wired up while this task's panel is actually open.
+  // Ordinary text paste (into the title/details/subtask fields) is untouched —
+  // a clipboard paste with no files just falls through without preventDefault.
+  useEffect(() => {
+    if (!liveTask) return;
+    const currentTask = liveTask;
+    const handlePaste = (e: ClipboardEvent): void => {
+      const files = e.clipboardData?.files;
+      if (!files || files.length === 0) return;
+      e.preventDefault();
+      void attachPastedFiles(currentTask.id, currentTask.attachments, Array.from(files));
+    };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+    // attachPastedFiles is stable in shape across renders (recreated but pure w.r.t. its args); only
+    // liveTask identity should re-arm the listener.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveTask]);
+
   if (!mounted) return null;
   // While closing, keep rendering the task that was open until the slide finishes.
   const task = liveTask ?? lastTaskRef.current;
@@ -427,6 +515,43 @@ export function TaskDetail(): JSX.Element | null {
     if (!ok) return;
     void deleteTask(task.id);
     closeTaskDetail();
+  };
+
+  /** Open the native file picker and attach whatever was chosen (cancel is a no-op). */
+  const pickAndAttachFiles = async (): Promise<void> => {
+    try {
+      const selection = await openFilePicker({ multiple: true });
+      if (!selection) return;
+      const paths = Array.isArray(selection) ? selection : [selection];
+      if (paths.length === 0) return;
+      const created = await ipc.attachFiles(task.id, paths);
+      await patchTask(task.id, { attachments: [...task.attachments, ...created] });
+    } catch (err) {
+      window.alert(`Couldn't attach the file: ${errorMessageOf(err)}`);
+    }
+  };
+
+  /** Open an attachment in the OS default app. */
+  const openAttachment = (attachment: Attachment): void => {
+    void ipc.openAttachment(attachment.path).catch((err: unknown) => {
+      window.alert(`Couldn't open “${attachment.name}”: ${errorMessageOf(err)}`);
+    });
+  };
+
+  // No confirmation here (unlike confirmDelete): removing an attachment moves a
+  // single file to the trash, not the whole task — low stakes and recoverable.
+  /** Remove an attachment (moved to trash by the backend, not deleted outright). */
+  const removeAttachment = (attachment: Attachment): void => {
+    void (async () => {
+      try {
+        await ipc.removeAttachment(attachment.path);
+        await patchTask(task.id, {
+          attachments: task.attachments.filter((a) => a.path !== attachment.path),
+        });
+      } catch (err) {
+        window.alert(`Couldn't remove “${attachment.name}”: ${errorMessageOf(err)}`);
+      }
+    })();
   };
 
   const dl = dueLabel(task.due);
@@ -488,7 +613,9 @@ export function TaskDetail(): JSX.Element | null {
                 label="In a week"
                 onClick={() => setDue(dateKeyDaysAhead(7))}
               />
-              <DatePickerRow value={task.due} onPick={setDue} />
+              <div className="mt-1 border-t border-line pt-1.5">
+                <DatePicker value={task.due} onPick={setDue} />
+              </div>
               {task.due && (
                 <OptionRow icon="x" label="Clear due date" danger onClick={() => setDue(null)} />
               )}
@@ -521,7 +648,9 @@ export function TaskDetail(): JSX.Element | null {
                 label="In a month"
                 onClick={() => setSnooze(dateKeyDaysAhead(30))}
               />
-              <DatePickerRow value={task.snoozeUntil} min={dateKeyDaysAhead(1)} onPick={setSnooze} />
+              <div className="mt-1 border-t border-line pt-1.5">
+                <DatePicker value={task.snoozeUntil} min={dateKeyDaysAhead(1)} onPick={setSnooze} />
+              </div>
               {task.snoozeUntil && (
                 <OptionRow icon="x" label="Un-snooze" danger onClick={() => setSnooze(null)} />
               )}
@@ -556,6 +685,15 @@ export function TaskDetail(): JSX.Element | null {
           <Divider />
 
           <Subtasks subtasks={task.subtasks} onToggle={toggleSubtask} onAdd={addSubtask} />
+
+          <Divider />
+
+          <Attachments
+            attachments={task.attachments}
+            onOpen={openAttachment}
+            onRemove={removeAttachment}
+            onAttach={() => void pickAndAttachFiles()}
+          />
 
           <Divider />
 

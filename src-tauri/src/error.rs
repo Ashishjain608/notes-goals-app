@@ -33,6 +33,11 @@ pub enum AppError {
     /// A note file is missing or malformed frontmatter delimiters.
     #[error("invalid note format: {0}")]
     InvalidNote(String),
+
+    /// An attachment path failed the path-traversal trust-boundary check —
+    /// not a plain `attachments/<id>/<name>` path inside the vault.
+    #[error("invalid attachment path: {0}")]
+    InvalidAttachmentPath(String),
 }
 
 /// Convenience alias for command results.

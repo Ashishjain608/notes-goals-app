@@ -39,7 +39,11 @@ export type IconName =
   | "quote"
   | "rule"
   | "scratch"
-  | "copy";
+  | "copy"
+  | "filePdf"
+  | "fileImage"
+  | "fileSheet"
+  | "fileArchive";
 
 /** Shared stroke attributes for every line glyph. */
 const stroke = {
@@ -209,6 +213,37 @@ const paths: Record<IconName, JSX.Element> = {
     <>
       <rect x="8" y="8" width="11" height="11" rx="2" {...stroke} />
       <path d="M5 15.5V6a1.5 1.5 0 0 1 1.5-1.5H15" {...stroke} />
+    </>
+  ),
+  // File-type family: the same folded-corner document silhouette as `notes`,
+  // each distinguished by a small inner mark so kinds read apart at a glance.
+  filePdf: (
+    <>
+      <path d="M6 4h8l4 4v12H6z" {...stroke} />
+      <path d="M14 4v4h4" {...stroke} />
+      <rect x="8.3" y="13" width="7.4" height="3.6" rx="0.9" fill="currentColor" stroke="none" />
+    </>
+  ),
+  fileImage: (
+    <>
+      <path d="M6 4h8l4 4v12H6z" {...stroke} />
+      <path d="M14 4v4h4" {...stroke} />
+      <circle cx="9.4" cy="11.4" r="1.1" {...stroke} />
+      <path d="M7.5 16.5l2.6-2.8 2 2.1 1.6-1.8 2.8 2.5" {...stroke} />
+    </>
+  ),
+  fileSheet: (
+    <>
+      <path d="M6 4h8l4 4v12H6z" {...stroke} />
+      <path d="M14 4v4h4" {...stroke} />
+      <path d="M7.5 12.5h9M7.5 16h9M12 9.8v9.2" {...stroke} />
+    </>
+  ),
+  fileArchive: (
+    <>
+      <path d="M6 4h8l4 4v12H6z" {...stroke} />
+      <path d="M14 4v4h4" {...stroke} />
+      <path d="M12 9v1.6l-1.3 1 1.3 1-1.3 1 1.3 1-1.3 1 1.3 1v1.4" {...stroke} />
     </>
   ),
 };

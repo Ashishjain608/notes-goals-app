@@ -73,6 +73,23 @@ export function NoteEditorDrawer({
   if (liveNote) lastNoteRef.current = liveNote;
 
   const apiRef = useRef<NoteEditorApi | null>(null);
+  // `close` is defined below the early returns (it needs the resolved note), so
+  // the window-level Escape handler reaches it through a ref.
+  const closeRef = useRef<() => void>(() => {});
+
+  // Escape closes the drawer from anywhere, not only when focus is inside it.
+  // The command palette owns Escape while open; the scratchpad sits above this
+  // drawer and stops the event before it reaches window.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== "Escape" || useStore.getState().paletteOpen) return;
+      e.preventDefault();
+      closeRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -108,6 +125,7 @@ export function NoteEditorDrawer({
     }
     onClose();
   };
+  closeRef.current = close;
 
   const openInNotes = (): void => {
     apiRef.current?.flush();

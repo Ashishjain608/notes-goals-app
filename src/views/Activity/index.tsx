@@ -11,7 +11,7 @@
 import { useMemo, useState, type JSX } from "react";
 import type { Goal, IsoDate, Task } from "@/types";
 import { useStore, selectDayActivity, goalsById } from "@/store";
-import { TaskRow, SectionLabel, EmptyState, Icon } from "@/components";
+import { TaskRow, SectionLabel, EmptyState, Icon, DateField } from "@/components";
 import { localToday, toLocalDateKey } from "@/lib/dates";
 
 const AGING_MODE = "noticeable" as const;
@@ -51,15 +51,14 @@ function dayHeadline(key: IsoDate): string {
 interface DateStepperProps {
   day: IsoDate;
   today: IsoDate;
-  theme: "light" | "dark";
   onChange: (day: IsoDate) => void;
 }
 
-/** Prev/next day arrows, a native date picker (capped at today), and a Today reset. */
-function DateStepper({ day, today, theme, onChange }: DateStepperProps): JSX.Element {
+/** Prev/next day arrows, a date field (capped at today), and a Today reset. */
+function DateStepper({ day, today, onChange }: DateStepperProps): JSX.Element {
   const atToday = day >= today;
   return (
-    <div className="flex items-center gap-1.5" style={{ colorScheme: theme }}>
+    <div className="flex items-center gap-1.5">
       <button
         type="button"
         aria-label="Previous day"
@@ -68,14 +67,7 @@ function DateStepper({ day, today, theme, onChange }: DateStepperProps): JSX.Ele
       >
         <Icon name="chevron" size={16} className="rotate-180" />
       </button>
-      <input
-        type="date"
-        value={day}
-        max={today}
-        onChange={(e) => e.target.value && onChange(e.target.value)}
-        aria-label="Pick a day"
-        className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] tabular-nums text-ink-2 outline-none"
-      />
+      <DateField value={day} max={today} onPick={onChange} placeholder="Pick a day" />
       <button
         type="button"
         aria-label="Next day"
@@ -141,7 +133,6 @@ export default function Activity(): JSX.Element {
   const tasks = useStore((s) => s.tasks);
   const goals = useStore((s) => s.goals);
   const contextFilter = useStore((s) => s.contextFilter);
-  const theme = useStore((s) => s.theme);
   const toggleTaskStatus = useStore((s) => s.toggleTaskStatus);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const navigate = useStore((s) => s.navigate);
@@ -173,7 +164,7 @@ export default function Activity(): JSX.Element {
             <div className="text-xs font-semibold uppercase tracking-[.1em] text-accent-ink">
               Activity
             </div>
-            <DateStepper day={day} today={today} theme={theme} onChange={setDay} />
+            <DateStepper day={day} today={today} onChange={setDay} />
           </div>
           <h1 className="m-0 font-serif text-[32px] font-normal tracking-[-.01em] text-ink">
             {dayHeadline(day)}

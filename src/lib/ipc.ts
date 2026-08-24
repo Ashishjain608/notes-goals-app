@@ -9,6 +9,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  Attachment,
   CreateGoalInput,
   CreateNoteInput,
   CreateNotebookInput,
@@ -71,3 +72,25 @@ export const deleteNotebook = (id: string): Promise<NotebookDeletionResult> =>
 export const createGoal = (input: CreateGoalInput): Promise<Goal> => invoke("create_goal", { input });
 export const updateGoal = (goal: Goal): Promise<Goal> => invoke("update_goal", { goal });
 export const deleteGoal = (id: string): Promise<GoalDeletionResult> => invoke("delete_goal", { id });
+
+/* -------------------------------------------------------------- Attachments
+   Files are copied into <vault>/attachments/<entityId>/ (entityId is a task
+   or note id). Both entities keep the returned records on the entity itself:
+   Task.attachments in the task JSON, Note.attachments in the note's YAML
+   frontmatter. (Notes briefly stored attachments as inline markdown links in
+   the body instead; that was replaced by the frontmatter list, though links
+   written back then still open via openAttachment.) */
+
+/** Copy each absolute host path (from the native file-picker dialog) into the vault, returning the created records in order. */
+export const attachFiles = (entityId: string, paths: string[]): Promise<Attachment[]> =>
+  invoke("attach_files", { entityId, paths });
+
+/** Attach clipboard-pasted bytes (no source path) as a new attachment. `bytes` is a plain array of byte values, e.g. `Array.from(new Uint8Array(buf))`. */
+export const attachBytes = (entityId: string, name: string, bytes: number[]): Promise<Attachment> =>
+  invoke("attach_bytes", { entityId, name, bytes });
+
+/** Move an attachment file to trash (never unlinked). `path` is the Attachment's `path` field. */
+export const removeAttachment = (path: string): Promise<void> => invoke("remove_attachment", { path });
+
+/** Open an attachment in the OS default app. `path` is the Attachment's `path` field. */
+export const openAttachment = (path: string): Promise<void> => invoke("open_attachment", { path });

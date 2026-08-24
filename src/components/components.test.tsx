@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { Goal, Subtask, Task } from "@/types";
 import { toLocalDateKey } from "@/lib/dates";
 import { Icon } from "./Icon";
+import { Checkbox } from "./Checkbox";
 import { ContextDot } from "./ContextDot";
 import { DueChip } from "./DueChip";
 import { SubtaskMeta } from "./SubtaskMeta";
@@ -29,6 +30,7 @@ function task(over: Partial<Task> = {}): Task {
     subtasks: [],
     details: "",
     priority: false,
+    attachments: [],
     ...over,
   };
 }
@@ -120,6 +122,21 @@ describe("GoalChip", () => {
   it("renders the goal title when resolved", () => {
     const html = renderToStaticMarkup(<GoalChip goal={goal} />);
     expect(html).toContain("Ship v1");
+  });
+});
+
+describe("Checkbox", () => {
+  // Guards the notes-goals-app-23v contrast fix: the unchecked ring must stay on
+  // the ink-2 token (visible against priority/stale row tints), not regress to
+  // the near-invisible line-2 hairline border.
+  it("borders the unchecked box with ink-2, not the low-contrast hairline", () => {
+    const html = renderToStaticMarkup(<Checkbox checked={false} onClick={() => {}} />);
+    expect(html).toContain("border-ink-2");
+    expect(html).not.toContain("border-line-2");
+  });
+  it("borders a checked box with accent, unaffected by the unchecked fix", () => {
+    const html = renderToStaticMarkup(<Checkbox checked={true} onClick={() => {}} />);
+    expect(html).toContain("border-accent");
   });
 });
 

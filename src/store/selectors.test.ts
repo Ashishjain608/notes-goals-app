@@ -44,6 +44,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     subtasks: [],
     details: "",
     priority: false,
+    attachments: [],
     ...overrides,
   };
 }
@@ -58,6 +59,7 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     notebookId: null,
     created: "2026-06-01T09:00:00Z",
     updated: "2026-06-01T09:00:00Z",
+    attachments: [],
     ...overrides,
   };
 }

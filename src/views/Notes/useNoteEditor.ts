@@ -12,14 +12,22 @@
  * current note metadata + body through `store.saveNote`; Rust bumps `updated`.
  * The pending save is flushed synchronously before switching notes and on
  * unmount, so no edit is ever lost.
+ *
+ * Attachments: `note.attachments` (YAML-frontmatter metadata, not the body) is
+ * mirrored as working state the same way title/context are. Adding or removing
+ * one is a discrete change, so — like `setContext` — it persists immediately via
+ * `flush()` rather than waiting for the body's debounce, and `flush()` always
+ * reads the live body first, so an immediate attachment save can never clobber
+ * in-flight typing.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, type Editor } from "@tiptap/react";
 import type { EditorProps } from "@tiptap/pm/view";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import type { Context, Note } from "@/types";
+import type { Attachment, Context, Note } from "@/types";
 import { buildNoteExtensions } from "@/lib/markdown";
+import { attachBytes, openAttachment, removeAttachment as removeAttachmentFile } from "@/lib/ipc";
 
 /** ~800ms debounce window for autosave (ADR-0005). */
 const AUTOSAVE_DEBOUNCE_MS = 800;
@@ -29,36 +37,110 @@ function isLinkableUrl(text: string): boolean {
   return /^https?:\/\/\S+$/i.test(text) || /^mailto:\S+@\S+$/i.test(text);
 }
 
+/** True for a note attachment's vault-relative href (the frozen `Attachment.path`
+ *  shape, "attachments/<noteId>/<file>" — src/types.ts). Everything else is a
+ *  real URL routed to the OS opener. */
+function isAttachmentHref(href: string): boolean {
+  return href.startsWith("attachments/");
+}
+
+/** Coerce a thrown value into a short user-facing message (mirrors the store's own convention). */
+function errorMessageOf(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "Something went wrong.";
+}
+
+/** Best-guess filename extension for a pasted file's MIME type (clipboard files often arrive unnamed). */
+function extensionForMime(mime: string): string {
+  const known: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+  };
+  return known[mime] ?? mime.split("/")[1] ?? "bin";
+}
+
 /**
- * ProseMirror-level editor behaviors that don't depend on React state:
- * - Cmd/Ctrl-click a link opens it in the OS default browser (Tauri opener),
- *   never navigating the webview itself. Plain click keeps editing the text.
+ * Attach one pasted file to `noteId` and hand the created record to
+ * `addAttachment` — same handoff the toolbar's Attach button uses, just fed by
+ * a paste instead of the file picker. No content is inserted into the editor.
+ */
+async function attachPastedFile(
+  noteId: string,
+  file: File,
+  addAttachment: (created: Attachment) => void,
+): Promise<void> {
+  try {
+    const bytes = Array.from(new Uint8Array(await file.arrayBuffer()));
+    const name = file.name.trim() || `pasted-${Date.now()}.${extensionForMime(file.type)}`;
+    const attachment = await attachBytes(noteId, name, bytes);
+    addAttachment(attachment);
+  } catch (err) {
+    window.alert(`Couldn't attach the pasted file: ${errorMessageOf(err)}`);
+  }
+}
+
+/**
+ * Build the ProseMirror-level editor behaviors that don't depend on React
+ * state. A factory (not a plain object) because the editor instance is
+ * created once and reused across note switches (see file header) — reading
+ * the live note id through `getNoteId` at event time (rather than closing
+ * over one fixed id) keeps paste-to-attach correct across switches without
+ * recreating the editor.
+ * - Cmd/Ctrl-click a link opens it: an attachment href via `ipc.openAttachment`,
+ *   any other via the OS default browser (Tauri opener). Plain click keeps
+ *   editing the text. This stays for legacy notes whose body already contains
+ *   an inline `attachments/...` link from before the attachment strip existed.
+ * - Pasting a file/image attaches it via `getAddAttachment()` (see
+ *   attachPastedFile) — nothing is inserted into the editor.
  * - Pasting a URL over a non-empty selection links the selection instead of
  *   replacing it; anything else falls through to the default (markdown) paste.
  */
-const NOTE_EDITOR_PROPS: EditorProps = {
-  handleDOMEvents: {
-    click: (_view, event) => {
-      const anchor = (event.target as HTMLElement | null)?.closest("a");
-      if (!anchor || !(event.metaKey || event.ctrlKey)) return false;
-      const href = anchor.getAttribute("href");
-      if (!href) return false;
-      event.preventDefault();
-      void openUrl(href);
+function createNoteEditorProps(
+  getNoteId: () => string | null,
+  getAddAttachment: () => (created: Attachment) => void,
+): EditorProps {
+  return {
+    handleDOMEvents: {
+      click: (_view, event) => {
+        const anchor = (event.target as HTMLElement | null)?.closest("a");
+        if (!anchor || !(event.metaKey || event.ctrlKey)) return false;
+        const href = anchor.getAttribute("href");
+        if (!href) return false;
+        event.preventDefault();
+        if (isAttachmentHref(href)) {
+          void openAttachment(decodeURI(href)).catch((err: unknown) => {
+            window.alert(`Couldn't open the attachment: ${errorMessageOf(err)}`);
+          });
+        } else {
+          void openUrl(href);
+        }
+        return true;
+      },
+    },
+    handlePaste: (view, event) => {
+      const files = Array.from(event.clipboardData?.files ?? []);
+      if (files.length > 0) {
+        const noteId = getNoteId();
+        if (!noteId) return false; // nothing loaded to attach against yet
+        const addAttachment = getAddAttachment();
+        for (const file of files) void attachPastedFile(noteId, file, addAttachment);
+        return true;
+      }
+      const text = event.clipboardData?.getData("text/plain")?.trim() ?? "";
+      if (!isLinkableUrl(text)) return false;
+      const { from, to, empty } = view.state.selection;
+      if (empty) return false; // no selection → let the default (markdown) paste run
+      const linkMark = view.state.schema.marks.link;
+      if (!linkMark) return false;
+      view.dispatch(view.state.tr.addMark(from, to, linkMark.create({ href: text })));
       return true;
     },
-  },
-  handlePaste: (view, event) => {
-    const text = event.clipboardData?.getData("text/plain")?.trim() ?? "";
-    if (!isLinkableUrl(text)) return false;
-    const { from, to, empty } = view.state.selection;
-    if (empty) return false; // no selection → let the default (markdown) paste run
-    const linkMark = view.state.schema.marks.link;
-    if (!linkMark) return false;
-    view.dispatch(view.state.tr.addMark(from, to, linkMark.create({ href: text })));
-    return true;
-  },
-};
+  };
+}
 
 /** The minimal store surface this hook needs (decoupled from the full store). */
 export interface NoteEditorStore {
@@ -95,6 +177,12 @@ export interface UseNoteEditorResult {
   getBody: () => string;
   /** True when the working title and body are both blank (an empty draft). */
   isEmpty: () => boolean;
+  /** Working copy of the note's attachments (YAML frontmatter, not the body). */
+  attachments: Attachment[];
+  /** Append newly created attachments and persist immediately with the live body. */
+  addAttachments: (created: Attachment[]) => void;
+  /** Move an attachment to trash, drop it from the list, and persist immediately. */
+  removeAttachment: (path: string) => void;
 }
 
 /** tiptap-markdown augments `editor.storage.markdown`; read it through here. */
@@ -113,13 +201,31 @@ export function useNoteEditor(
   options: UseNoteEditorOptions = {},
 ): UseNoteEditorResult {
   const extensions = useMemo(() => buildNoteExtensions(), []);
+  // The id whose content currently lives in the editor — declared ahead of
+  // `useEditor` so the (single, reused) editor's paste handler can always read
+  // the *live* note through this ref rather than the note passed in at the
+  // moment the editor was constructed.
+  const loadedIdRef = useRef<string | null>(null);
+  // Forwards to the current `addAttachments` below; the editor (and its props)
+  // is created exactly once, so paste must read this indirectly rather than
+  // closing over a callback that changes identity across renders.
+  const addAttachmentsRef = useRef<(created: Attachment[]) => void>(() => {});
+  const editorProps = useMemo(
+    () =>
+      createNoteEditorProps(
+        () => loadedIdRef.current,
+        () => (created: Attachment) => addAttachmentsRef.current([created]),
+      ),
+    [],
+  );
   const editor = useEditor(
-    { extensions, immediatelyRender: false, editorProps: NOTE_EDITOR_PROPS },
+    { extensions, immediatelyRender: false, editorProps },
     [],
   );
 
   const [title, setTitleState] = useState(note?.title ?? "");
   const [context, setContextState] = useState<Context>(note?.context ?? "office");
+  const [attachments, setAttachmentsState] = useState<Attachment[]>(note?.attachments ?? []);
   const [loadingBody, setLoadingBody] = useState(false);
 
   // Keep the latest onBody in a ref so callbacks stay stable across renders.
@@ -128,9 +234,8 @@ export function useNoteEditor(
 
   // Body cache (per note id) so re-selecting a note never re-fetches from disk.
   const bodyCache = useRef<Map<string, string>>(new Map());
-  // The id whose content currently lives in the editor — guards setContent so it
+  // loadedIdRef (declared above, ahead of useEditor) guards setContent so it
   // only runs on an actual switch, never on a keystroke-driven re-render.
-  const loadedIdRef = useRef<string | null>(null);
   // Pending autosave timer + the exact metadata to persist when it fires.
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingNoteRef = useRef<Note | null>(null);
@@ -140,6 +245,9 @@ export function useNoteEditor(
   // Mirror the working context the same way.
   const contextRef = useRef(context);
   contextRef.current = context;
+  // Mirror the working attachments the same way.
+  const attachmentsRef = useRef(attachments);
+  attachmentsRef.current = attachments;
 
   /** Persist the pending edit immediately and cancel the debounce. */
   const flush = useCallback(() => {
@@ -155,7 +263,12 @@ export function useNoteEditor(
     bodyCache.current.set(target.id, body);
     onBodyRef.current?.(target.id, body);
     void store.saveNote(
-      { ...target, title: titleRef.current, context: contextRef.current },
+      {
+        ...target,
+        title: titleRef.current,
+        context: contextRef.current,
+        attachments: attachmentsRef.current,
+      },
       body,
     );
   }, [editor, store]);
@@ -210,6 +323,42 @@ export function useNoteEditor(
     [note, flush],
   );
 
+  /** Append newly created attachments — a discrete change, so persist it immediately. */
+  const addAttachments = useCallback(
+    (created: Attachment[]) => {
+      if (created.length === 0) return;
+      const next = [...attachmentsRef.current, ...created];
+      setAttachmentsState(next);
+      attachmentsRef.current = next;
+      if (!note || note.id !== loadedIdRef.current) return; // nothing loaded yet
+      pendingNoteRef.current = note;
+      flush();
+    },
+    [note, flush],
+  );
+  addAttachmentsRef.current = addAttachments;
+
+  /** Trash the file, drop it from the working list, and persist immediately. */
+  const removeAttachment = useCallback(
+    (path: string) => {
+      void (async () => {
+        try {
+          await removeAttachmentFile(path);
+        } catch (err) {
+          window.alert(`Couldn't remove the attachment: ${errorMessageOf(err)}`);
+          return;
+        }
+        const next = attachmentsRef.current.filter((a) => a.path !== path);
+        setAttachmentsState(next);
+        attachmentsRef.current = next;
+        if (!note || note.id !== loadedIdRef.current) return; // nothing loaded yet
+        pendingNoteRef.current = note;
+        flush();
+      })();
+    },
+    [note, flush],
+  );
+
   // Body edits → schedule a save. Registered once; reads live refs internally.
   useEffect(() => {
     if (!editor) return;
@@ -234,6 +383,8 @@ export function useNoteEditor(
       editor.commands.clearContent();
       editor.setEditable(false);
       setTitleState("");
+      setAttachmentsState([]);
+      attachmentsRef.current = [];
       return;
     }
 
@@ -242,6 +393,8 @@ export function useNoteEditor(
     titleRef.current = note.title;
     setContextState(note.context);
     contextRef.current = note.context;
+    setAttachmentsState(note.attachments);
+    attachmentsRef.current = note.attachments;
 
     const cached = bodyCache.current.get(targetId);
     if (cached !== undefined) {
@@ -279,7 +432,21 @@ export function useNoteEditor(
   // Flush any pending save when the component unmounts.
   useEffect(() => () => flush(), [flush]);
 
-  return { editor, title, setTitle, context, setContext, loadingBody, flush, discard, getBody, isEmpty };
+  return {
+    editor,
+    title,
+    setTitle,
+    context,
+    setContext,
+    loadingBody,
+    flush,
+    discard,
+    getBody,
+    isEmpty,
+    attachments,
+    addAttachments,
+    removeAttachment,
+  };
 }
 
 /** Replace the editor's content with markdown without emitting an `update`. */

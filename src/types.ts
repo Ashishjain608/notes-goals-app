@@ -28,6 +28,17 @@ export interface Subtask {
   status: SubtaskStatus;
 }
 
+/** A file copied into the vault and linked to a task or a note. */
+export interface Attachment {
+  /** Vault-relative POSIX path, e.g. "attachments/<entityId>/report.pdf". */
+  path: string;
+  /** Display filename. */
+  name: string;
+  /** Size in bytes at attach time. */
+  size: number;
+  added: IsoDateTime;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -46,6 +57,8 @@ export interface Task {
   details: string;
   /** User-flagged "do this now" priority — floats to the top and is highlighted. */
   priority: boolean;
+  /** Files copied into the vault and linked to this task. */
+  attachments: Attachment[];
 }
 
 /**
@@ -65,6 +78,12 @@ export interface Note {
   notebookId: string | null;
   created: IsoDateTime;
   updated: IsoDateTime;
+  /**
+   * Files copied into the vault and linked to this note, carried in the
+   * note's YAML frontmatter (not the body — inline markdown links are a
+   * separate, older mechanism this field doesn't replace).
+   */
+  attachments: Attachment[];
 }
 
 /**

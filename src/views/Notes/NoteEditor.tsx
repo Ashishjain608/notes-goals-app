@@ -1,20 +1,29 @@
 /**
  * NoteEditor — the shared note editing surface (docs/adr/0005).
  *
- * A formatting toolbar + an editable serif title + the WYSIWYG TipTap body,
- * driven by useNoteEditor (debounced autosave). Used by the Notes screen and by
- * the goal note drawer. The host supplies surrounding chrome via `metaExtra`
- * (chips) and chooses whether the context is switchable here or fixed (a
- * read-only chip). An optional `apiRef` exposes flush/isEmpty so a host can
- * persist pending edits and discard an empty draft on close.
+ * A formatting toolbar + an editable serif title + the WYSIWYG TipTap body +
+ * an attachment strip, driven by useNoteEditor (debounced autosave). Used by
+ * the Notes screen and by the goal note drawer. The host supplies surrounding
+ * chrome via `metaExtra` (chips) and chooses whether the context is
+ * switchable here or fixed (a read-only chip). An optional `apiRef` exposes
+ * flush/isEmpty so a host can persist pending edits and discard an empty
+ * draft on close.
  */
 import { useEffect, type JSX, type MutableRefObject, type ReactNode } from "react";
 import { EditorContent } from "@tiptap/react";
-import type { Context, Note } from "@/types";
+import type { Attachment, Context, Note } from "@/types";
 import { ageInDays } from "@/lib/dates";
-import { ContextDot } from "@/components";
+import { openAttachment } from "@/lib/ipc";
+import { AttachmentList, ContextDot } from "@/components";
 import { EditorToolbar } from "./EditorToolbar";
 import { useNoteEditor, type NoteEditorStore } from "./useNoteEditor";
+
+/** Coerce a thrown value into a short user-facing message (mirrors the store's own convention). */
+function errorMessageOf(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "Something went wrong.";
+}
 
 const NOTE_CONTEXTS: ReadonlyArray<{ value: Context; label: string }> = [
   { value: "office", label: "Office" },
@@ -81,18 +90,38 @@ export function NoteEditor({
   metaExtra,
   apiRef,
 }: NoteEditorProps): JSX.Element {
-  const { editor, title, setTitle, context, setContext, loadingBody, flush, discard, getBody, isEmpty } =
-    useNoteEditor(note, store, { onBody });
+  const {
+    editor,
+    title,
+    setTitle,
+    context,
+    setContext,
+    loadingBody,
+    flush,
+    discard,
+    getBody,
+    isEmpty,
+    attachments,
+    addAttachments,
+    removeAttachment,
+  } = useNoteEditor(note, store, { onBody });
 
   // Expose the editor handle so a host can persist / discard / patch on close.
   useEffect(() => {
     if (apiRef) apiRef.current = { flush, discard, getBody, isEmpty };
   }, [apiRef, flush, discard, getBody, isEmpty]);
 
+  /** Open an attachment in the OS default app. */
+  const handleOpenAttachment = (attachment: Attachment): void => {
+    void openAttachment(attachment.path).catch((err: unknown) => {
+      window.alert(`Couldn't open "${attachment.name}": ${errorMessageOf(err)}`);
+    });
+  };
+
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
       <div className="mx-auto flex h-full w-full max-w-[1000px] flex-col px-8">
-        <EditorToolbar editor={editor} onDelete={onDelete} />
+        <EditorToolbar editor={editor} noteId={note.id} onAttach={addAttachments} onDelete={onDelete} />
 
         <div className="mb-3 mt-1 flex items-center gap-2.5 text-[12.5px] text-ink-2">
           {contextEditable ? (
@@ -135,6 +164,18 @@ export function NoteEditor({
             </div>
           )}
         </div>
+
+        {/* Quiet when empty: AttachmentList itself renders nothing, and this
+            wrapper only exists (with its spacing) once there's something to show. */}
+        {attachments.length > 0 && (
+          <div className="-mt-4 mb-6">
+            <AttachmentList
+              attachments={attachments}
+              onOpen={handleOpenAttachment}
+              onRemove={(a) => removeAttachment(a.path)}
+            />
+          </div>
+        )}
       </div>
 
       <EditorStyles />

@@ -49,7 +49,11 @@ export function Checkbox({
   onClick,
 }: CheckboxProps): JSX.Element {
   const shape = dropped ? "rounded-sm" : "rounded-full";
-  const border = checked ? "border-accent" : "border-line-2 group-hover/cb:border-accent";
+  // Unchecked ring uses ink-2 (not the hairline line-2) — line-2 reads at ~1:1
+  // contrast against the priority/stale row tints, i.e. invisible; ink-2 clears
+  // 3:1 non-text contrast against every row background (plain/priority/stale,
+  // light and dark) without an opaque fill, so the hollow-ring look is kept.
+  const border = checked ? "border-accent" : "border-ink-2 group-hover/cb:border-accent";
   const fill = checked ? "bg-accent" : "bg-transparent";
   const iconSize = size - 6;
   const celebrating = checked && celebrate;

@@ -19,7 +19,15 @@ struct AppConfig {
 }
 
 /// The subfolders every vault must contain.
-const SUBFOLDERS: [&str; 6] = ["tasks", "notes", "goals", "notebooks", ".atlas", ".atlas/trash"];
+const SUBFOLDERS: [&str; 7] = [
+    "tasks",
+    "notes",
+    "goals",
+    "notebooks",
+    "attachments",
+    ".atlas",
+    ".atlas/trash",
+];
 
 /// Path to `<appConfigDir>/config.json`, creating the config dir if needed.
 fn config_file_path(app: &AppHandle) -> AppResult<PathBuf> {
