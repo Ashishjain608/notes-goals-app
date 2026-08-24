@@ -17,6 +17,25 @@ Default triage vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `rea
 Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
 
+## Non-Interactive Shell Commands
+
+**ALWAYS use non-interactive flags** with file operations — `cp`/`mv`/`rm` may be aliased to `-i`
+on this machine, which hangs the agent waiting for y/n.
+
+```bash
+cp -f source dest        # NOT: cp source dest
+mv -f source dest        # NOT: mv source dest
+rm -f file               # NOT: rm file
+rm -rf directory         # NOT: rm -r directory
+```
+
+Also: `scp`/`ssh` → `-o BatchMode=yes`, `apt-get` → `-y`, `brew` → `HOMEBREW_NO_AUTO_UPDATE=1`.
+
+## Subagent briefs
+
+When spawning a subagent, name the exact files it will read and edit. Agents that have to
+discover the file layout themselves spend most of their tokens on `grep`/`Read` round trips.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:1105d646 -->
 ## Beads Issue Tracker
 
