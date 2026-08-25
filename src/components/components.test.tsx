@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Goal, Subtask, Task } from "@/types";
-import { toLocalDateKey } from "@/lib/dates";
+import { localToday, toLocalDateKey } from "@/lib/dates";
 import { Icon } from "./Icon";
 import { Checkbox } from "./Checkbox";
 import { ContextDot } from "./ContextDot";
@@ -160,6 +160,37 @@ describe("TaskRow", () => {
       <TaskRow task={task({ goalId: "g1" })} goal={goal} mode="noticeable" />,
     );
     expect(html).toContain("Ship v1");
+  });
+
+  it("marks a task committed to today, in lists that have no commit control", () => {
+    const html = renderToStaticMarkup(
+      <TaskRow task={task({ committedOn: localToday() })} mode="noticeable" />,
+    );
+    expect(html).toContain("Today");
+  });
+
+  it("does not mark a commitment from an earlier day", () => {
+    const html = renderToStaticMarkup(
+      <TaskRow task={task({ committedOn: "2020-01-01" })} mode="noticeable" />,
+    );
+    expect(html).not.toContain(">Today");
+  });
+
+  it("drops the chip where the row carries its own commit toggle (the button says it)", () => {
+    const html = renderToStaticMarkup(
+      <TaskRow
+        task={task({ committedOn: localToday() })}
+        mode="noticeable"
+        onToggleCommit={() => {}}
+      />,
+    );
+    expect(html).not.toContain(">Today");
+    expect(html).toContain("Take off today"); // the apostrophe is HTML-escaped
+  });
+
+  it("shows the carry count so a repeatedly-deferred task says so", () => {
+    const html = renderToStaticMarkup(<TaskRow task={task({ carried: 3 })} mode="noticeable" />);
+    expect(html).toContain("carried 3");
   });
 });
 

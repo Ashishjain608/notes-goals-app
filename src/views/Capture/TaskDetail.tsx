@@ -11,9 +11,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type JSX, type ReactNode } from "react";
 import { open as openFilePicker } from "@tauri-apps/plugin-dialog";
 import type { Attachment, Goal, IsoDate, Subtask, Task, TaskStatus } from "@/types";
-import { useStore } from "@/store";
+import { useStore, selectSlate, SLATE_CAP } from "@/store";
 import * as ipc from "@/lib/ipc";
-import { ageInDays, dueLabel, formatShortDate } from "@/lib/dates";
+import { ageInDays, dueLabel, formatShortDate, localToday } from "@/lib/dates";
 import { AttachmentList, Checkbox, ContextDot, DatePicker, Icon, type IconName } from "@/components";
 import { OptionRow } from "./OptionRow";
 import { dateKeyDaysAhead } from "./dueDates";
@@ -333,6 +333,50 @@ function Attachments({
   );
 }
 
+/**
+ * A one-tap toggle that puts the task on today's slate (ADR-0009). Labelled and
+ * always visible: this is the day's primary gesture, so it must not hide behind
+ * a hover affordance. When the slate is full it says so rather than going
+ * silently dead.
+ */
+function CommitToggle({
+  on,
+  full,
+  onToggle,
+}: {
+  on: boolean;
+  full: boolean;
+  onToggle: () => void;
+}): JSX.Element {
+  const blocked = !on && full;
+  return (
+    <button
+      type="button"
+      disabled={blocked}
+      onClick={onToggle}
+      className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-100 ${
+        on ? "bg-accent-soft" : blocked ? "cursor-default" : "hover:bg-raise"
+      }`}
+    >
+      <span className={on ? "text-accent" : "text-ink-3"}>
+        <Icon name="today" size={16} />
+      </span>
+      <span className={`flex-1 text-sm ${on ? "text-ink" : "text-ink-3"}`}>
+        {on
+          ? "On today's slate"
+          : blocked
+            ? `Today's slate is full (${SLATE_CAP}) — free a slot first`
+            : "Commit to today"}
+      </span>
+      {on && (
+        <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-white">
+          Today
+        </span>
+      )}
+    </button>
+  );
+}
+
 /** A one-tap toggle that flags the task as priority (floats it + highlights it). */
 function PriorityToggle({ on, onToggle }: { on: boolean; onToggle: () => void }): JSX.Element {
   return (
@@ -379,6 +423,7 @@ export function TaskDetail(): JSX.Element | null {
   const goals = useStore((s) => s.goals);
   const theme = useStore((s) => s.theme);
   const patchTask = useStore((s) => s.patchTask);
+  const toggleTaskCommit = useStore((s) => s.toggleTaskCommit);
   const setTaskStatus = useStore((s) => s.setTaskStatus);
   const deleteTask = useStore((s) => s.deleteTask);
   const closeTaskDetail = useStore((s) => s.closeTaskDetail);
@@ -495,6 +540,8 @@ export function TaskDetail(): JSX.Element | null {
   };
 
   const togglePriority = (): void => void patchTask(task.id, { priority: !task.priority });
+  const slate = selectSlate(tasks);
+  const onSlate = task.committedOn === localToday();
 
   const toggleSubtask = (subtaskId: string): void => {
     const subtasks = task.subtasks.map((s) =>
@@ -590,6 +637,14 @@ export function TaskDetail(): JSX.Element | null {
           <StatusControl status={task.status} onSet={(s) => void setTaskStatus(task.id, s)} />
 
           <Divider />
+
+          {task.status === "open" && (
+            <CommitToggle
+              on={onSlate}
+              full={slate.full}
+              onToggle={() => void toggleTaskCommit(task.id)}
+            />
+          )}
 
           <PriorityToggle on={task.priority} onToggle={togglePriority} />
 

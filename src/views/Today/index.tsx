@@ -24,7 +24,7 @@ import {
   type SlateSummary,
   type TodayView,
 } from "@/store";
-import { TaskRow, SectionLabel, EmptyState, ContextDot } from "@/components";
+import { TaskRow, SectionLabel, EmptyState, ContextDot, Icon } from "@/components";
 import { QuickAddInline } from "@/views/Capture";
 
 /** Aging visualization mode for Today's rows (v1 uses "noticeable" per the contract). */
@@ -102,11 +102,20 @@ function DayComplete({ slate }: { slate: SlateSummary }): JSX.Element {
   );
 }
 
-/** The nudge shown when nothing has been committed yet. */
+/**
+ * The nudge shown when nothing has been committed yet. It names the gesture:
+ * the commit control is a small icon on the row, and nobody discovers an icon
+ * by guessing.
+ */
 function SlateInvite(): JSX.Element {
   return (
     <div className="rounded-lg border border-dashed border-line-2 px-5 py-[14px] text-[13.5px] text-ink-2">
-      Nothing committed yet — pick up to {SLATE_CAP} from below and those become today.
+      <span className="font-medium text-ink">Pick today&rsquo;s work.</span> Tap the{" "}
+      <span className="inline-flex translate-y-[3px] text-accent">
+        <Icon name="today" size={15} />
+      </span>{" "}
+      on any task below &mdash; up to {SLATE_CAP} &mdash; and finishing them ends the day. Task
+      details have the same control, spelled out.
     </div>
   );
 }
@@ -133,7 +142,8 @@ function Slate({
       <div className="mb-0.5 flex items-baseline gap-2 px-4">
         <SectionLabel accent>Committed</SectionLabel>
         <span className="text-[11px] tabular-nums text-ink-3">
-          {slate.doneCount} of {slate.count} done
+          {slate.count} of {SLATE_CAP} slots
+          {slate.doneCount > 0 && ` · ${slate.doneCount} done`}
         </span>
       </div>
       {view.committed.map((task) => (
@@ -142,7 +152,6 @@ function Slate({
           task={task}
           mode={AGING_MODE}
           showContext
-          committed
           goal={task.goalId ? gById[task.goalId] ?? null : null}
           onToggle={handlers.onToggle}
           onOpen={handlers.onOpen}

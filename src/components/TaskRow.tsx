@@ -17,6 +17,7 @@ import { SubtaskMeta } from "./SubtaskMeta";
 import { GoalChip } from "./GoalChip";
 import { AgeTag } from "./AgeTag";
 import { Icon } from "./Icon";
+import { localToday } from "@/lib/dates";
 
 export interface TaskRowProps {
   task: Task;
@@ -30,8 +31,6 @@ export interface TaskRowProps {
   onOpenGoal?: (goalId: string) => void;
   /** When provided, the trailing flag becomes a quick priority toggle. */
   onTogglePriority?: (id: string) => void;
-  /** True when this task sits on today's slate. */
-  committed?: boolean;
   /** True when the slate is full — committing anything new is refused. */
   slateFull?: boolean;
   /** When provided, the row gains a commit-to-today toggle. */
@@ -49,7 +48,6 @@ export function TaskRow({
   onOpen,
   onOpenGoal,
   onTogglePriority,
-  committed = false,
   slateFull = false,
   onToggleCommit,
 }: TaskRowProps): JSX.Element {
@@ -70,6 +68,9 @@ export function TaskRow({
         ? a.tintClass
         : "bg-transparent";
   const padding = dense ? "py-2 pl-4 pr-3.5" : "py-[11px] pl-4 pr-3.5";
+  // Derived, not passed: a task is on today's slate wherever it is rendered, so
+  // every list says so — Today, All Tasks, a goal's task list (ADR-0009).
+  const onSlate = task.committedOn != null && task.committedOn === localToday();
   const showBar = a.barW > 0 && !muted && a.barColorClass;
 
   return (
@@ -107,6 +108,15 @@ export function TaskRow({
           {!muted && <DueChip due={task.due} />}
           {!muted && <SubtaskMeta subtasks={task.subtasks} />}
           {task.goalId && <GoalChip goal={goal} onOpen={onOpenGoal} />}
+          {!muted && onSlate && !onToggleCommit && (
+            <span
+              className="flex items-center gap-1 rounded-full bg-accent-soft px-2 py-px text-[11px] font-medium text-accent-ink"
+              title="Committed to today"
+            >
+              <Icon name="today" size={11} />
+              Today
+            </span>
+          )}
           {!muted && task.carried > 0 && (
             <span
               className="text-xs text-warn-ink"
@@ -127,10 +137,10 @@ export function TaskRow({
           {onToggleCommit && (
             <button
               type="button"
-              disabled={!committed && slateFull}
-              aria-label={committed ? "Take off today's slate" : "Commit to today"}
+              disabled={!onSlate && slateFull}
+              aria-label={onSlate ? "Take off today's slate" : "Commit to today"}
               title={
-                committed
+                onSlate
                   ? "Take off today's slate"
                   : slateFull
                     ? "Today's slate is full — finish or free a slot first"
@@ -141,11 +151,11 @@ export function TaskRow({
                 onToggleCommit(task.id);
               }}
               className={`rounded p-0.5 transition-all duration-150 ${
-                committed
+                onSlate
                   ? "text-accent"
                   : slateFull
-                    ? "text-ink-3 opacity-0 group-hover:opacity-40"
-                    : "text-ink-3 opacity-0 hover:text-accent group-hover:opacity-100"
+                    ? "text-ink-3 opacity-30"
+                    : "text-ink-3 opacity-60 hover:text-accent hover:opacity-100"
               }`}
             >
               <Icon name="today" size={14} />
