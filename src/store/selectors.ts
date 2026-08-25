@@ -10,7 +10,13 @@
  */
 
 import type { ContextFilter, Goal, IsoDate, Note, Notebook, Task, TaskStatus } from "@/types";
-import { ageInDays, isCompletedToday, isSnoozed, toLocalDateKeyFromIso } from "@/lib/dates";
+import {
+  ageInDays,
+  isCompletedToday,
+  isSnoozed,
+  localToday,
+  toLocalDateKeyFromIso,
+} from "@/lib/dates";
 
 /* ---------------------------------------------------------------- utilities */
 
@@ -52,7 +58,63 @@ export function goalsById(goals: Goal[]): Record<string, Goal> {
 
 /* -------------------------------------------------------------------- TODAY */
 
+/**
+ * How many tasks may sit on one day's slate. The cap IS the mechanism: a day
+ * you can finish needs a small, fixed number of slots, and committing a sixth
+ * thing has to cost you a fifth. Change this number, not the model, to tune it.
+ */
+export const SLATE_CAP = 5;
+
+/** True when this task is committed to the local day `day`. */
+function isOnSlate(task: Task, day: IsoDate): boolean {
+  return task.committedOn != null && toLocalDateKeyFromIso(task.committedOn) === day;
+}
+
+export interface SlateSummary {
+  /** Tasks committed to today, done ones included — what the cap counts. */
+  count: number;
+  /** Still to do. */
+  openCount: number;
+  /** Finished today, from the slate. */
+  doneCount: number;
+  /** True once every committed task is done: the day's finish line. */
+  complete: boolean;
+  /** True when no further task may be committed today. */
+  full: boolean;
+}
+
+/**
+ * The state of today's slate across ALL contexts. Global on purpose, and
+ * deliberately NOT part of TodayView: the scarce thing is your hours, not your
+ * office/personal split, so the cap and the finish line must not move when the
+ * context filter does. Dropped tasks free their slot.
+ */
+export function selectSlate(tasks: Task[], now: Date = new Date()): SlateSummary {
+  const today = localToday(now);
+  let openCount = 0;
+  let doneCount = 0;
+
+  for (const task of tasks) {
+    if (task.status === "dropped" || !isOnSlate(task, today)) continue;
+    if (task.status === "done") doneCount += 1;
+    else openCount += 1;
+  }
+
+  const count = openCount + doneCount;
+  return {
+    count,
+    openCount,
+    doneCount,
+    complete: openCount === 0 && doneCount > 0,
+    full: count >= SLATE_CAP,
+  };
+}
+
 export interface TodayView {
+  /** Open tasks committed to today, in the standard active-list order. */
+  committed: Task[];
+  /** Today's committed tasks that are already done. */
+  slateDone: Task[];
   office: Task[];
   personal: Task[];
   completedToday: Task[];
@@ -61,13 +123,21 @@ export interface TodayView {
 }
 
 /**
- * Today (ADR-0004): open + un-snoozed tasks within the filter, grouped by
- * context and sorted oldest-`created` first; plus tasks marked done today
- * (tucked at the bottom). A task dropped today is excluded — only done-today
- * keeps a courtesy slot. `openCount` counts the visible open tasks;
- * `oldestAgeDays` is the largest age among them (0 when none).
+ * Today (ADR-0004, ADR-0009): open + un-snoozed tasks within the filter,
+ * grouped by context and sorted oldest-`created` first; plus tasks marked done
+ * today (tucked at the bottom). A task dropped today is excluded — only
+ * done-today keeps a courtesy slot. `openCount` counts every visible open task
+ * (slate included); `oldestAgeDays` is the largest age among them (0 when none).
+ *
+ * Tasks committed to today are lifted out of the office/personal columns into
+ * `committed` so they appear exactly once. A commitment from an EARLIER day is
+ * not a commitment today — that task simply falls back into the pool, which is
+ * what makes the slate an honest daily decision rather than a growing backlog.
  */
 export function selectToday(tasks: Task[], filter: ContextFilter, now: Date = new Date()): TodayView {
+  const today = localToday(now);
+  const committed: Task[] = [];
+  const slateDone: Task[] = [];
   const office: Task[] = [];
   const personal: Task[] = [];
   const completedToday: Task[] = [];
@@ -76,24 +146,30 @@ export function selectToday(tasks: Task[], filter: ContextFilter, now: Date = ne
     if (!matchesFilter(task.context, filter)) continue;
 
     if (task.status === "open" && !isSnoozed(task.snoozeUntil, now)) {
-      if (task.context === "office") office.push(task);
+      if (isOnSlate(task, today)) committed.push(task);
+      else if (task.context === "office") office.push(task);
       else personal.push(task);
     } else if (task.status === "done" && isCompletedToday(task.completed, now)) {
       completedToday.push(task);
+      if (isOnSlate(task, today)) slateDone.push(task);
     }
   }
 
+  committed.sort(byPriorityDueAge);
   office.sort(byPriorityDueAge);
   personal.sort(byPriorityDueAge);
   completedToday.sort(byCreatedAsc);
+  slateDone.sort(byCreatedAsc);
 
-  const open = [...office, ...personal];
+  const open = [...committed, ...office, ...personal];
   const oldestAgeDays = open.reduce(
     (oldest, task) => Math.max(oldest, ageInDays(task.created, now)),
     0,
   );
 
   return {
+    committed,
+    slateDone,
     office,
     personal,
     completedToday,

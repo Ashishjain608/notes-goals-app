@@ -24,7 +24,8 @@ import type {
   TaskStatus,
 } from "@/types";
 import * as ipc from "@/lib/ipc";
-import { reconcileNoteGoal, reconcileNoteNotebook } from "./selectors";
+import { localToday } from "@/lib/dates";
+import { reconcileNoteGoal, reconcileNoteNotebook, selectSlate } from "./selectors";
 
 export type AppStatus = "loading" | "needs-vault" | "ready" | "error";
 export type Screen = "today" | "tasks" | "notes" | "goals" | "goal" | "activity";
@@ -83,6 +84,12 @@ export interface AppState {
     >,
   ) => Promise<void>;
   toggleTaskPriority: (id: string) => Promise<void>;
+  /**
+   * Put a task on today's slate, or take it off. Resolves false when the slate
+   * is already at SLATE_CAP — the caller shows why rather than silently doing
+   * nothing.
+   */
+  toggleTaskCommit: (id: string) => Promise<boolean>;
   deleteTask: (id: string) => Promise<void>;
 
   // note actions
@@ -341,6 +348,30 @@ export const useStore = create<AppState>((set, get) => ({
       ipc.updateTask({ ...current, priority: !current.priority }),
     );
     set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? updated : t)) }));
+  },
+
+  toggleTaskCommit: async (id) => {
+    const current = get().tasks.find((t) => t.id === id);
+    if (!current) return false;
+
+    const today = localToday();
+    const onSlate = current.committedOn === today;
+    if (!onSlate && selectSlate(get().tasks).full) return false;
+
+    // Re-committing something you promised on an earlier day and didn't finish
+    // is what `carried` counts — the honest record, not a punishment.
+    const carriedForward =
+      !onSlate && current.committedOn != null && current.committedOn < today;
+
+    const updated = await withSaveGuard(() =>
+      ipc.updateTask({
+        ...current,
+        committedOn: onSlate ? null : today,
+        carried: carriedForward ? current.carried + 1 : current.carried,
+      }),
+    );
+    set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? updated : t)) }));
+    return true;
   },
 
   deleteTask: async (id) => {

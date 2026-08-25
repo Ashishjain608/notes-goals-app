@@ -105,6 +105,8 @@ pub fn create_task(app: AppHandle, input: CreateTaskInput) -> AppResult<Task> {
         details: String::new(),
         priority: false,
         attachments: Vec::new(),
+        committed_on: None,
+        carried: 0,
     };
     store_io::write_task(&vault, &task)?;
     Ok(task)
@@ -428,6 +430,8 @@ mod tests {
             details: String::new(),
             priority: false,
             attachments: vec![],
+            committed_on: None,
+            carried: 0,
         };
         apply_completed_rule(&mut t);
         assert!(t.completed.is_some(), "done should set completed");
@@ -480,6 +484,8 @@ mod tests {
             details: String::new(),
             priority: false,
             attachments: vec![],
+            committed_on: None,
+            carried: 0,
         };
         store_io::write_task(&vault, &linked_task).unwrap();
 
@@ -676,6 +682,8 @@ mod tests {
             details: String::new(),
             priority: false,
             attachments: vec![],
+            committed_on: None,
+            carried: 0,
         }
     }
 

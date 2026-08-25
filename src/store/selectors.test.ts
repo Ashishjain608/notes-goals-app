@@ -19,7 +19,9 @@ import {
   selectNotebooks,
   selectNotes,
   selectNotesByNotebook,
+  selectSlate,
   selectToday,
+  SLATE_CAP,
 } from "./selectors";
 import { toLocalDateKey } from "@/lib/dates";
 
@@ -44,6 +46,8 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     subtasks: [],
     details: "",
     priority: false,
+    committedOn: null,
+    carried: 0,
     attachments: [],
     ...overrides,
   };
@@ -104,6 +108,59 @@ describe("goalsById", () => {
   });
 });
 
+/* ------------------------------------------------------------ the day slate */
+
+/** Local 'YYYY-MM-DD' for the fixed NOW, and its neighbours. */
+const TODAY = toLocalDateKey(NOW);
+const YESTERDAY = toLocalDateKey(new Date(2026, 5, 6, 12, 0, 0));
+
+describe("selectSlate", () => {
+  it("counts only what is committed to TODAY, done included", () => {
+    const tasks = [
+      makeTask({ committedOn: TODAY }),
+      makeTask({ committedOn: TODAY, status: "done", completed: "2026-06-07T10:00:00Z" }),
+      makeTask({ committedOn: YESTERDAY }), // yesterday's promise is not today's
+      makeTask({ committedOn: null }),
+    ];
+
+    const slate = selectSlate(tasks, NOW);
+
+    expect(slate.count).toBe(2);
+    expect(slate.openCount).toBe(1);
+    expect(slate.doneCount).toBe(1);
+    expect(slate.complete).toBe(false);
+  });
+
+  it("is complete only when something was committed and all of it is done", () => {
+    const empty = selectSlate([makeTask()], NOW);
+    expect(empty.complete).toBe(false); // an empty day is not a finished day
+
+    const finished = selectSlate(
+      [makeTask({ committedOn: TODAY, status: "done", completed: "2026-06-07T10:00:00Z" })],
+      NOW,
+    );
+    expect(finished.complete).toBe(true);
+  });
+
+  it("fills at SLATE_CAP, and a dropped task gives its slot back", () => {
+    const full = Array.from({ length: SLATE_CAP }, () => makeTask({ committedOn: TODAY }));
+    expect(selectSlate(full, NOW).full).toBe(true);
+
+    const [first, ...rest] = full;
+    const withDrop = [{ ...first!, status: "dropped" as const }, ...rest];
+    expect(selectSlate(withDrop, NOW).full).toBe(false);
+    expect(selectSlate(withDrop, NOW).count).toBe(SLATE_CAP - 1);
+  });
+
+  it("ignores the context filter entirely — the cap is on hours, not contexts", () => {
+    const tasks = [
+      makeTask({ context: "office", committedOn: TODAY }),
+      makeTask({ context: "personal", committedOn: TODAY }),
+    ];
+    expect(selectSlate(tasks, NOW).count).toBe(2);
+  });
+});
+
 /* ----------------------------------------------------------------- selectToday */
 
 describe("selectToday", () => {
@@ -117,6 +174,50 @@ describe("selectToday", () => {
     expect(view.office.map((t) => t.id)).toEqual(["o2", "o1"]); // oldest first
     expect(view.personal.map((t) => t.id)).toEqual(["p1"]);
     expect(view.openCount).toBe(3);
+  });
+
+  it("lifts today's committed tasks out of the context columns, exactly once", () => {
+    const slated = makeTask({ id: "s1", context: "office", committedOn: TODAY });
+    const pooled = makeTask({ id: "p1", context: "office" });
+
+    const view = selectToday([slated, pooled], "all", NOW);
+
+    expect(view.committed.map((t) => t.id)).toEqual(["s1"]);
+    expect(view.office.map((t) => t.id)).toEqual(["p1"]);
+    expect(view.openCount).toBe(2); // the slate still counts as open work
+  });
+
+  it("drops a stale commitment back into the pool rather than onto today's slate", () => {
+    const stale = makeTask({ id: "old", context: "office", committedOn: YESTERDAY, carried: 2 });
+
+    const view = selectToday([stale], "all", NOW);
+
+    expect(view.committed).toEqual([]);
+    expect(view.office.map((t) => t.id)).toEqual(["old"]);
+  });
+
+  it("keeps a finished slate task in both slateDone and completedToday", () => {
+    const done = makeTask({
+      id: "d1",
+      committedOn: TODAY,
+      status: "done",
+      completed: "2026-06-07T10:00:00Z",
+    });
+
+    const view = selectToday([done], "all", NOW);
+
+    expect(view.slateDone.map((t) => t.id)).toEqual(["d1"]);
+    expect(view.completedToday.map((t) => t.id)).toEqual(["d1"]);
+    expect(view.committed).toEqual([]);
+  });
+
+  it("never shows a snoozed task on the slate", () => {
+    const snoozed = makeTask({ id: "z", committedOn: TODAY, snoozeUntil: "2026-06-08" });
+
+    const view = selectToday([snoozed], "all", NOW);
+
+    expect(view.committed).toEqual([]);
+    expect(view.office).toEqual([]);
   });
 
   it("excludes future-snoozed tasks but includes ones snoozed until today (inclusive)", () => {

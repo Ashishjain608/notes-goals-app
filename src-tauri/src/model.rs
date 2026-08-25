@@ -99,6 +99,15 @@ pub struct Task {
     /// resilience).
     #[serde(default)]
     pub attachments: Vec<Attachment>,
+    /// Bare `YYYY-MM-DD` local day this task is committed to (Today's slate),
+    /// or `None`. Defaults to `None` so task files written before this field
+    /// existed still load (ADR-0006 resilience).
+    #[serde(default)]
+    pub committed_on: Option<String>,
+    /// How many times this task was re-committed after failing to finish.
+    /// Defaults to 0 for files written before this field existed.
+    #[serde(default)]
+    pub carried: u32,
 }
 
 /// Note metadata — the markdown body lives in the `.md` file and is loaded

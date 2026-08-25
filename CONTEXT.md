@@ -54,6 +54,20 @@ _Avoid_: defer, hide, pause.
 The hero view. A live query over all Tasks, not a stored page — it shows the open (un-snoozed) Tasks plus those completed today. Carry-forward is emergent: an open Task keeps appearing here until it is `done` or `dropped`. There is no daily page and no copy-forward step.
 _Avoid_: daily note, daily page, inbox.
 
+**Slate**:
+The set of Tasks committed to a single local day — the day's payload, capped at five (ADR-0009). Not a stored page and not a Status: a Task carries the day it was committed to (`committedOn`), so the slate is a live query exactly like Today. A commitment from an earlier day is not a commitment today; that Task falls back into the pool.
+_Avoid_: daily page, daily plan, MIT list, sprint.
+
+**Commit** (a Task):
+The verb for putting a Task on today's slate (and *uncommitting* takes it off). Committing is capped across both Contexts together — the scarce thing is hours, not categories.
+_Avoid_: schedule (that implies a time), assign, star (that's Priority).
+
+**Day complete**:
+The state Today enters when every Task committed to the slate is done. The app's only finish line, and its only reward — there are deliberately no points, streaks or penalties (ADR-0009).
+
+**Carried**:
+How many earlier days a Task was committed to and not finished, shown on the row as `carried 3×`. The day-scoped sibling of Age: a visible record, never a punishment.
+
 **Activity**:
 A read-only retrospective lens over a single (past or present) day: the Tasks **created** and the Tasks **completed** on that local day, derived live from their timestamps. Like Today it owns no data and is not a stored page — it is the "look back" counterpart to Today's "now". Reopening a Task clears its completion, so it leaves that day's completed list (the lens reflects current timestamps, not an immutable event log).
 _Avoid_: journal (implies writing — see Note), daily log page, history.
@@ -80,6 +94,7 @@ _Avoid_: database, library, store (those refer to the in-memory representation);
 - A **Note** links to **at most one Goal**; a **Goal** has many Notes (computed live by matching `goalId`). A Note's **Context must match its linked Goal's** — changing the Note's Context unlinks it from the Goal (symmetric to the Notebook rule). Notes are added/edited from the Goal in place and also appear in the Notes module.
 - A **Task** has zero or more single-level **Subtasks**.
 - **Today** is a query over **Tasks** — it owns no data of its own.
+- The **slate** is a query over **Tasks** too: those whose `committedOn` is the current local day. At most five at a time, counted across both Contexts.
 - A **Goal**'s progress is `done ÷ non-dropped` over its linked **Tasks** (dropped Tasks excluded entirely, snoozed Tasks still count, Subtasks do not contribute). A Goal's own **Status** is independent of this progress — the user may mark a Goal done while leaving stragglers open.
 - A **Goal**'s **Status** never cascades: closing or holding a Goal leaves its linked Tasks and Notes untouched, and they keep behaving exactly as before (open Tasks still surface in Today).
 

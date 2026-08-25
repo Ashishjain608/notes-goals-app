@@ -30,6 +30,12 @@ export interface TaskRowProps {
   onOpenGoal?: (goalId: string) => void;
   /** When provided, the trailing flag becomes a quick priority toggle. */
   onTogglePriority?: (id: string) => void;
+  /** True when this task sits on today's slate. */
+  committed?: boolean;
+  /** True when the slate is full — committing anything new is refused. */
+  slateFull?: boolean;
+  /** When provided, the row gains a commit-to-today toggle. */
+  onToggleCommit?: (id: string) => void;
 }
 
 /** Render one task row. */
@@ -43,6 +49,9 @@ export function TaskRow({
   onOpen,
   onOpenGoal,
   onTogglePriority,
+  committed = false,
+  slateFull = false,
+  onToggleCommit,
 }: TaskRowProps): JSX.Element {
   const done = task.status === "done";
   const dropped = task.status === "dropped";
@@ -98,6 +107,16 @@ export function TaskRow({
           {!muted && <DueChip due={task.due} />}
           {!muted && <SubtaskMeta subtasks={task.subtasks} />}
           {task.goalId && <GoalChip goal={goal} onOpen={onOpenGoal} />}
+          {!muted && task.carried > 0 && (
+            <span
+              className="text-xs text-warn-ink"
+              title={`Committed and not finished on ${task.carried} earlier ${
+                task.carried === 1 ? "day" : "days"
+              }`}
+            >
+              carried {task.carried}×
+            </span>
+          )}
           {done && task.completed && <span className="text-xs text-ink-3">done</span>}
           {dropped && <span className="text-xs text-ink-3">dropped</span>}
         </div>
@@ -105,6 +124,33 @@ export function TaskRow({
 
       {!muted && (
         <div className="flex items-center gap-2 pt-px">
+          {onToggleCommit && (
+            <button
+              type="button"
+              disabled={!committed && slateFull}
+              aria-label={committed ? "Take off today's slate" : "Commit to today"}
+              title={
+                committed
+                  ? "Take off today's slate"
+                  : slateFull
+                    ? "Today's slate is full — finish or free a slot first"
+                    : "Commit to today"
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCommit(task.id);
+              }}
+              className={`rounded p-0.5 transition-all duration-150 ${
+                committed
+                  ? "text-accent"
+                  : slateFull
+                    ? "text-ink-3 opacity-0 group-hover:opacity-40"
+                    : "text-ink-3 opacity-0 hover:text-accent group-hover:opacity-100"
+              }`}
+            >
+              <Icon name="today" size={14} />
+            </button>
+          )}
           {onTogglePriority ? (
             <button
               type="button"

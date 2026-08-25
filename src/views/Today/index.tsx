@@ -1,19 +1,29 @@
 /**
  * Today — the hero screen.
  *
- * Surfaces every open, un-snoozed task within the current context filter, oldest
- * first, so aging work rises to the top (ADR-0004). The "columns" layout shows
- * Office | Personal side-by-side when no context is filtered, and collapses to a
- * single list when one context is selected. Tasks completed today are tucked in a
- * dense group at the bottom. An inline quick-add sits under the header.
+ * Two bands. The **slate** on top: the handful of tasks you committed to today
+ * (ADR-0009), capped at SLATE_CAP so the day is finishable — when they're all
+ * done the band becomes the day's finish line, the one thing a live query over
+ * every open task can never say on its own. Below it, everything else open and
+ * un-snoozed within the context filter, in the "columns" layout (Office |
+ * Personal side by side, collapsing to one list when a context is selected).
+ * Tasks completed today are tucked in a dense group at the bottom.
  *
- * This view is a thin shell: it reads store slices, runs the frozen `selectToday`
- * / `goalsById` selectors, and renders shared components. All mutations route
- * through store actions.
+ * This view is a thin shell: it reads store slices, runs the frozen
+ * `selectToday` / `selectSlate` / `goalsById` selectors, and renders shared
+ * components. All mutations route through store actions.
  */
 import type { JSX } from "react";
 import type { ContextFilter, Goal, Task } from "@/types";
-import { useStore, selectToday, goalsById, type TodayView } from "@/store";
+import {
+  useStore,
+  selectToday,
+  selectSlate,
+  goalsById,
+  SLATE_CAP,
+  type SlateSummary,
+  type TodayView,
+} from "@/store";
 import { TaskRow, SectionLabel, EmptyState, ContextDot } from "@/components";
 import { QuickAddInline } from "@/views/Capture";
 
@@ -26,6 +36,7 @@ interface RowHandlers {
   onOpen: (id: string) => void;
   onOpenGoal: (goalId: string) => void;
   onTogglePriority: (id: string) => void;
+  onToggleCommit: (id: string) => void;
 }
 
 /** Today's date as the prototype's serif headline string, e.g. "Sunday, June 7". */
@@ -74,6 +85,83 @@ function TodayHeader({ view, now }: { view: TodayView; now: Date }): JSX.Element
   );
 }
 
+/* ------------------------------------------------------------------- SLATE */
+
+/** The earned end-of-day state: everything committed is finished. */
+function DayComplete({ slate }: { slate: SlateSummary }): JSX.Element {
+  return (
+    <div className="rounded-lg border border-accent-line bg-accent-soft px-5 py-[18px]">
+      <div className="font-serif text-[20px] leading-tight tracking-[-.01em] text-ink">
+        Day complete.
+      </div>
+      <div className="mt-1 text-[13.5px] text-ink-2">
+        All {slate.doneCount} committed {slate.doneCount === 1 ? "task" : "tasks"} done. Anything
+        else today is a bonus.
+      </div>
+    </div>
+  );
+}
+
+/** The nudge shown when nothing has been committed yet. */
+function SlateInvite(): JSX.Element {
+  return (
+    <div className="rounded-lg border border-dashed border-line-2 px-5 py-[14px] text-[13.5px] text-ink-2">
+      Nothing committed yet — pick up to {SLATE_CAP} from below and those become today.
+    </div>
+  );
+}
+
+/** The committed band: its header, its rows, and its two terminal states. */
+function Slate({
+  slate,
+  view,
+  gById,
+  handlers,
+  hasAvailable,
+}: {
+  slate: SlateSummary;
+  view: TodayView;
+  gById: Record<string, Goal>;
+  handlers: RowHandlers;
+  hasAvailable: boolean;
+}): JSX.Element | null {
+  if (slate.complete) return <DayComplete slate={slate} />;
+  if (slate.count === 0) return hasAvailable ? <SlateInvite /> : null;
+
+  return (
+    <div>
+      <div className="mb-0.5 flex items-baseline gap-2 px-4">
+        <SectionLabel accent>Committed</SectionLabel>
+        <span className="text-[11px] tabular-nums text-ink-3">
+          {slate.doneCount} of {slate.count} done
+        </span>
+      </div>
+      {view.committed.map((task) => (
+        <TaskRow
+          key={task.id}
+          task={task}
+          mode={AGING_MODE}
+          showContext
+          committed
+          goal={task.goalId ? gById[task.goalId] ?? null : null}
+          onToggle={handlers.onToggle}
+          onOpen={handlers.onOpen}
+          onOpenGoal={handlers.onOpenGoal}
+          onTogglePriority={handlers.onTogglePriority}
+          onToggleCommit={handlers.onToggleCommit}
+        />
+      ))}
+      {view.committed.length === 0 && (
+        <div className="px-4 py-3.5 text-[13px] italic text-ink-3">
+          Nothing left here in this context.
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------- AVAILABLE */
+
 /** The "Completed today" group of dense rows, or nothing when none completed. */
 function CompletedGroup({
   tasks,
@@ -113,10 +201,12 @@ function ColumnTasks({
   tasks,
   gById,
   handlers,
+  slateFull,
 }: {
   tasks: Task[];
   gById: Record<string, Goal>;
   handlers: RowHandlers;
+  slateFull: boolean;
 }): JSX.Element {
   return (
     <div>
@@ -126,11 +216,13 @@ function ColumnTasks({
           task={task}
           mode={AGING_MODE}
           showContext={false}
+          slateFull={slateFull}
           goal={task.goalId ? gById[task.goalId] ?? null : null}
           onToggle={handlers.onToggle}
           onOpen={handlers.onOpen}
           onOpenGoal={handlers.onOpenGoal}
           onTogglePriority={handlers.onTogglePriority}
+          onToggleCommit={handlers.onToggleCommit}
         />
       ))}
     </div>
@@ -147,17 +239,19 @@ function ColumnsBody({
   view,
   gById,
   handlers,
+  slateFull,
 }: {
   view: TodayView;
   gById: Record<string, Goal>;
   handlers: RowHandlers;
+  slateFull: boolean;
 }): JSX.Element {
   return (
     <div className="grid grid-cols-2 gap-7">
       <div>
         <ContextHeader context="office" />
         {view.office.length > 0 ? (
-          <ColumnTasks tasks={view.office} gById={gById} handlers={handlers} />
+          <ColumnTasks tasks={view.office} gById={gById} handlers={handlers} slateFull={slateFull} />
         ) : (
           <ColumnEmpty />
         )}
@@ -165,7 +259,12 @@ function ColumnsBody({
       <div>
         <ContextHeader context="personal" />
         {view.personal.length > 0 ? (
-          <ColumnTasks tasks={view.personal} gById={gById} handlers={handlers} />
+          <ColumnTasks
+            tasks={view.personal}
+            gById={gById}
+            handlers={handlers}
+            slateFull={slateFull}
+          />
         ) : (
           <ColumnEmpty />
         )}
@@ -183,16 +282,18 @@ function SingleColumnBody({
   view,
   gById,
   handlers,
+  slateFull,
 }: {
   tasks: Task[];
   view: TodayView;
   gById: Record<string, Goal>;
   handlers: RowHandlers;
+  slateFull: boolean;
 }): JSX.Element {
   return (
     <div>
       {tasks.length > 0 ? (
-        <ColumnTasks tasks={tasks} gById={gById} handlers={handlers} />
+        <ColumnTasks tasks={tasks} gById={gById} handlers={handlers} slateFull={slateFull} />
       ) : (
         <EmptyState
           title="Nothing waiting on you."
@@ -232,10 +333,14 @@ export default function Today(): JSX.Element {
   const contextFilter = useStore((s) => s.contextFilter);
   const toggleTaskStatus = useStore((s) => s.toggleTaskStatus);
   const toggleTaskPriority = useStore((s) => s.toggleTaskPriority);
+  const toggleTaskCommit = useStore((s) => s.toggleTaskCommit);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const navigate = useStore((s) => s.navigate);
 
   const view = selectToday(tasks, contextFilter);
+  // The slate is measured across every context — the cap is on your hours, not
+  // on the filter you happen to be looking through.
+  const slate = selectSlate(tasks);
   const gById = goalsById(goals);
 
   const handlers: RowHandlers = {
@@ -243,17 +348,35 @@ export default function Today(): JSX.Element {
     onOpen: (id) => openTaskDetail(id),
     onOpenGoal: (goalId) => navigate("goal", goalId),
     onTogglePriority: (id) => void toggleTaskPriority(id),
+    onToggleCommit: (id) => void toggleTaskCommit(id),
   };
 
   const isAll = contextFilter === "all";
-  const body = renderBody(contextFilter, view, gById, handlers);
+  const available = view.office.length + view.personal.length;
+  const body = renderBody(contextFilter, view, gById, handlers, slate.full);
 
   return (
     <div className="scroll h-full pb-[120px] pt-10">
       <div className={`mx-auto px-6 ${isAll ? "max-w-[880px]" : "max-w-[640px]"}`}>
         <TodayHeader view={view} now={new Date()} />
         <QuickAddInline />
-        <div className="mt-[18px]">{body}</div>
+        <div className="mt-[18px]">
+          <Slate
+            slate={slate}
+            view={view}
+            gById={gById}
+            handlers={handlers}
+            hasAvailable={available > 0}
+          />
+        </div>
+        <div className="mt-[18px]">
+          {slate.count > 0 && available > 0 && (
+            <div className="mb-0.5 px-4">
+              <SectionLabel count={available}>Available</SectionLabel>
+            </div>
+          )}
+          {body}
+        </div>
       </div>
     </div>
   );
@@ -265,12 +388,21 @@ function renderBody(
   view: TodayView,
   gById: Record<string, Goal>,
   handlers: RowHandlers,
+  slateFull: boolean,
 ): JSX.Element {
   if (filter === "all") {
     if (view.openCount === 0) return <FullEmptyBody view={view} gById={gById} handlers={handlers} />;
-    return <ColumnsBody view={view} gById={gById} handlers={handlers} />;
+    return <ColumnsBody view={view} gById={gById} handlers={handlers} slateFull={slateFull} />;
   }
 
   const tasks = filter === "office" ? view.office : view.personal;
-  return <SingleColumnBody tasks={tasks} view={view} gById={gById} handlers={handlers} />;
+  return (
+    <SingleColumnBody
+      tasks={tasks}
+      view={view}
+      gById={gById}
+      handlers={handlers}
+      slateFull={slateFull}
+    />
+  );
 }

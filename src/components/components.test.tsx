@@ -30,6 +30,8 @@ function task(over: Partial<Task> = {}): Task {
     subtasks: [],
     details: "",
     priority: false,
+    committedOn: null,
+    carried: 0,
     attachments: [],
     ...over,
   };

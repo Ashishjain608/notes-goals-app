@@ -59,6 +59,14 @@ export interface Task {
   priority: boolean;
   /** Files copied into the vault and linked to this task. */
   attachments: Attachment[];
+  /**
+   * The local day this task was committed to (Today's slate), or null when it
+   * sits in the pool. A date earlier than today means it was committed and not
+   * finished: it drops back into the pool rather than lingering on the slate.
+   */
+  committedOn: IsoDate | null;
+  /** How many times this task was re-committed after failing to finish. */
+  carried: number;
 }
 
 /**
