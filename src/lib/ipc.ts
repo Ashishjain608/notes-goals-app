@@ -17,6 +17,7 @@ import type {
   Goal,
   GoalDeletionResult,
   Note,
+  NoteBodyHit,
   Notebook,
   NotebookDeletionResult,
   StoreSnapshot,
@@ -41,6 +42,14 @@ export const loadAll = (): Promise<StoreSnapshot> => invoke("load_all");
 
 /** Lazily read a single note's markdown body. */
 export const loadNoteBody = (id: string): Promise<string> => invoke("load_note_body", { id });
+
+/**
+ * Search note *bodies* on disk. Titles, tasks, goals and notebooks are already
+ * in the store and are matched there — only bodies are lazy, so only they need
+ * this trip to Rust. Returns at most 20 hits.
+ */
+export const searchNoteBodies = (query: string): Promise<NoteBodyHit[]> =>
+  invoke("search_note_bodies", { query });
 
 /* -------------------------------------------------------------------- Tasks */
 

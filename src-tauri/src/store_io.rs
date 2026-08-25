@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AppError, AppResult};
-use crate::model::{Attachment, Goal, Note, Notebook, Task};
+use crate::model::{Attachment, Goal, Note, NoteBodyHit, Notebook, Task};
 
 /// The kind of entity, used to derive subfolder + extension.
 #[derive(Debug, Clone, Copy)]
@@ -547,6 +547,79 @@ pub fn load_notes(vault: &Path) -> Vec<Note> {
     })
 }
 
+/* ------------------------------------------------------------ body search */
+
+/// Case-insensitively find `needle` in `haystack`, both as char slices, and
+/// return the match's CHAR index. Working in chars (not bytes) keeps the
+/// excerpt slicing below safe on multi-byte text.
+fn find_folded(haystack: &[char], needle: &[char]) -> Option<usize> {
+    if needle.is_empty() || needle.len() > haystack.len() {
+        return None;
+    }
+    haystack.windows(needle.len()).position(|w| w == needle)
+}
+
+/// Collapse runs of whitespace (markdown bodies are full of newlines) so an
+/// excerpt renders as one readable line.
+fn collapse_ws(s: &str) -> String {
+    s.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// A one-line excerpt around the char at `at`, with elision markers.
+fn excerpt(chars: &[char], at: usize, needle_len: usize) -> String {
+    const BEFORE: usize = 32;
+    const AFTER: usize = 72;
+    let start = at.saturating_sub(BEFORE);
+    let end = (at + needle_len + AFTER).min(chars.len());
+    let text = collapse_ws(&chars[start..end].iter().collect::<String>());
+    format!(
+        "{}{}{}",
+        if start > 0 { "…" } else { "" },
+        text,
+        if end < chars.len() { "…" } else { "" }
+    )
+}
+
+/// Scan every note's markdown body for `query`, returning at most `limit` hits
+/// with an excerpt each. Frontmatter is excluded — titles and other metadata
+/// are already in the frontend store and are matched there.
+///
+/// Case-insensitivity is ASCII-folded: a non-ASCII query still matches, but
+/// only case-sensitively. A plain scan is fast enough for a personal vault;
+/// swap in an index only if that stops being true.
+pub fn search_note_bodies(vault: &Path, query: &str, limit: usize) -> Vec<NoteBodyHit> {
+    let needle: Vec<char> = query.trim().chars().map(|c| c.to_ascii_lowercase()).collect();
+    if needle.is_empty() {
+        return Vec::new();
+    }
+
+    let mut hits = Vec::new();
+    for path in list_files(vault, EntityKind::Note) {
+        if hits.len() >= limit {
+            break;
+        }
+        let Some(id) = path.file_stem().and_then(|s| s.to_str()) else {
+            continue;
+        };
+        let Ok(raw) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok((_yaml, body)) = split_frontmatter(&raw) else {
+            continue;
+        };
+
+        let chars: Vec<char> = body.chars().collect();
+        let folded: Vec<char> = chars.iter().map(|c| c.to_ascii_lowercase()).collect();
+        if let Some(at) = find_folded(&folded, &needle) {
+            hits.push(NoteBodyHit {
+                id: id.to_string(),
+                snippet: excerpt(&chars, at, needle.len()),
+            });
+        }
+    }
+    hits
+}
+
 /// Generic resilient loader: applies `parse` to each file of `kind`, skipping
 /// failures with a stderr warning.
 fn load_collection<T>(
@@ -602,6 +675,8 @@ mod tests {
             details: "Some **details** for this task.".to_string(),
             priority: true,
             attachments: vec![],
+            committed_on: None,
+            carried: 0,
         }
     }
 
@@ -698,6 +773,40 @@ mod tests {
         let loaded: Goal =
             read_json(&entity_path(&vault, EntityKind::Goal, "goal-1")).unwrap();
         assert_eq!(loaded, goal);
+    }
+
+    #[test]
+    fn search_note_bodies_matches_body_case_insensitively_with_excerpt() {
+        let vault = temp_vault();
+        write_note(
+            &vault,
+            &sample_note("note-hit", None),
+            "Quarterly plan for the Import Business, shipping in March.\n",
+        )
+        .unwrap();
+        write_note(&vault, &sample_note("note-miss", None), "Unrelated prose.\n").unwrap();
+
+        let hits = search_note_bodies(&vault, "import business", 20);
+
+        assert_eq!(hits.len(), 1, "only the matching body should hit");
+        assert_eq!(hits[0].id, "note-hit");
+        // Original casing survives into the excerpt, whitespace is collapsed.
+        assert!(hits[0].snippet.contains("Import Business"));
+        assert!(!hits[0].snippet.contains('\n'));
+    }
+
+    #[test]
+    fn search_note_bodies_ignores_frontmatter_and_honors_limit() {
+        let vault = temp_vault();
+        // "Findings" is the sample note's TITLE — it lives in frontmatter, and a
+        // body search must not match it (the store already searches titles).
+        write_note(&vault, &sample_note("n1", None), "alpha beta\n").unwrap();
+        write_note(&vault, &sample_note("n2", None), "alpha gamma\n").unwrap();
+
+        assert!(search_note_bodies(&vault, "Findings", 20).is_empty());
+        assert_eq!(search_note_bodies(&vault, "alpha", 20).len(), 2);
+        assert_eq!(search_note_bodies(&vault, "alpha", 1).len(), 1, "limit caps the scan");
+        assert!(search_note_bodies(&vault, "   ", 20).is_empty(), "blank query matches nothing");
     }
 
     #[test]

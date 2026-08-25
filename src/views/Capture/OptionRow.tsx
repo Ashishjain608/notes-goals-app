@@ -19,6 +19,8 @@ export interface OptionRowProps {
   active?: boolean;
   /** Styles the label in accent ink for destructive actions. */
   danger?: boolean;
+  /** Keyboard-highlighted row (arrow-key selection in the palette). */
+  selected?: boolean;
   onClick?: () => void;
 }
 
@@ -29,6 +31,7 @@ export function OptionRow({
   sub,
   active = false,
   danger = false,
+  selected = false,
   onClick,
 }: OptionRowProps): JSX.Element {
   return (
@@ -36,8 +39,8 @@ export function OptionRow({
       type="button"
       onClick={onClick}
       className={`flex w-full items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-left text-[13.5px] transition-colors duration-100 hover:bg-raise ${
-        danger ? "text-accent-ink" : "text-ink"
-      }`}
+        selected ? "bg-raise" : ""
+      } ${danger ? "text-accent-ink" : "text-ink"}`}
     >
       {icon && (
         <span className="text-ink-3">

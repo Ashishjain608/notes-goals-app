@@ -110,6 +110,17 @@ pub struct Task {
     pub carried: u32,
 }
 
+/// A note whose markdown *body* matched a search query, with a short excerpt
+/// around the first match. Bodies are never held in the frontend store
+/// (ADR-0006), so body search runs over the files here and returns only this.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NoteBodyHit {
+    pub id: String,
+    /// One line of surrounding body text, whitespace-collapsed and elided.
+    pub snippet: String,
+}
+
 /// Note metadata — the markdown body lives in the `.md` file and is loaded
 /// lazily via `load_note_body`, never carried in this record. Stored as
 /// `notes/<id>.md` with YAML frontmatter.

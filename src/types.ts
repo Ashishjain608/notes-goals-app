@@ -161,6 +161,12 @@ export interface StoreSnapshot {
   notebooks: Notebook[];
 }
 
+/** A note whose markdown body matched a search, with a one-line excerpt. */
+export interface NoteBodyHit {
+  id: string;
+  snippet: string;
+}
+
 /** Result of deleting a goal: which linked entities had goalId cleared (docs/adr/0003). */
 export interface GoalDeletionResult {
   clearedTaskIds: string[];

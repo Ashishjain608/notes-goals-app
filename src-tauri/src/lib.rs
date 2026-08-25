@@ -30,6 +30,7 @@ pub fn run() {
             commands::relocate_vault,
             commands::load_all,
             commands::load_note_body,
+            commands::search_note_bodies,
             commands::create_task,
             commands::update_task,
             commands::delete_task,

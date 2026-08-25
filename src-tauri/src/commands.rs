@@ -14,8 +14,8 @@ use uuid::Uuid;
 use crate::error::{AppError, AppResult};
 use crate::model::{
     Attachment, CreateGoalInput, CreateNoteInput, CreateNotebookInput, CreateTaskInput, Goal,
-    GoalDeletionResult, GoalStatus, Note, Notebook, NotebookDeletionResult, StoreSnapshot, Task,
-    TaskStatus,
+    GoalDeletionResult, GoalStatus, Note, NoteBodyHit, Notebook, NotebookDeletionResult,
+    StoreSnapshot, Task, TaskStatus,
 };
 use crate::store_io::{self, EntityKind};
 use crate::vault;
@@ -82,6 +82,15 @@ pub fn load_all(app: AppHandle) -> AppResult<StoreSnapshot> {
 pub fn load_note_body(app: AppHandle, id: String) -> AppResult<String> {
     let vault = vault::require_vault(&app)?;
     store_io::read_note_body(&vault, &id)
+}
+
+/// Search every note's markdown body for `query`, returning at most 20 hits
+/// with a one-line excerpt each. Titles/goals/tasks are already in the frontend
+/// store and are matched there; only bodies need this trip to disk (ADR-0006).
+#[tauri::command]
+pub fn search_note_bodies(app: AppHandle, query: String) -> AppResult<Vec<NoteBodyHit>> {
+    let vault = vault::require_vault(&app)?;
+    Ok(store_io::search_note_bodies(&vault, &query, 20))
 }
 
 /* -------------------------------------------------------------------- Tasks */
