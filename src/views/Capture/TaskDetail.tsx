@@ -174,6 +174,7 @@ function DetailHeader({ task, onClose }: { task: Task; onClose: () => void }): J
         type="button"
         onClick={onClose}
         aria-label="Close"
+        title="Close (Esc)"
         className="rounded-[6px] p-1 text-ink-3 transition-colors duration-100 hover:bg-raise"
       >
         <Icon name="x" size={18} />

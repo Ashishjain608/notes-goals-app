@@ -231,6 +231,7 @@ function NotebookRow({
           type="button"
           onClick={onToggle}
           aria-label={collapsed ? "Expand notebook" : "Collapse notebook"}
+          title={collapsed ? "Expand notebook" : "Collapse notebook"}
           className="grid h-5 w-4 place-items-center text-ink-3 hover:text-ink-2"
         >
           <Icon name={collapsed ? "chevron" : "chevronDown"} size={14} />
@@ -334,6 +335,7 @@ function UnfiledRow({
           type="button"
           onClick={onToggle}
           aria-label={collapsed ? "Expand Unfiled" : "Collapse Unfiled"}
+          title={collapsed ? "Expand Unfiled" : "Collapse Unfiled"}
           className="grid h-5 w-4 place-items-center text-ink-3 hover:text-ink-2"
         >
           <Icon name={collapsed ? "chevron" : "chevronDown"} size={14} />

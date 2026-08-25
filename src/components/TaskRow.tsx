@@ -165,6 +165,11 @@ export function TaskRow({
             <button
               type="button"
               aria-label={task.priority ? "Remove priority" : "Mark as priority"}
+              title={
+                task.priority
+                  ? "Remove priority — stops floating to the top"
+                  : "Mark as priority — floats to the top of every list"
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 onTogglePriority(task.id);

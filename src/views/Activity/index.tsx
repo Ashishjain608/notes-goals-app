@@ -62,6 +62,7 @@ function DateStepper({ day, today, onChange }: DateStepperProps): JSX.Element {
       <button
         type="button"
         aria-label="Previous day"
+        title="Previous day"
         onClick={() => onChange(shiftDay(day, -1))}
         className="grid h-8 w-8 place-items-center rounded-md text-ink-2 transition-colors hover:bg-raise"
       >
@@ -71,6 +72,7 @@ function DateStepper({ day, today, onChange }: DateStepperProps): JSX.Element {
       <button
         type="button"
         aria-label="Next day"
+        title="Next day"
         disabled={atToday}
         onClick={() => onChange(shiftDay(day, 1))}
         className="grid h-8 w-8 place-items-center rounded-md text-ink-2 transition-colors hover:bg-raise disabled:opacity-30 disabled:hover:bg-transparent"

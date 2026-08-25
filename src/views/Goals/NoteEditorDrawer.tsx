@@ -205,6 +205,7 @@ export function NoteEditorDrawer({
             <button
               type="button"
               aria-label="Close"
+              title="Close (Esc)"
               onClick={close}
               className="grid h-7 w-7 place-items-center rounded-md text-ink-3 transition-colors hover:bg-raise"
             >

@@ -184,6 +184,7 @@ function GoalMeta({
             type="button"
             onClick={() => onTarget(null)}
             aria-label="Clear target date"
+            title="Clear the target date"
             className="text-ink-3 transition-colors hover:text-accent-ink"
           >
             <Icon name="x" size={12} />

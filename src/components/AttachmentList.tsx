@@ -107,6 +107,7 @@ export function AttachmentList({ attachments, onOpen, onRemove }: AttachmentList
             type="button"
             onClick={() => onRemove(attachment)}
             aria-label={`Remove ${attachment.name}`}
+            title="Remove attachment — the file moves to the vault's trash"
             className="shrink-0 rounded-md p-1 text-ink-3 transition-colors duration-100 hover:bg-raise hover:text-accent-ink"
           >
             <Icon name="trash" size={13} />

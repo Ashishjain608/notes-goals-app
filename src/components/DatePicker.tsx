@@ -172,6 +172,7 @@ export function DatePicker({ value, min, max, onPick }: DatePickerProps): JSX.El
         <button
           type="button"
           aria-label="Previous month"
+          title="Previous month"
           onClick={() => goToMonth(-1)}
           className="grid h-6 w-6 place-items-center rounded text-ink-2 transition-colors hover:bg-raise"
         >
@@ -181,6 +182,7 @@ export function DatePicker({ value, min, max, onPick }: DatePickerProps): JSX.El
         <button
           type="button"
           aria-label="Next month"
+          title="Next month"
           onClick={() => goToMonth(1)}
           className="grid h-6 w-6 place-items-center rounded text-ink-2 transition-colors hover:bg-raise"
         >

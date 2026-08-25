@@ -74,7 +74,7 @@ export function TitleBar(): JSX.Element {
         className="flex w-[240px] items-center gap-2 rounded-md border border-line bg-surface px-3 py-1.5 text-[13px] text-ink-3 shadow-sm transition-colors hover:text-ink-2"
       >
         <Icon name="search" size={16} />
-        <span className="flex-1 text-left">Capture or jump…</span>
+        <span className="flex-1 text-left">Search or capture…</span>
         <kbd className="rounded border border-line-2 px-1.5 py-px font-mono text-[11px]">⌘K</kbd>
       </button>
 
