@@ -32,6 +32,7 @@ import {
   tabTitle,
   type ScratchState,
 } from "./scratchTabs";
+import { confirmDestructive } from "@/lib/confirm";
 
 const RECT_KEY = "ng-scratch-rect";
 const MIN_W = 280;
@@ -353,8 +354,8 @@ export function Scratchpad(): JSX.Element | null {
       });
   };
 
-  const clearAll = (): void => {
-    if (tab.text.trim() && !window.confirm("Clear this tab?")) return;
+  const clearAll = async (): Promise<void> => {
+    if (tab.text.trim() && !(await confirmDestructive("Clear this tab?", "Clear"))) return;
     updateText("");
     textRef.current?.focus();
   };
@@ -376,9 +377,13 @@ export function Scratchpad(): JSX.Element | null {
 
   const renameTheTab = (id: string, name: string): void => update(renameTab(state, id, name));
 
-  const requestCloseTab = (id: string): void => {
+  const requestCloseTab = async (id: string): Promise<void> => {
     const target = state.tabs.find((t) => t.id === id);
-    if (target?.text.trim() && !window.confirm(`Close "${tabTitle(target)}"? This can't be undone.`)) return;
+    if (
+      target?.text.trim() &&
+      !(await confirmDestructive(`Close "${tabTitle(target)}"? This can't be undone.`, "Close"))
+    )
+      return;
     update(closeTab(state, id));
     focusTextarea();
   };
@@ -399,7 +404,7 @@ export function Scratchpad(): JSX.Element | null {
     } else if (cmd && e.key.toLowerCase() === "w") {
       e.preventDefault();
       e.stopPropagation();
-      requestCloseTab(tab.id);
+      void requestCloseTab(tab.id);
     } else if (cmd && /^[1-9]$/.test(e.key)) {
       e.preventDefault();
       e.stopPropagation();

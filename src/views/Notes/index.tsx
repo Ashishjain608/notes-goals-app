@@ -21,6 +21,7 @@ import {
   type AppState,
 } from "@/store";
 import { EmptyState, GoalChip, Icon } from "@/components";
+import { confirmDestructive } from "@/lib/confirm";
 import { NoteList } from "./NoteList";
 import { NoteEditor } from "./NoteEditor";
 import type { NoteEditorStore } from "./useNoteEditor";
@@ -155,7 +156,7 @@ export default function Notes(): JSX.Element {
 
   /** Confirm + delete the selected note, then fall back to a neighbour. */
   const handleDelete = async (note: Note): Promise<void> => {
-    const ok = window.confirm(`Delete "${note.title || "Untitled"}"? This cannot be undone.`);
+    const ok = await confirmDestructive(`Delete "${note.title || "Untitled"}"? This cannot be undone.`);
     if (!ok) return;
     const fallback = visibleNotes.find((n) => n.id !== note.id)?.id ?? null;
     await deleteNote(note.id);
@@ -168,7 +169,7 @@ export default function Notes(): JSX.Element {
     const tail = count
       ? ` Its ${count} note${count === 1 ? "" : "s"} will be moved to Unfiled.`
       : "";
-    if (!window.confirm(`Delete notebook "${notebook.name}"?${tail}`)) return;
+    if (!(await confirmDestructive(`Delete notebook "${notebook.name}"?${tail}`))) return;
     await deleteNotebook(notebook.id);
   };
 

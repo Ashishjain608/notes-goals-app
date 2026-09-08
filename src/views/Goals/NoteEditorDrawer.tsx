@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState, type JSX, type ReactNode } from "
 import type { Note } from "@/types";
 import { useStore } from "@/store";
 import { Icon } from "@/components";
+import { confirmDestructive } from "@/lib/confirm";
 import { NoteEditor, type NoteEditorApi } from "@/views/Notes/NoteEditor";
 import type { NoteEditorStore } from "@/views/Notes/useNoteEditor";
 
@@ -143,8 +144,8 @@ export function NoteEditorDrawer({
     onClose();
   };
 
-  const confirmDelete = (): void => {
-    if (!window.confirm(`Delete “${note.title || "Untitled"}”? This can't be undone.`)) return;
+  const confirmDelete = async (): Promise<void> => {
+    if (!(await confirmDestructive(`Delete “${note.title || "Untitled"}”? This can't be undone.`))) return;
     apiRef.current?.discard();
     void deleteNote(note.id);
     onClose();

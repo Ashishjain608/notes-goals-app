@@ -14,6 +14,7 @@ import type { Attachment, Goal, IsoDate, Subtask, Task, TaskStatus } from "@/typ
 import { useStore, selectSlate, SLATE_CAP } from "@/store";
 import * as ipc from "@/lib/ipc";
 import { ageInDays, dueLabel, formatShortDate, localToday } from "@/lib/dates";
+import { confirmDestructive } from "@/lib/confirm";
 import { AttachmentList, Checkbox, ContextDot, DatePicker, Icon, type IconName } from "@/components";
 import { OptionRow } from "./OptionRow";
 import { dateKeyDaysAhead } from "./dueDates";
@@ -558,8 +559,8 @@ export function TaskDetail(): JSX.Element | null {
     void patchTask(task.id, { subtasks: [...task.subtasks, subtask] });
   };
 
-  const confirmDelete = (): void => {
-    const ok = window.confirm(`Delete “${task.title}”? This can't be undone.`);
+  const confirmDelete = async (): Promise<void> => {
+    const ok = await confirmDestructive(`Delete “${task.title}”? This can't be undone.`);
     if (!ok) return;
     void deleteTask(task.id);
     closeTaskDetail();
