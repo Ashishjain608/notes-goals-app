@@ -1,6 +1,22 @@
 # Notes & Goals
 
+[![CI](https://github.com/Ashishjain608/notes-goals-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Ashishjain608/notes-goals-app/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/Ashishjain608/notes-goals-app)](https://github.com/Ashishjain608/notes-goals-app/releases/latest)
+
 A calm, local-first macOS app that unifies your daily **tasks**, **notes**, and longer-term **goals** — all stored as plain, inspectable files in a folder you choose. No database server, no cloud, no accounts, no sync. Things/Bear in spirit, never Notion/ClickUp.
+
+## Download
+
+- **[Latest release](https://github.com/Ashishjain608/notes-goals-app/releases/latest)** — macOS 12 (Monterey) or later, Apple Silicon and Intel.
+- Or read more at **[the website](https://ashishjain608.github.io/notes-goals-app/)**.
+
+Download the `.dmg`, open it, and drag **Notes & Goals** into Applications. Release builds are unsigned unless noted otherwise on the release, so the first launch trips Gatekeeper ("Notes & Goals can't be opened because Apple cannot check it for malicious software"). Either:
+
+- Right-click (or Control-click) the app in Applications and choose **Open**, then confirm in the dialog that appears — only needed once, or
+- Run `xattr -dr com.apple.quarantine "/Applications/Notes & Goals.app"` in Terminal.
+
+On first launch you'll be asked to choose a data folder — you can change it later from **Settings (⌘,)**.
 
 ## The idea
 
@@ -59,7 +75,7 @@ On first launch, choose a data folder. The app creates the `tasks/`, `notes/`, `
 npm run tauri:build
 ```
 
-The bundled `.app` lands in `src-tauri/target/release/bundle/macos/`. (This is a personal-use build — no code signing or notarization is configured.)
+The bundled `.app` and `.dmg` land in `src-tauri/target/release/bundle/`. A local build like this is unsigned — see the Gatekeeper workaround in [Download](#download) — unless you configure your own Apple signing identity.
 
 ## Tests
 
@@ -88,6 +104,10 @@ src-tauri/     Rust backend: model, vault, store_io, commands
 - [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — the full build plan
 - [`docs/adr/`](docs/adr/) — architectural decision records
 - [`docs/agents/BUILD_CONTRACT.md`](docs/agents/BUILD_CONTRACT.md) — frozen module interfaces
+
+## Contributing
+
+Contributions are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, conventions, and the checks a PR needs to pass.
 
 ## License
 

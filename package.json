@@ -4,6 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "description": "A calm, local-first macOS app to track notes and goals",
+  "license": "MIT",
+  "author": "Ashish Jain",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ashishjain608/notes-goals-app.git"
+  },
+  "homepage": "https://ashishjain608.github.io/notes-goals-app/",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -16,6 +23,9 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
+    "@fontsource/hanken-grotesk": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/newsreader": "^5.3.0",
     "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.5.4",
