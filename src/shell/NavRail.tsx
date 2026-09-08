@@ -119,6 +119,41 @@ function ScratchToggle({
   );
 }
 
+/** Opens the Settings modal — sits beside the scratchpad/theme toggles. */
+function SettingsToggle({
+  expanded,
+  restrictTab,
+}: {
+  expanded: boolean;
+  restrictTab?: boolean;
+}): JSX.Element {
+  const openSettings = useStore((s) => s.openSettings);
+  if (expanded) {
+    return (
+      <button
+        type="button"
+        onClick={openSettings}
+        className="flex w-full items-center gap-3 rounded-lg px-3 py-[9px] text-left text-ink-2 transition-colors hover:bg-raise"
+      >
+        <Icon name="settings" size={18} />
+        <span className="whitespace-nowrap text-[14px] font-medium">Settings</span>
+        <span className="ml-auto text-[11px] tabular-nums text-ink-3">⌘,</span>
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      title="Settings (⌘,)"
+      tabIndex={restrictTab ? -1 : undefined}
+      onClick={openSettings}
+      className="grid h-[34px] w-[34px] place-items-center rounded-md text-ink-2 transition-colors hover:bg-raise"
+    >
+      <Icon name="settings" size={18} />
+    </button>
+  );
+}
+
 /** The nav rail: pinned expand/collapse in flow, plus a hover/focus flyout while collapsed. */
 export function NavRail({ expanded }: { expanded: boolean }): JSX.Element {
   const screen = useStore((s) => s.route.screen);
@@ -261,6 +296,7 @@ export function NavRail({ expanded }: { expanded: boolean }): JSX.Element {
         <div className="mt-auto flex flex-col gap-1">
           <ScratchToggle expanded={expanded} restrictTab={!expanded} />
           <ThemeToggle expanded={expanded} restrictTab={!expanded} />
+          <SettingsToggle expanded={expanded} restrictTab={!expanded} />
         </div>
       </nav>
 
@@ -275,6 +311,7 @@ export function NavRail({ expanded }: { expanded: boolean }): JSX.Element {
           <div className="mt-auto flex flex-col gap-1">
             <ScratchToggle expanded />
             <ThemeToggle expanded />
+            <SettingsToggle expanded />
           </div>
         </nav>
       )}

@@ -38,6 +38,15 @@ pub fn get_vault_path(app: AppHandle) -> AppResult<Option<String>> {
     Ok(vault::resolve_existing_vault(&app))
 }
 
+/// The raw configured vault path, even if the folder is currently missing.
+/// Used by VaultGate to show "your data folder isn't available" (with the
+/// path) instead of the first-run screen when a vault was configured but its
+/// folder is gone (e.g. an unmounted drive).
+#[tauri::command]
+pub fn get_configured_vault_path(app: AppHandle) -> AppResult<Option<String>> {
+    Ok(vault::configured_vault_path(&app))
+}
+
 /// Open a native folder picker; on pick, initialize + persist the vault and
 /// return its path. On cancel, return `None`. Async so the blocking dialog runs
 /// off the main thread.

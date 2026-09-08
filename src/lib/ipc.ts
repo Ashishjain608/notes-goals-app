@@ -29,6 +29,14 @@ import type {
 /** Persisted vault path, or null if none chosen yet. */
 export const getVaultPath = (): Promise<string | null> => invoke("get_vault_path");
 
+/**
+ * The raw configured vault path from config.json, even if the folder is
+ * currently missing (e.g. an unmounted drive) — lets VaultGate distinguish
+ * "never configured" (first run) from "configured but unavailable".
+ */
+export const getConfiguredVaultPath = (): Promise<string | null> =>
+  invoke("get_configured_vault_path");
+
 /** Open the native folder picker, validate + initialize, persist. Returns chosen path or null if cancelled. */
 export const chooseVault = (): Promise<string | null> => invoke("choose_vault");
 

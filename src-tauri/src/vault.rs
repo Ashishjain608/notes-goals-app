@@ -75,6 +75,14 @@ pub fn resolve_existing_vault(app: &AppHandle) -> Option<String> {
     }
 }
 
+/// The raw configured vault path, even if the folder is currently missing —
+/// unlike `resolve_existing_vault`, this does not check readability. Lets the
+/// frontend tell "never configured" (first run) apart from "configured but
+/// unavailable" (e.g. an unmounted drive) so the gate screen can say which.
+pub fn configured_vault_path(app: &AppHandle) -> Option<String> {
+    read_config(app)
+}
+
 /// The configured vault path for use by data commands. Errors with `NoVault`
 /// when nothing is configured or the folder is gone — commands should fail
 /// loudly rather than silently operating on a missing vault.

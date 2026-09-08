@@ -34,6 +34,10 @@ export type Theme = "light" | "dark";
 export interface AppState {
   // data
   vaultPath: string | null;
+  /** The configured path when it's currently unreachable (e.g. an unmounted
+   * drive) — set only while `status` is "needs-vault" for that reason, so
+   * VaultGate can say *why* rather than looking like a first run. */
+  missingVaultPath: string | null;
   status: AppStatus;
   errorMessage: string | null;
   tasks: Task[];
@@ -49,6 +53,7 @@ export interface AppState {
   paletteOpen: boolean;
   selectedNoteId: string | null;
   scratchOpen: boolean;
+  settingsOpen: boolean;
 
   // lifecycle
   init: () => Promise<void>;
@@ -69,6 +74,9 @@ export interface AppState {
   selectNote: (id: string | null) => void;
   toggleScratch: () => void;
   closeScratch: () => void;
+  openSettings: () => void;
+  closeSettings: () => void;
+  toggleSettings: () => void;
 
   // task actions
   addTask: (input: CreateTaskInput) => Promise<Task>;
@@ -173,6 +181,7 @@ async function withSaveGuard<T>(fn: () => Promise<T>): Promise<T> {
 export const useStore = create<AppState>((set, get) => ({
   // data
   vaultPath: null,
+  missingVaultPath: null,
   status: "loading",
   errorMessage: null,
   tasks: [],
@@ -188,6 +197,7 @@ export const useStore = create<AppState>((set, get) => ({
   paletteOpen: false,
   selectedNoteId: null,
   scratchOpen: false,
+  settingsOpen: false,
 
   /* ------------------------------------------------------------- lifecycle */
 
@@ -199,12 +209,17 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       const vaultPath = await ipc.getVaultPath();
       if (vaultPath === null) {
-        set({ vaultPath: null, status: "needs-vault", errorMessage: null });
+        // Distinguish "never configured" (first run) from "configured but
+        // currently unreachable" (e.g. an unmounted drive) so VaultGate can
+        // say which.
+        const missingVaultPath = await ipc.getConfiguredVaultPath();
+        set({ vaultPath: null, missingVaultPath, status: "needs-vault", errorMessage: null });
         return;
       }
       const snapshot = await ipc.loadAll();
       set({
         vaultPath,
+        missingVaultPath: null,
         tasks: snapshot.tasks,
         notes: snapshot.notes,
         goals: snapshot.goals,
@@ -224,6 +239,7 @@ export const useStore = create<AppState>((set, get) => ({
       const snapshot = await ipc.loadAll();
       set({
         vaultPath,
+        missingVaultPath: null,
         tasks: snapshot.tasks,
         notes: snapshot.notes,
         goals: snapshot.goals,
@@ -242,6 +258,7 @@ export const useStore = create<AppState>((set, get) => ({
       const snapshot = await ipc.loadAll();
       set({
         vaultPath: path,
+        missingVaultPath: null,
         tasks: snapshot.tasks,
         notes: snapshot.notes,
         goals: snapshot.goals,
@@ -306,6 +323,10 @@ export const useStore = create<AppState>((set, get) => ({
 
   toggleScratch: () => set((s) => ({ scratchOpen: !s.scratchOpen })),
   closeScratch: () => set({ scratchOpen: false }),
+
+  openSettings: () => set({ settingsOpen: true }),
+  closeSettings: () => set({ settingsOpen: false }),
+  toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
 
   /* ---------------------------------------------------------- task actions */
 

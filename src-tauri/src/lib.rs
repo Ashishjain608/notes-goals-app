@@ -26,6 +26,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::get_vault_path,
+            commands::get_configured_vault_path,
             commands::choose_vault,
             commands::relocate_vault,
             commands::load_all,

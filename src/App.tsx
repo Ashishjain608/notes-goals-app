@@ -12,6 +12,7 @@ import { NavRail } from "@/shell/NavRail";
 import { TitleBar } from "@/shell/TitleBar";
 import { SidebarToggle } from "@/shell/SidebarToggle";
 import { Scratchpad } from "@/shell/Scratchpad";
+import { Settings } from "@/shell/Settings";
 import { VaultGate } from "@/shell/VaultGate";
 import { CommandPalette, TaskDetail } from "@/views/Capture";
 import Today from "@/views/Today";
@@ -68,6 +69,10 @@ export default function App(): JSX.Element {
         e.preventDefault();
         useStore.getState().toggleScratch();
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === ",") {
+        e.preventDefault();
+        useStore.getState().toggleSettings();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -97,6 +102,7 @@ export default function App(): JSX.Element {
       <CommandPalette />
       <TaskDetail />
       <Scratchpad />
+      <Settings />
     </div>
   );
 }
