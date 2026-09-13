@@ -6,8 +6,8 @@
 use std::path::Path;
 
 use chrono::{SecondsFormat, Utc};
-use tauri::AppHandle;
-use tauri_plugin_dialog::DialogExt;
+use tauri::{AppHandle, Manager};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 use tauri_plugin_opener::OpenerExt;
 use uuid::Uuid;
 
@@ -48,18 +48,56 @@ pub fn get_configured_vault_path(app: AppHandle) -> AppResult<Option<String>> {
 }
 
 /// Open a native folder picker; on pick, initialize + persist the vault and
-/// return its path. On cancel, return `None`. Async so the blocking dialog runs
-/// off the main thread.
+/// return its path. On cancel, return `None`. On first run the picker starts in
+/// Documents with New Folder available — VaultGate's steps describe exactly
+/// that. A folder that already holds unrelated files asks first, and "Choose
+/// Another…" reopens the picker. Async so the blocking dialogs run off the
+/// main thread.
 #[tauri::command]
 pub async fn choose_vault(app: AppHandle) -> AppResult<Option<String>> {
-    let Some(picked) = app.dialog().file().blocking_pick_folder() else {
-        return Ok(None);
-    };
-    let path = picked
-        .into_path()
-        .map_err(|e| AppError::Io(std::io::Error::other(e.to_string())))?;
-    let resolved = vault::initialize_vault(&app, &path)?;
-    Ok(Some(resolved))
+    loop {
+        let mut picker = app
+            .dialog()
+            .file()
+            .set_title("Choose a data folder for Notes & Goals")
+            .set_can_create_directories(true);
+        if vault::configured_vault_path(&app).is_none() {
+            if let Ok(documents) = app.path().document_dir() {
+                picker = picker.set_directory(documents);
+            }
+        }
+        let Some(picked) = picker.blocking_pick_folder() else {
+            return Ok(None);
+        };
+        let path = picked
+            .into_path()
+            .map_err(|e| AppError::Io(std::io::Error::other(e.to_string())))?;
+        if vault::has_unrelated_files(&path) && !confirm_folder_with_files(&app, &path) {
+            continue;
+        }
+        return Ok(Some(vault::initialize_vault(&app, &path)?));
+    }
+}
+
+/// Ask before turning a folder that already holds other files into a vault.
+/// True means "use it anyway".
+fn confirm_folder_with_files(app: &AppHandle, path: &Path) -> bool {
+    let name = path
+        .file_name()
+        .map_or_else(|| path.display().to_string(), |n| n.to_string_lossy().into_owned());
+    app.dialog()
+        .message(format!(
+            "“{name}” already has other files in it. Notes & Goals will add its own folders \
+             (tasks, notes, goals and a few more) next to them.\n\n\
+             For a tidy setup, choose an empty folder or make a new one."
+        ))
+        .title("Use a folder that isn’t empty?")
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "Use This Folder".into(),
+            "Choose Another…".into(),
+        ))
+        .blocking_show()
 }
 
 /// Switch to a different existing vault folder: validate, create missing

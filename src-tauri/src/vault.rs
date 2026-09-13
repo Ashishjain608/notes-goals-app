@@ -64,6 +64,22 @@ fn is_readable_dir(path: &Path) -> bool {
     path.is_dir() && fs::read_dir(path).is_ok()
 }
 
+/// True when `path` already holds visible files or folders but isn't a vault,
+/// i.e. choosing it would scatter the vault's subfolders among unrelated
+/// things. Hidden entries (`.DS_Store`, …) don't count, and neither does a
+/// folder that already has `tasks/` (an existing vault, e.g. synced from
+/// another Mac). Unreadable folders report false; `initialize_vault` rejects them.
+pub fn has_unrelated_files(path: &Path) -> bool {
+    if path.join("tasks").is_dir() {
+        return false;
+    }
+    fs::read_dir(path).is_ok_and(|entries| {
+        entries
+            .flatten()
+            .any(|entry| !entry.file_name().to_string_lossy().starts_with('.'))
+    })
+}
+
 /// The configured vault path *only if* the folder currently exists and is
 /// readable; otherwise `None`. Used by `get_vault_path`.
 pub fn resolve_existing_vault(app: &AppHandle) -> Option<String> {
@@ -114,4 +130,42 @@ pub fn initialize_vault(app: &AppHandle, vault: &Path) -> AppResult<String> {
     let path_str = vault.to_string_lossy().to_string();
     write_config(app, &path_str)?;
     Ok(path_str)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "notes-goals-vault-test-{}-{name}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn unrelated_files_ignores_empty_hidden_and_existing_vaults() {
+        let empty = temp_dir("empty");
+        assert!(!has_unrelated_files(&empty));
+
+        let hidden = temp_dir("hidden");
+        fs::write(hidden.join(".DS_Store"), "").unwrap();
+        assert!(!has_unrelated_files(&hidden));
+
+        let existing_vault = temp_dir("vault");
+        ensure_subfolders(&existing_vault).unwrap();
+        fs::write(existing_vault.join("README.md"), "").unwrap();
+        assert!(!has_unrelated_files(&existing_vault));
+
+        let documents = temp_dir("documents");
+        fs::write(documents.join("taxes.pdf"), "").unwrap();
+        assert!(has_unrelated_files(&documents));
+
+        for dir in [empty, hidden, existing_vault, documents] {
+            let _ = fs::remove_dir_all(dir);
+        }
+    }
 }
