@@ -1,5 +1,9 @@
 # Contributing
 
+Thanks for helping out. Bugs and ideas go through the [issue forms](https://github.com/Ashishjain608/notes-goals-app/issues/new/choose);
+security problems go through [`SECURITY.md`](SECURITY.md), never a public issue. Everyone taking part follows the
+[Code of Conduct](CODE_OF_CONDUCT.md). Notable changes are recorded in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Prerequisites
 
 - **Rust** (stable) — install via [rustup](https://rustup.rs)

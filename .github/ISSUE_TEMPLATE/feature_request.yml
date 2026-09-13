@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an idea for Notes & Goals
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Notes & Goals means to stay calm, local-first, and single-user — Things or Bear in spirit, not Notion. Ideas that fit that are the most likely to land.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The moment where the app gets in your way.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What do you do today instead?
