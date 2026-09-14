@@ -8,7 +8,7 @@ A calm, local-first macOS app that unifies your daily **tasks**, **notes**, and 
 
 **[Download for macOS](https://github.com/Ashishjain608/notes-goals-app/releases/latest)** · [Website](https://ashishjain608.github.io/notes-goals-app/) · [Install guide](#install) · [Contributing](CONTRIBUTING.md)
 
-![A short tour of Notes & Goals: adding a task and committing it to today's slate, finishing the slate until the day is complete, jumping to a goal with ⌘K, adding a checklist item to the goal's note, and switching to dark mode](site/screenshots/demo.gif)
+![A short tour of Notes & Goals: adding a task and committing it to today's slate, finishing the slate until the day is complete, jumping to a goal with ⌘K and adding a checklist item to its note, jotting in the ⌘J scratchpad with a second tab and dragging it aside, and switching to dark mode](site/screenshots/demo.gif)
 
 ## The idea
 
