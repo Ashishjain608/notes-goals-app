@@ -8,10 +8,7 @@ A calm, local-first macOS app that unifies your daily **tasks**, **notes**, and 
 
 **[Download for macOS](https://github.com/Ashishjain608/notes-goals-app/releases/latest)** · [Website](https://ashishjain608.github.io/notes-goals-app/) · [Install guide](#install) · [Contributing](CONTRIBUTING.md)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/screenshots/today-dark.png">
-  <img alt="Notes & Goals showing Today: the day's slate of committed tasks above the open tasks for Office and Personal" src="site/screenshots/today-light.png">
-</picture>
+![A short tour of Notes & Goals: adding a task and committing it to today's slate, finishing the slate until the day is complete, jumping to a goal with ⌘K, adding a checklist item to the goal's note, and switching to dark mode](site/screenshots/demo.gif)
 
 ## The idea
 
