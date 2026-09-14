@@ -3,7 +3,11 @@
 Notable changes to Notes & Goals. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — planned as 0.1.0, the first public release
+## [Unreleased]
+
+## [0.1.0] - 2026-09-14
+
+The first public release.
 
 ### Added
 
@@ -22,4 +26,5 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 - A Content Security Policy limits what the app's webview can load and run.
 
-[Unreleased]: https://github.com/Ashishjain608/notes-goals-app/commits/main
+[Unreleased]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Ashishjain608/notes-goals-app/releases/tag/v0.1.0
