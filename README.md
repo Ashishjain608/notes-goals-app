@@ -19,18 +19,28 @@ The **task is the source of truth**, not a daily page. **Today** is a live query
 <table>
   <tr>
     <td width="50%" valign="top">
-      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/notes-dark.png"><img alt="The Notes screen: notebooks, a note list, and a note open in the editor" src="site/screenshots/notes-light.png"></picture>
-      <p align="center"><b>Notes</b> — a WYSIWYG editor that saves portable Markdown</p>
+      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/scratchpad-dark.png"><img alt="The Scratchpad floating over Today, with several tabs of brain-dump notes" src="site/screenshots/scratchpad-light.png"></picture>
+      <p align="center"><b>Scratchpad (⌘J)</b> — a floating brain-dump pad with tabs, kept on this Mac only</p>
     </td>
     <td width="50%" valign="top">
-      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/goal-dark.png"><img alt="A goal page: progress computed from linked tasks, with its tasks and notes" src="site/screenshots/goal-light.png"></picture>
-      <p align="center"><b>Goals</b> — progress computed from linked tasks</p>
+      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/notes-dark.png"><img alt="The Notes screen: notebooks, a note list, and a note open in the editor" src="site/screenshots/notes-light.png"></picture>
+      <p align="center"><b>Notes</b> — a WYSIWYG editor that saves portable Markdown</p>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
+      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/goal-dark.png"><img alt="A goal page: progress computed from linked tasks, with its tasks and notes" src="site/screenshots/goal-light.png"></picture>
+      <p align="center"><b>Goals</b> — progress computed from linked tasks</p>
+    </td>
+    <td width="50%" valign="top">
       <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/search-dark.png"><img alt="The ⌘K palette searching tasks, goals and note bodies" src="site/screenshots/search-light.png"></picture>
       <p align="center"><b>Search (⌘K)</b> — tasks, goals, notebooks, and note bodies</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/activity-dark.png"><img alt="Activity: the tasks created and completed on a chosen day" src="site/screenshots/activity-light.png"></picture>
+      <p align="center"><b>Activity</b> — what you created and finished on any day</p>
     </td>
     <td width="50%" valign="top">
       <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/today-light.png"><img alt="Today in the other theme" src="site/screenshots/today-dark.png"></picture>
@@ -81,7 +91,7 @@ Plain files mean it's portable and git/Dropbox/iCloud-friendly — point the fol
 - **Notes** — a WYSIWYG editor (headings, lists, checkboxes, quotes, a divider, links that open in your browser on ⌘-click, and smart `--`→— / `...`→…), organized into **context-scoped notebooks** with drag-and-drop filing.
 - **Goals** — progress computed live from linked tasks, plus notes you can **add and edit in place** (they also appear in Notes).
 - **Activity** — a read-only look back at the tasks you created and completed on any chosen day.
-- **Scratchpad** — a floating, draggable brain-dump pad (⌘J) that lives only on your device, never in the data folder.
+- **Scratchpad** — a floating, draggable brain-dump pad (⌘J) with tabs that lives only on your device, never in the data folder.
 - An **Office / Personal** context filter across every view, light + dark themes, and a ⌘K command palette.
 
 ## Build from source
