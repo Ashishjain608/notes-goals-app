@@ -3,12 +3,14 @@
 <head>
 <script>document.documentElement.className='js';</script>
 <meta charset="utf-8">
-<title>Notes &amp; Goals</title>
+<title>Notes &amp; Goals — calm tasks, notes and goals for your Mac</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="A calm, local-first macOS app for tasks, notes and goals. The task is the source of truth — Today is a live query, not a daily page. Plain files, no cloud, no accounts.">
+<meta name="theme-color" content="#f3f3f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0f16" media="(prefers-color-scheme: dark)">
+<meta name="description" content="A calm, local-first macOS app for tasks, notes and goals. Today is a live view, not a daily page. Plain files in a folder you choose — no cloud, no accounts, free and open source.">
 <meta property="og:title" content="Notes & Goals — a calm, local-first macOS app">
-<meta property="og:description" content="The task is the source of truth. Today is a live query, not a daily page. Plain files in a folder you own — no cloud, no accounts, no telemetry.">
+<meta property="og:description" content="Tasks, notes and goals in one calm window. Plain files in a folder you own — no cloud, no accounts, no telemetry.">
 <meta property="og:image" content="https://ashishjain608.github.io/notes-goals-app/screenshots/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -19,36 +21,35 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
 <style>
-  /* ---------------------------------------------------------- tokens (from design/tokens.css) */
+  /* ------------------------------------------------------ tokens (from design/tokens.css) */
   :root{
-    --sans:"Hanken Grotesk",system-ui,sans-serif;
+    --sans:"Hanken Grotesk",system-ui,-apple-system,sans-serif;
     --serif:"Newsreader",Georgia,serif;
-    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 
-    --bg:#f3f3f7; --surface:#fff; --surface-2:#eceef4; --raise:rgba(40,40,90,.03);
-    --ink:#1c2230; --ink-2:#586273; --ink-3:#9aa3b2;
+    --bg:#f3f3f7; --surface:#fff; --surface-2:#eceef4; --raise:rgba(40,40,90,.04);
+    --ink:#1c2230; --ink-2:#586273; --ink-3:#8a93a3;
     --line:#e7e9f0; --line-2:#d9dce4;
     --accent:#4f46e5; --accent-ink:#4038c4; --accent-soft:rgba(79,70,229,.10); --accent-line:rgba(79,70,229,.32);
-    --shadow:0 1px 2px rgba(40,40,90,.05),0 16px 38px -16px rgba(40,40,90,.18);
+    --btn:#4f46e5; --btn-hover:#4338ca;
     --shadow-sm:0 1px 2px rgba(40,40,90,.06);
-    --warn-soft:rgba(245,158,11,.12); --warn-ink:#d97706;
+    --shadow-window:0 0 0 1px rgba(28,34,48,.08),0 2px 6px rgba(40,40,90,.06),0 40px 80px -30px rgba(40,40,110,.38);
+    --warn-soft:rgba(245,158,11,.12); --warn-ink:#b45309;
     --ctx-office:#4f46e5; --ctx-personal:#059669;
-    --age-aging-ink:#d97706; --age-stale-ink:#dc2626;
     --bg-gradient:linear-gradient(135deg,#fef1f6 0%,#eef1ff 46%,#ecfdf7 100%);
   }
   @media (prefers-color-scheme:dark){
     :root{
-      --bg:#0d0f16; --surface:#181b26; --surface-2:#21252f; --raise:rgba(150,160,220,.05);
-      --ink:#e8eaf2; --ink-2:#9aa3b4; --ink-3:#616c7e;
+      --bg:#0d0f16; --surface:#181b26; --surface-2:#21252f; --raise:rgba(150,160,220,.06);
+      --ink:#e8eaf2; --ink-2:#a0a9ba; --ink-3:#6f7a8c;
       --line:#262b38; --line-2:#353c4b;
-      --accent:#818cf8; --accent-ink:#a3adff; --accent-soft:rgba(129,140,248,.18); --accent-line:rgba(129,140,248,.32);
-      --shadow:0 1px 2px rgba(0,0,0,.5),0 18px 44px -16px rgba(0,0,0,.7);
+      --accent:#818cf8; --accent-ink:#a3adff; --accent-soft:rgba(129,140,248,.16); --accent-line:rgba(129,140,248,.36);
       --shadow-sm:0 1px 2px rgba(0,0,0,.5);
-      --warn-soft:rgba(251,191,36,.12); --warn-ink:#fbbf24;
+      --shadow-window:0 0 0 1px rgba(255,255,255,.08),0 2px 6px rgba(0,0,0,.4),0 40px 90px -30px rgba(0,0,0,.85);
+      --warn-soft:rgba(251,191,36,.10); --warn-ink:#fbbf24;
       --ctx-office:#818cf8; --ctx-personal:#34d399;
-      --age-aging-ink:#fbbf24; --age-stale-ink:#f87171;
       --bg-gradient:radial-gradient(58% 62% at 8% 4%,#211a33 0%,rgba(33,26,51,0) 58%),
                     radial-gradient(50% 56% at 96% 12%,#122036 0%,rgba(18,32,54,0) 56%),
                     radial-gradient(60% 64% at 80% 108%,#0d2620 0%,rgba(13,38,32,0) 56%),
@@ -56,156 +57,247 @@
     }
   }
 
-  /* ---------------------------------------------------------------------- reset */
+  /* ------------------------------------------------------------------------- base */
   *,*::before,*::after{box-sizing:border-box}
-  html{-webkit-text-size-adjust:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;overflow-x:hidden}
-  h1,h2,h3{margin:0}
-  p{margin:0}
-  ul{margin:0;padding:0;list-style:none}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:76px}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;
+    overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  h1,h2,h3,h4,p,figure,blockquote,pre{margin:0}
+  ul,ol{margin:0;padding:0;list-style:none}
   a{color:inherit}
   img{max-width:100%;display:block}
-  button{font:inherit;color:inherit}
-  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
-  .container{max-width:1120px;margin:0 auto;padding:0 24px}
+  svg{flex-shrink:0}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+  .container{max-width:1160px;margin:0 auto;padding-inline:24px}
   .mono{font-family:var(--mono)}
-  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}}
+  kbd{display:inline-block;min-width:1.9em;padding:.1em .45em;border:1px solid var(--line-2);border-bottom-width:2px;
+    border-radius:6px;background:var(--surface);color:var(--ink);font-family:var(--mono);font-size:.8em;font-weight:500;
+    line-height:1.45;text-align:center;vertical-align:.06em}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation-duration:.001ms !important;transition-duration:.001ms !important}
+  }
 
-  /* ------------------------------------------------------------------ reveal-on-scroll */
-  /* No-JS/no-script visitors (and this file's own qlmanage check) get the page
-     fully visible by default; the fade/rise is opt-in once script confirms it
-     can also flip .in-view back on. */
-  .js .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+  /* No-JS visitors get everything visible; the rise-in is opt-in once script runs. */
+  .js .reveal{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
   .js .reveal.in-view{opacity:1;transform:none}
 
-  /* --------------------------------------------------------------------- site header */
-  .site-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
-    padding:14px 24px;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--line)}
+  /* ---------------------------------------------------------------------- buttons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:14px 22px;border-radius:11px;
+    font-size:15px;font-weight:600;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;
+    transition:transform .15s ease,box-shadow .15s ease,background-color .15s ease,border-color .15s ease}
+  .btn svg{width:17px;height:17px}
+  .btn-primary{background:var(--btn);color:#fff;border:1px solid transparent;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 10px 24px -10px rgba(79,70,229,.7)}
+  .btn-primary:hover{background:var(--btn-hover);transform:translateY(-1px)}
+  .btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line-2);box-shadow:var(--shadow-sm)}
+  .btn-ghost:hover{border-color:var(--accent-line);transform:translateY(-1px)}
+  .btn-sm{padding:9px 14px;border-radius:9px;font-size:14px}
+
+  /* ------------------------------------------------------------------------ header */
+  .site-header{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--line);
+    background:color-mix(in srgb,var(--bg) 80%,transparent);
+    -webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px)}
+  .header-inner{max-width:1160px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:36px}
   .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
-  .brand-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow-sm);flex-shrink:0}
-  .brand-mark span{font-family:var(--serif);font-style:italic;color:var(--accent);font-size:17px;line-height:1;margin-top:-1px}
-  .brand-word{font-weight:600;font-size:15px;letter-spacing:-.01em}
-  .header-actions{display:flex;align-items:center;gap:18px}
-  .link-quiet{font-size:14px;font-weight:500;color:var(--ink-2);text-decoration:none;white-space:nowrap}
-  .link-quiet:hover{color:var(--accent-ink)}
-  @media (max-width:560px){.header-actions .btn-primary{display:none}}
+  .brand-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);
+    background:var(--surface);box-shadow:var(--shadow-sm)}
+  .brand-mark span{margin-top:-1px;font-family:var(--serif);font-style:italic;font-size:18px;line-height:1;color:var(--accent)}
+  .brand-word{font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .nav-links{display:flex;gap:28px}
+  .nav-links a{font-size:14px;font-weight:500;color:var(--ink-2);text-decoration:none}
+  .nav-links a:hover{color:var(--ink)}
+  .header-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .gh-link{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:9px;font-size:14px;font-weight:500;
+    color:var(--ink-2);text-decoration:none;transition:background-color .15s ease,color .15s ease}
+  .gh-link svg{width:18px;height:18px}
+  .gh-link:hover{color:var(--ink);background:var(--raise)}
+  @media (max-width:860px){.nav-links{display:none}}
+  @media (max-width:440px){.gh-link span{display:none}.brand-word{display:none}}
 
-  /* ------------------------------------------------------------------------ buttons */
-  .btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;font-weight:600;
-    font-size:15px;padding:12px 22px;border-radius:10px;text-decoration:none;box-shadow:var(--shadow-sm);
-    transition:transform .15s ease,box-shadow .15s ease;border:none;cursor:pointer}
-  .btn-primary:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
-  .btn-secondary{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);font-weight:500;font-size:14.5px;
-    text-decoration:none;padding:6px 2px;border-bottom:1px solid transparent}
-  .btn-secondary:hover{color:var(--accent-ink);border-color:var(--accent-line)}
+  /* -------------------------------------------------------------------------- hero */
+  .hero{position:relative;isolation:isolate;padding-block:88px 72px;text-align:center}
+  .hero-wash{position:absolute;inset:0 0 auto;height:960px;z-index:-1;pointer-events:none;background:var(--bg-gradient);
+    -webkit-mask-image:linear-gradient(#000 45%,transparent);mask-image:linear-gradient(#000 45%,transparent)}
+  .hero-badge{display:inline-flex;align-items:center;gap:10px;padding:6px 14px 6px 8px;border-radius:999px;
+    border:1px solid var(--line-2);background:color-mix(in srgb,var(--surface) 70%,transparent);
+    font-size:13px;font-weight:500;color:var(--ink-2)}
+  .hero-badge b{padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink);font-size:12px;font-weight:600}
+  .hero-title{margin-top:26px;font-family:var(--serif);font-weight:400;font-size:clamp(44px,7.4vw,88px);line-height:.98;letter-spacing:-.032em}
+  .hero-title em{display:block;font-style:italic;color:var(--accent-ink)}
+  .hero-lede{max-width:48ch;margin:26px auto 0;font-size:clamp(17px,1.9vw,19.5px);line-height:1.6;color:var(--ink-2)}
+  .cta-row{margin-top:36px;display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+  .release-meta{margin-top:14px;font-size:12.5px;color:var(--ink-3)}
+  .hero-media{position:relative;max-width:1080px;margin:68px auto 0}
+  .hero-media::before{content:"";position:absolute;inset:10% 8% -4%;z-index:-1;border-radius:50%;
+    background:radial-gradient(closest-side,rgba(99,102,241,.35),transparent);filter:blur(48px)}
+  .hero-caption{margin-top:20px;font-size:14px;color:var(--ink-3)}
+  .promises{margin-top:44px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px 28px;font-size:14px;font-weight:500;color:var(--ink-2)}
+  .promises li{display:inline-flex;align-items:center;gap:8px}
+  .promises svg{width:16px;height:16px;color:var(--ctx-personal)}
 
-  /* ---------------------------------------------------------------------------- hero */
-  .hero-wash{position:absolute;inset:0 0 auto 0;height:820px;background:var(--bg-gradient);
-    -webkit-mask-image:linear-gradient(to bottom,#000 0%,transparent 92%);mask-image:linear-gradient(to bottom,#000 0%,transparent 92%);
-    z-index:-1;pointer-events:none}
-  /* z-index:0 gives .hero its own stacking context, so the wash's negative
-     z-index keeps it behind the hero text instead of escaping to the page root
-     (where it could paint over unpositioned content — a real stacking bug, not
-     just a qlmanage quirk: an absolutely-positioned z-index:0 layer paints
-     after unpositioned in-flow siblings per CSS painting order). */
-  .hero{position:relative;z-index:0;padding:76px 0 96px}
-  .hero-grid{display:grid;gap:52px;justify-items:center;text-align:center}
-  .hero-copy{max-width:720px;display:flex;flex-direction:column;align-items:center}
-  .hero-copy .hero-cta{justify-content:center}
-  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:14px}
-  .hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(32px,4.6vw,48px);line-height:1.1;letter-spacing:-.015em}
-  .hero-lede{margin-top:18px;font-size:17px;line-height:1.65;color:var(--ink-2);max-width:52ch}
-  .hero-cta{margin-top:30px;display:flex;flex-wrap:wrap;align-items:center;gap:22px}
-  .cta-col{display:flex;flex-direction:column;gap:6px}
-  .release-line{font-size:12.5px;color:var(--ink-3)}
-  .release-line b{color:var(--ink-2);font-weight:600}
-  .hero-req{margin-top:14px;font-size:12.5px;color:var(--ink-3)}
+  /* A framed 1296×(896|912) capture: crop its 48px transparent/flat margin down to
+     the 1200×800 app window, then give the window a radius and shadow of our own
+     so it reads right in both themes. */
+  .window{position:relative;aspect-ratio:3/2;overflow:hidden;border-radius:14px;background:var(--surface);box-shadow:var(--shadow-window)}
+  .window img{position:absolute;left:-4%;top:-6%;width:108%;max-width:none;height:auto}
+  .window-sm{border-radius:9px;box-shadow:0 0 0 1px var(--line)}
 
-  /* ----------------------------------------------------------------------- screenshots */
-  /* Each PNG is a framed window with ~48px of transparent shadow around it. */
-  .shot{display:block;width:100%}
-  .shot img{width:100%;height:auto}
-  .hero-shot{max-width:1100px}
-  .gallery{margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:24px 32px}
-  .gallery figure{margin:0}
-  .gallery .wide{grid-column:1/-1}
-  .gallery figcaption{margin-top:4px;text-align:center;font-size:14px;color:var(--ink-2)}
-  .gallery figcaption b{color:var(--ink);font-weight:600}
-  @media (max-width:760px){.gallery{grid-template-columns:1fr}}
+  /* ---------------------------------------------------------------------- sections */
+  .section{padding-block:128px}
+  .band{background:var(--surface);border-block:1px solid var(--line)}
+  .kicker{margin-bottom:16px;font-size:13.5px;font-weight:600;color:var(--accent-ink)}
+  .h2{font-family:var(--serif);font-weight:400;font-size:clamp(34px,4.8vw,58px);line-height:1.02;letter-spacing:-.025em}
+  .h2 em{font-style:italic;color:var(--accent-ink)}
+  .lede{margin-top:20px;max-width:58ch;font-size:17px;line-height:1.7;color:var(--ink-2)}
+  .head-center{max-width:780px;margin-inline:auto;text-align:center}
+  .head-center .lede{margin-inline:auto}
+  @media (max-width:640px){.section{padding-block:84px}.hero{padding-block:56px 56px}}
 
-  /* ------------------------------------------------------------------------- sections */
-  main section{padding:88px 0}
-  .section-head{max-width:640px}
-  .section-head h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3.6vw,34px);line-height:1.18;letter-spacing:-.01em}
-  .section-lede{margin-top:14px;font-size:15.5px;line-height:1.7;color:var(--ink-2)}
-  .section-lede + .section-lede{margin-top:12px}
+  /* -------------------------------------------------------------------------- idea */
+  .idea-grid{margin-top:52px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:64px;align-items:start}
+  .pull{font-family:var(--serif);font-style:italic;font-size:clamp(24px,2.8vw,32px);line-height:1.34;letter-spacing:-.01em}
+  .pull b{font-style:normal;font-weight:500;color:var(--accent-ink)}
+  .prose p{font-size:16.5px;line-height:1.75;color:var(--ink-2)}
+  .prose p + p{margin-top:16px}
 
-  .idea{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-  .idea-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:56px;align-items:start;margin-top:34px}
-  .pull{font-family:var(--serif);font-style:italic;font-size:clamp(22px,2.6vw,28px);line-height:1.4;color:var(--ink)}
-  .pull b{color:var(--accent-ink);font-weight:500;font-style:normal}
+  /* --------------------------------------------------------------------- features */
+  .spotlights{margin-top:88px;display:flex;flex-direction:column;gap:128px}
+  .spotlight{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:72px;align-items:center}
+  .spotlight.flip{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+  .spotlight.flip .spot-copy{order:2}
+  .spot-label{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600}
+  .spot-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent-ink)}
+  .spot-icon svg{width:18px;height:18px}
+  .spot-title{margin-top:20px;font-family:var(--serif);font-weight:400;font-size:clamp(28px,3.3vw,40px);line-height:1.08;letter-spacing:-.018em}
+  .spot-text{margin-top:16px;font-size:16.5px;line-height:1.7;color:var(--ink-2)}
+  .ticks{margin-top:24px;display:grid;gap:12px}
+  .ticks li{display:flex;gap:12px;font-size:15px;line-height:1.55;color:var(--ink-2)}
+  .ticks svg{width:17px;height:17px;margin-top:2px;color:var(--accent)}
+  @media (max-width:900px){
+    .spotlights{gap:88px}
+    .spotlight,.spotlight.flip{grid-template-columns:minmax(0,1fr);gap:36px}
+    .spotlight.flip .spot-copy{order:0}
+  }
 
-  .features-grid{margin-top:44px;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
-    border:1px solid var(--line);border-radius:14px;overflow:hidden}
-  .feature{background:var(--surface);padding:24px 22px;transition:background-color .15s ease}
-  .feature:hover{background:var(--raise)}
-  .feature-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent-ink);margin-bottom:14px}
-  .feature-icon svg{width:17px;height:17px}
-  .feature-icon.dots{gap:4px;background:transparent}
-  .feature-icon.dots i{width:9px;height:9px;border-radius:50%;display:inline-block}
-  .feature-icon.dots i:first-child{background:var(--ctx-office)}
-  .feature-icon.dots i:last-child{background:var(--ctx-personal);margin-left:2px}
-  .feature h3{font-size:15px;font-weight:600;letter-spacing:-.005em}
-  .feature p{margin-top:7px;font-size:13.5px;line-height:1.55;color:var(--ink-2)}
-  @media (max-width:900px){.features-grid{grid-template-columns:repeat(2,1fr)}}
-  @media (max-width:520px){.features-grid{grid-template-columns:1fr}}
+  .cards{margin-top:128px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+  .card{padding:12px 12px 26px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-sm)}
+  .card-body{padding:22px 12px 0}
+  .card-title{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600}
+  .card-text{margin-top:8px;font-size:14.5px;line-height:1.6;color:var(--ink-2)}
+  @media (max-width:900px){.cards{grid-template-columns:minmax(0,1fr);max-width:560px;margin-inline:auto}}
 
-  .data-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;margin-top:34px}
-  .promise-list{margin-top:20px;display:flex;flex-direction:column;gap:10px}
-  .promise-list li{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-2)}
-  .promise-list svg{width:15px;height:15px;color:var(--accent);flex-shrink:0}
-  pre.code{margin:0;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:20px 22px;
-    font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--ink-2);overflow-x:auto;white-space:pre}
-  pre.code .hi{color:var(--accent-ink);font-weight:600}
-  pre.code .dim{color:var(--ink-3)}
+  .extras{margin-top:40px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+  .extras li{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;
+    background:var(--surface);font-size:13.5px;color:var(--ink-2)}
+  .extras svg{width:15px;height:15px;color:var(--ink-3)}
+  .ctx-dots{display:inline-flex;gap:3px}
+  .ctx-dots i{width:8px;height:8px;border-radius:50%;background:var(--ctx-office)}
+  .ctx-dots i + i{background:var(--ctx-personal)}
 
-  .install-steps{margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:36px 44px}
-  .step{display:flex;gap:16px}
-  .step-num{font-family:var(--serif);font-style:italic;font-size:26px;color:var(--accent-line);line-height:1;flex-shrink:0;width:34px}
-  .step h3{font-size:15.5px;font-weight:600;letter-spacing:-.005em}
-  .step p{margin-top:6px;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
-  .step code{font-family:var(--mono);font-size:12px;background:var(--surface-2);border:1px solid var(--line);
-    border-radius:5px;padding:1px 6px;color:var(--ink)}
-  .note-box{margin-top:44px;display:flex;gap:12px;align-items:flex-start;background:var(--warn-soft);
-    border:1px solid var(--accent-line);border-radius:12px;padding:16px 18px}
-  .note-box svg{width:17px;height:17px;color:var(--warn-ink);flex-shrink:0;margin-top:1px}
-  .note-box p{font-size:13.5px;line-height:1.65;color:var(--ink-2)}
-  .note-box code{font-family:var(--mono);font-size:12px;background:var(--surface-2);border:1px solid var(--line);
-    border-radius:5px;padding:1px 6px;color:var(--ink)}
+  /* ------------------------------------------------------- your data: two views */
+  .twin{margin-top:60px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+  .pane{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--bg)}
+  .pane-bar{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);
+    font-size:12.5px;color:var(--ink-3)}
+  .pane-bar svg{width:15px;height:15px}
+  .pane-path{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pane-tag{margin-left:auto;padding:2px 9px;border-radius:999px;border:1px solid var(--line-2);font-size:11.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
 
-  .source{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+  .note{flex:1;padding:26px 30px 32px;background:var(--surface)}
+  .note-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);
+    font-size:12px;color:var(--ink-2)}
+  .chip svg{width:13px;height:13px}
+  .chip-dot{width:7px;height:7px;border-radius:50%;background:var(--ctx-personal)}
+  .note-title{margin-top:18px;font-size:25px;font-weight:600;line-height:1.25;letter-spacing:-.012em}
+  .note-body{margin-top:14px;font-size:15px;line-height:1.65}
+  .note-h{font-size:17.5px;font-weight:600}
+  .note-p{margin-top:8px;color:var(--ink-2)}
+  .note-list{margin-top:10px;display:grid;gap:5px}
+  .note-bullet{position:relative;padding-left:18px}
+  .note-bullet::before{content:"";position:absolute;left:5px;top:.68em;width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
+  .note-check{display:flex;align-items:flex-start;gap:10px}
+  .box{display:grid;place-items:center;width:16px;height:16px;margin-top:3px;border:1.5px solid var(--line-2);border-radius:5px;flex-shrink:0}
+  .box svg{width:12px;height:12px}
+  .box-done{border-color:var(--accent);background:var(--accent);color:#fff}
+  .is-done{color:var(--ink-3);text-decoration:line-through}
+  .note-quote{margin-top:14px;padding-left:14px;border-left:3px solid var(--accent-line);font-style:italic;color:var(--ink-2)}
 
-  footer.site-footer{border-top:1px solid var(--line);padding:36px 0}
-  .footer-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
-  .footer-brand{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink-2)}
-  .footer-links{display:flex;align-items:center;gap:22px;font-size:13.5px}
+  .file{flex:1;padding-block:18px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.85;color:var(--ink-2)}
+  .file > span{display:block;padding-inline:20px;white-space:pre}
+  .file .k{color:var(--accent-ink)}
+  .file .d{color:var(--ink-3)}
+
+  /* Paired lines: point at either side and both light up. */
+  [data-l]{border-radius:5px;transition:background-color .25s ease,box-shadow .25s ease}
+  .note .lit{background:var(--accent-soft);box-shadow:0 0 0 5px var(--accent-soft)}
+  .file .lit{border-radius:0;background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+
+  .data-foot{margin-top:44px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px 64px;align-items:center}
+  .tree{overflow-x:auto;padding:18px 22px;border:1px solid var(--line);border-radius:14px;background:var(--bg);
+    font-family:var(--mono);font-size:12.5px;line-height:1.85;color:var(--ink-2);white-space:pre}
+  .tree .hi{color:var(--accent-ink);font-weight:500}
+  .tree .d{color:var(--ink-3)}
+  .facts{display:grid;gap:16px}
+  .facts li{display:flex;gap:12px;font-size:15px;line-height:1.6;color:var(--ink-2)}
+  .facts b{color:var(--ink);font-weight:600}
+  .facts svg{width:17px;height:17px;margin-top:3px;color:var(--ctx-personal)}
+  @media (max-width:900px){.twin,.data-foot{grid-template-columns:minmax(0,1fr)}}
+
+  /* ----------------------------------------------------------------------- install */
+  .steps{margin-top:60px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+  .step{padding:24px 22px 26px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+  .step-num{font-family:var(--serif);font-style:italic;font-size:36px;line-height:1;color:var(--accent)}
+  .step-title{margin-top:16px;font-size:16px;font-weight:600}
+  .step-text{margin-top:8px;font-size:14px;line-height:1.62;color:var(--ink-2)}
+  .inline-code{padding:1px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);
+    font-family:var(--mono);font-size:12px;color:var(--ink);overflow-wrap:anywhere}
+  .note-box{margin-top:20px;display:flex;align-items:flex-start;gap:12px;padding:18px 20px;border:1px solid var(--line);
+    border-radius:14px;background:var(--warn-soft)}
+  .note-box svg{width:18px;height:18px;margin-top:2px;color:var(--warn-ink)}
+  .note-box p{font-size:14px;line-height:1.7;color:var(--ink-2)}
+  @media (max-width:1000px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:560px){.steps{grid-template-columns:minmax(0,1fr)}}
+
+  /* --------------------------------------------------------------------------- FAQ */
+  .faq{max-width:800px;margin:52px auto 0;border-top:1px solid var(--line)}
+  .faq details{border-bottom:1px solid var(--line)}
+  .faq summary{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 4px;cursor:pointer;list-style:none;
+    font-size:17px;font-weight:600}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";font-family:var(--mono);font-size:22px;font-weight:400;line-height:1;color:var(--ink-3);transition:transform .2s ease}
+  .faq details[open] summary::after{transform:rotate(45deg)}
+  .faq summary:hover{color:var(--accent-ink)}
+  .faq-answer{max-width:68ch;padding:0 4px 24px;font-size:15.5px;line-height:1.72;color:var(--ink-2)}
+  .faq-answer a{color:var(--accent-ink)}
+
+  /* ----------------------------------------------------------------- closing CTA */
+  .cta{position:relative;isolation:isolate;text-align:center}
+  .cta::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--bg-gradient);
+    -webkit-mask-image:radial-gradient(80% 100% at 50% 100%,#000 30%,transparent 80%);mask-image:radial-gradient(80% 100% at 50% 100%,#000 30%,transparent 80%)}
+  .source{max-width:920px;margin:88px auto 0;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.45fr);gap:24px 40px;align-items:center;text-align:left}
+  .source-title{font-size:16px;font-weight:600}
+  .source-text{margin-top:6px;font-size:14.5px;line-height:1.65;color:var(--ink-2)}
+  .code{overflow-x:auto;padding:18px 22px;border:1px solid var(--line);border-radius:14px;background:var(--surface);
+    font-family:var(--mono);font-size:12.5px;line-height:1.85;color:var(--ink);white-space:pre}
+  .code .d{color:var(--ink-3)}
+  @media (max-width:760px){.source{grid-template-columns:minmax(0,1fr)}}
+
+  /* ------------------------------------------------------------------------ footer */
+  .site-footer{padding-block:36px;border-top:1px solid var(--line)}
+  .footer-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px}
+  .footer-brand{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-2)}
+  .footer-links{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:13.5px}
   .footer-links a{color:var(--ink-2);text-decoration:none}
   .footer-links a:hover{color:var(--accent-ink)}
 
-  @media (max-width:920px){
-    .idea-grid, .data-grid, .source{grid-template-columns:1fr}
-    .install-steps{grid-template-columns:1fr}
-  }
-  @media (max-width:560px){
-    main section{padding:60px 0}
-    .hero{padding:52px 0 64px}
-  }
+  @media (max-width:900px){.idea-grid{grid-template-columns:minmax(0,1fr);gap:28px}}
 </style>
 </head>
 <body>
 
-<!-- icon sprite — verbatim from src/components/Icon.tsx (24-grid, 1.6px stroke) -->
+<!-- Icon sprite. App icons are verbatim from src/components/Icon.tsx (24-grid, 1.6px stroke). -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <symbol id="i-today" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -230,24 +322,46 @@
     <symbol id="i-scratch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4.5 7h7M4.5 11h4.5"/><path d="M13.5 16.5l1-3 5.5-5.5 2 2-5.5 5.5-3 1z"/>
     </symbol>
-    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="m5 12.5 4.5 4.5L19 7"/>
     </symbol>
     <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>
     </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v13m0 0-4.5-4.5M12 16l4.5-4.5"/><path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+    </symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>
+    </symbol>
+    <symbol id="i-theme" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-github" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+    </symbol>
   </defs>
 </svg>
 
 <header class="site-header">
-  <a class="brand" href="#top">
-    <span class="brand-mark"><span aria-hidden="true">&amp;</span></span>
-    <span class="brand-word">Notes &amp; Goals</span>
-  </a>
-  <nav class="header-actions" aria-label="Primary">
-    <a class="link-quiet" href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">View source</a>
-    <a class="btn-primary" id="download-cta-top" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest" target="_blank" rel="noopener">Download</a>
-  </nav>
+  <div class="header-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark"><span aria-hidden="true">&amp;</span></span>
+      <span class="brand-word">Notes &amp; Goals</span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#data">Your data</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      <a class="gh-link" href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener" title="View the source code on GitHub">
+        <svg aria-hidden="true"><use href="#i-github"/></svg><span>View source</span>
+      </a>
+      <a class="btn btn-primary btn-sm js-download" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest">Download</a>
+    </div>
+  </div>
 </header>
 
 <main id="top">
@@ -255,58 +369,66 @@
   <!-- ============================================================================ HERO -->
   <section class="hero">
     <div class="hero-wash" aria-hidden="true"></div>
-    <div class="container hero-grid">
-      <div class="hero-copy">
-        <p class="eyebrow reveal">For macOS · Local-first</p>
-        <h1 class="reveal" style="transition-delay:.05s">The task is the source of truth.</h1>
-        <p class="hero-lede reveal" style="transition-delay:.1s">
-          Notes &amp; Goals is a calm home for what you're doing, writing, and working toward — tasks,
-          notes and goals, kept as plain files in a folder you choose. Today isn't a page you copy
-          forward; it's a live view of what's still open.
-        </p>
-        <div class="hero-cta reveal" style="transition-delay:.15s">
-          <a class="btn-primary" id="download-cta" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest" target="_blank" rel="noopener">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v13m0 0-4.5-4.5M12 16l4.5-4.5"/><path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-            Download for macOS
-          </a>
-          <div class="cta-col">
-            <span class="release-line mono" id="release-version" hidden></span>
-            <span class="release-line">Universal build · macOS 12+</span>
-          </div>
-          <a class="btn-secondary" href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">View source ↗</a>
-        </div>
+    <div class="container">
+      <p class="hero-badge reveal"><b>Free</b> Open source · for macOS</p>
+      <h1 class="hero-title reveal" style="transition-delay:.05s">Tasks, notes and goals. <em>One calm window.</em></h1>
+      <p class="hero-lede reveal" style="transition-delay:.1s">
+        Notes &amp; Goals keeps what you're doing, writing and working toward as plain files in a folder
+        you choose. No accounts, no cloud, and no daily page to copy forward.
+      </p>
+      <div class="cta-row reveal" style="transition-delay:.15s">
+        <a class="btn btn-primary js-download" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest">
+          <svg aria-hidden="true"><use href="#i-download"/></svg>Download for macOS
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">
+          <svg aria-hidden="true"><use href="#i-github"/></svg>View source
+        </a>
       </div>
+      <p class="release-meta mono reveal" id="release-meta" style="transition-delay:.15s">Universal · Apple Silicon &amp; Intel · macOS 12+</p>
 
-      <picture class="shot hero-shot reveal" style="transition-delay:.2s">
-        <source srcset="screenshots/today-dark.png" media="(prefers-color-scheme: dark)">
-        <img src="screenshots/today-light.png" width="1296" height="896"
-             alt="Notes &amp; Goals on Today: the day's slate of committed tasks above the open tasks for Office and Personal, with the nav rail on the left.">
-      </picture>
+      <figure class="hero-media reveal" style="transition-delay:.22s">
+        <div class="window">
+          <picture>
+            <source srcset="screenshots/today-dark.png" media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)">
+            <source srcset="screenshots/today-light.png" media="(prefers-reduced-motion: reduce)">
+            <img src="screenshots/demo.gif" width="1296" height="912"
+                 alt="A short tour of Notes &amp; Goals: adding a task and finishing today's slate, jumping to a goal with ⌘K and editing its note, jotting in the ⌘J scratchpad, and switching to dark mode.">
+          </picture>
+        </div>
+        <figcaption class="hero-caption">Plan the day, find anything with <kbd>⌘K</kbd>, and jot a thought in the <kbd>⌘J</kbd> scratchpad.</figcaption>
+      </figure>
+
+      <ul class="promises reveal">
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg>No account</li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg>No cloud</li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg>No telemetry</li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg>Markdown &amp; JSON files</li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg>MIT licensed</li>
+      </ul>
     </div>
   </section>
 
   <!-- ============================================================================ THE IDEA -->
-  <section class="idea" id="idea">
+  <section class="section band" id="idea">
     <div class="container">
-      <div class="section-head reveal">
-        <p class="eyebrow">The idea</p>
-        <h2>No daily page. No copy-forward. Just what's still open.</h2>
+      <div class="reveal">
+        <p class="kicker">The idea</p>
+        <h2 class="h2">The task is the <em>source of truth.</em></h2>
       </div>
       <div class="idea-grid">
         <p class="pull reveal">
-          Most task apps make you re-create today from yesterday. <b>Notes &amp; Goals doesn't have a
-          daily page at all</b> — Today is a live query over every task you haven't finished.
+          Most task apps make you rebuild today from yesterday. <b>Notes &amp; Goals has no daily page at
+          all</b> — Today is a live view of every task you haven't finished.
         </p>
-        <div class="reveal" style="transition-delay:.06s">
-          <p class="section-lede">
-            Mark something done or dropped and it's gone. Leave it open and it simply keeps showing up
-            — quietly getting older — until you deal with it. Carry-forward is automatic and invisible;
-            there's no migration step, ever.
+        <div class="prose reveal" style="transition-delay:.06s">
+          <p>
+            Mark something done or dropped and it's gone. Leave it open and it keeps showing up, quietly
+            getting older, until you deal with it. Carry-forward is automatic; there's no migration step, ever.
           </p>
-          <p class="section-lede">
-            Some days call for more than a queue, though. Commit up to five tasks to today's slate,
-            mixing office and personal as you like, and finish them — that's the day's only finish
-            line. No points, no streaks, no penalties.
+          <p>
+            Some days need more than a queue. Commit up to five tasks to today's slate, office and personal
+            mixed as you like, and finish them. That's the day's only finish line — no points, no streaks,
+            no penalties.
           </p>
         </div>
       </div>
@@ -314,167 +436,292 @@
   </section>
 
   <!-- ============================================================================ FEATURES -->
-  <section id="features">
+  <section class="section" id="features">
     <div class="container">
-      <div class="section-head reveal">
-        <p class="eyebrow">What's inside</p>
-        <h2>Everything a day of work touches, in one quiet window.</h2>
+      <div class="head-center reveal">
+        <p class="kicker">What's inside</p>
+        <h2 class="h2">Plan it, write it, <em>finish it.</em></h2>
+        <p class="lede">A slate for the tasks that matter today, a real editor for the thinking around them, and goals that keep score for you.</p>
       </div>
-      <ul class="features-grid reveal" style="transition-delay:.06s">
-        <li class="feature">
-          <span class="feature-icon"><svg><use href="#i-today"/></svg></span>
-          <h3>The day's slate</h3>
-          <p>Commit up to five tasks to today. Finish them and the day is done — no points, no streaks, no penalties.</p>
+
+      <div class="spotlights">
+        <article class="spotlight">
+          <div class="spot-copy reveal">
+            <p class="spot-label"><span class="spot-icon"><svg aria-hidden="true"><use href="#i-today"/></svg></span>Today</p>
+            <h3 class="spot-title">Give the day a finish line.</h3>
+            <p class="spot-text">Commit up to five tasks to today's slate. Finish them all and the day is complete — then close the laptop.</p>
+            <ul class="ticks">
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>Open tasks carry forward on their own and show their age.</li>
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>Priority flags, due dates, snooze, and subtasks.</li>
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>A slide-in detail panel for everything else.</li>
+            </ul>
+          </div>
+          <div class="window reveal" style="transition-delay:.08s">
+            <picture>
+              <source srcset="screenshots/today-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="screenshots/today-light.png" width="1296" height="896" loading="lazy"
+                   alt="Today: the day's slate of committed tasks above the open tasks for Office and Personal.">
+            </picture>
+          </div>
+        </article>
+
+        <article class="spotlight flip">
+          <div class="spot-copy reveal">
+            <p class="spot-label"><span class="spot-icon"><svg aria-hidden="true"><use href="#i-scratch"/></svg></span>Scratchpad <kbd>⌘J</kbd></p>
+            <h3 class="spot-title">Get it out of your head, then get back to work.</h3>
+            <p class="spot-text">A floating brain-dump pad that opens over whatever you're doing. Drag it anywhere, resize it, and keep separate scraps in tabs.</p>
+            <ul class="ticks">
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><kbd>⌘T</kbd> for a new tab, <kbd>⌘1</kbd>–<kbd>⌘9</kbd> to jump between them.</span></li>
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>Insert the time, copy a tab, or clear it in one click.</li>
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>Stays on this Mac — never written to your data folder.</li>
+            </ul>
+          </div>
+          <div class="window reveal" style="transition-delay:.08s">
+            <picture>
+              <source srcset="screenshots/scratchpad-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="screenshots/scratchpad-light.png" width="1296" height="896" loading="lazy"
+                   alt="The Scratchpad floating over Today, with several tabs of brain-dump notes.">
+            </picture>
+          </div>
+        </article>
+
+        <article class="spotlight">
+          <div class="spot-copy reveal">
+            <p class="spot-label"><span class="spot-icon"><svg aria-hidden="true"><use href="#i-notes"/></svg></span>Notes</p>
+            <h3 class="spot-title">Write in a real editor. Keep plain Markdown.</h3>
+            <p class="spot-text">Headings, lists, checklists, quotes and dividers as you type — saved as a <span class="mono">.md</span> file any editor can open.</p>
+            <ul class="ticks">
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>Notebooks for Office and Personal, with drag-and-drop filing.</li>
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>Links open in your browser on ⌘-click.</li>
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>Smart punctuation: <span class="mono">--</span> becomes —, <span class="mono">...</span> becomes ….</li>
+            </ul>
+          </div>
+          <div class="window reveal" style="transition-delay:.08s">
+            <picture>
+              <source srcset="screenshots/notes-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="screenshots/notes-light.png" width="1296" height="896" loading="lazy"
+                   alt="Notes: notebooks, a list of notes, and a note open in the editor with a heading, a checklist and a quote.">
+            </picture>
+          </div>
+        </article>
+      </div>
+
+      <ul class="cards">
+        <li class="card reveal">
+          <div class="window window-sm">
+            <picture>
+              <source srcset="screenshots/goal-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="screenshots/goal-light.png" width="1296" height="896" loading="lazy" alt="A goal page with its progress, linked tasks and notes.">
+            </picture>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Goals</h3>
+            <p class="card-text">Longer-term aims whose progress comes from the tasks you link. Nothing to update by hand.</p>
+          </div>
         </li>
-        <li class="feature">
-          <span class="feature-icon"><svg><use href="#i-search"/></svg></span>
-          <h3>Global search — ⌘K</h3>
-          <p>Search tasks, goals, notebooks and notes — note bodies included — and jump straight to the result.</p>
+        <li class="card reveal" style="transition-delay:.06s">
+          <div class="window window-sm">
+            <picture>
+              <source srcset="screenshots/search-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="screenshots/search-light.png" width="1296" height="896" loading="lazy" alt="The ⌘K palette finding a task, a goal and a line inside a note.">
+            </picture>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Search <kbd>⌘K</kbd></h3>
+            <p class="card-text">Find tasks, goals, notebooks and words inside notes, then jump straight there.</p>
+          </div>
         </li>
-        <li class="feature">
-          <span class="feature-icon"><svg><use href="#i-notes"/></svg></span>
-          <h3>Notes</h3>
-          <p>A WYSIWYG editor that writes clean Markdown underneath. Headings, lists, checkboxes, quotes — nothing proprietary.</p>
-        </li>
-        <li class="feature">
-          <span class="feature-icon"><svg><use href="#i-goals"/></svg></span>
-          <h3>Goals</h3>
-          <p>Longer-term aims with progress computed live from the tasks linked to them. Nothing to update by hand.</p>
-        </li>
-        <li class="feature">
-          <span class="feature-icon"><svg><use href="#i-notebook"/></svg></span>
-          <h3>Notebooks</h3>
-          <p>Context-scoped notebooks group your notes, with drag-and-drop filing. No nesting, no ceremony.</p>
-        </li>
-        <li class="feature">
-          <span class="feature-icon"><svg><use href="#i-clock"/></svg></span>
-          <h3>Activity</h3>
-          <p>A read-only look back at what you created and finished on any chosen day. No journaling required.</p>
-        </li>
-        <li class="feature">
-          <span class="feature-icon"><svg><use href="#i-scratch"/></svg></span>
-          <h3>Scratchpad — ⌘J</h3>
-          <p>A floating, draggable brain-dump that lives only on your device — never in your data folder.</p>
-        </li>
-        <li class="feature">
-          <span class="feature-icon dots"><i></i><i></i></span>
-          <h3>Office / Personal</h3>
-          <p>One context filter runs across every view, so work and life stay legible without ever blurring.</p>
+        <li class="card reveal" style="transition-delay:.12s">
+          <div class="window window-sm">
+            <picture>
+              <source srcset="screenshots/activity-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="screenshots/activity-light.png" width="1296" height="896" loading="lazy" alt="Activity: the tasks created and completed on a chosen day.">
+            </picture>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Activity</h3>
+            <p class="card-text">Look back at what you created and finished on any day. No journaling required.</p>
+          </div>
         </li>
       </ul>
-      <div class="gallery">
-        <figure class="wide reveal">
-          <picture class="shot">
-            <source srcset="screenshots/notes-dark.png" media="(prefers-color-scheme: dark)">
-            <img src="screenshots/notes-light.png" width="1296" height="896" loading="lazy"
-                 alt="The Notes screen: notebooks, a list of notes, and a note open in the editor with a heading, a checklist and a quote.">
-          </picture>
-          <figcaption><b>Notes</b> — a calm editor that saves plain Markdown underneath.</figcaption>
-        </figure>
-        <figure class="reveal">
-          <picture class="shot">
-            <source srcset="screenshots/goal-dark.png" media="(prefers-color-scheme: dark)">
-            <img src="screenshots/goal-light.png" width="1296" height="896" loading="lazy"
-                 alt="A goal page with its progress bar, linked tasks and notes.">
-          </picture>
-          <figcaption><b>Goals</b> — progress follows the tasks you link.</figcaption>
-        </figure>
-        <figure class="reveal" style="transition-delay:.06s">
-          <picture class="shot">
-            <source srcset="screenshots/search-dark.png" media="(prefers-color-scheme: dark)">
-            <img src="screenshots/search-light.png" width="1296" height="896" loading="lazy"
-                 alt="The ⌘K palette finding a task, a goal and a line inside a note.">
-          </picture>
-          <figcaption><b>Search</b> — ⌘K finds tasks, goals and words inside notes.</figcaption>
-        </figure>
-      </div>
+
+      <ul class="extras reveal">
+        <li><span class="ctx-dots" aria-hidden="true"><i></i><i></i></span>Office / Personal filter on every view</li>
+        <li><svg aria-hidden="true"><use href="#i-theme"/></svg>Light and dark themes</li>
+        <li><svg aria-hidden="true"><use href="#i-folder"/></svg>Settings <kbd>⌘,</kbd> to change or reveal your data folder</li>
+      </ul>
     </div>
   </section>
 
   <!-- ============================================================================ YOUR DATA -->
-  <section class="idea" id="data">
+  <section class="section band" id="data">
     <div class="container">
-      <div class="section-head reveal">
-        <p class="eyebrow">Your data is yours</p>
-        <h2>Plain files, in a folder you choose.</h2>
+      <div class="head-center reveal">
+        <p class="kicker">Your data</p>
+        <h2 class="h2">Same note. <em>Two views.</em></h2>
+        <p class="lede">
+          Everything you write lands in a folder you choose, as files you can read without the app — Markdown
+          for notes, JSON for tasks and goals. Point at a line on either side to find its twin.
+        </p>
       </div>
-      <div class="data-grid">
-        <div class="reveal" style="transition-delay:.06s">
-          <p class="section-lede" style="margin-top:0">
-            No database, no server, no account. Notes &amp; Goals writes tasks, notes, and goals as
-            individual files — JSON for structured data, Markdown with YAML frontmatter for notes.
-            Point the folder at Dropbox, iCloud Drive, or a git repo and it syncs itself; that's your
-            call, not the app's.
-          </p>
-          <ul class="promise-list">
-            <li><svg><use href="#i-check"/></svg> No accounts</li>
-            <li><svg><use href="#i-check"/></svg> No cloud</li>
-            <li><svg><use href="#i-check"/></svg> No telemetry</li>
-          </ul>
+
+      <div class="twin reveal" style="transition-delay:.06s">
+        <div class="pane">
+          <div class="pane-bar">
+            <svg aria-hidden="true"><use href="#i-notes"/></svg>
+            <span class="pane-path">Notes &amp; Goals</span>
+            <span class="pane-tag">In the app</span>
+          </div>
+          <div class="note">
+            <div class="note-meta">
+              <span class="chip" data-l="ctx"><span class="chip-dot"></span>Personal</span>
+              <span class="chip" data-l="nb"><svg aria-hidden="true"><use href="#i-notebook"/></svg>Training</span>
+              <span class="chip" data-l="goal"><svg aria-hidden="true"><use href="#i-goals"/></svg>Run a half marathon in November</span>
+            </div>
+            <h3 class="note-title" data-l="title">Half marathon training plan</h3>
+            <div class="note-body">
+              <h4 class="note-h" data-l="h">Weeks 9–12</h4>
+              <p class="note-p" data-l="p">Base is solid — now it's about the long run.</p>
+              <ul class="note-list">
+                <li class="note-bullet" data-l="b1">Tue: easy 6 km + strides</li>
+                <li class="note-bullet" data-l="b2">Thu: tempo 8 km</li>
+              </ul>
+              <ul class="note-list">
+                <li class="note-check" data-l="c1"><span class="box box-done"><svg aria-hidden="true"><use href="#i-check"/></svg></span><span class="is-done">Book physio for the shin niggle</span></li>
+                <li class="note-check" data-l="c2"><span class="box"></span><span>Sun: long run, 18 km</span></li>
+              </ul>
+              <blockquote class="note-quote" data-l="q">Don't chase race pace before mile 15.</blockquote>
+            </div>
+          </div>
         </div>
-        <pre class="code reveal" style="transition-delay:.1s"><code>data-folder/
-├─ <span class="hi">tasks/</span>&lt;uuid&gt;.json      <span class="dim">one file per task</span>
-├─ <span class="hi">notes/</span>&lt;uuid&gt;.md        <span class="dim">YAML frontmatter + markdown body</span>
-├─ <span class="hi">goals/</span>&lt;uuid&gt;.json      <span class="dim">one file per goal</span>
-├─ <span class="hi">notebooks/</span>&lt;uuid&gt;.json  <span class="dim">one file per notebook</span>
-└─ <span class="hi">.atlas/trash/</span>          <span class="dim">deleted files, never hard-unlinked</span></code></pre>
+
+        <div class="pane">
+          <div class="pane-bar">
+            <svg aria-hidden="true"><use href="#i-folder"/></svg>
+            <span class="pane-path mono">notes/5f0c2a9e-7d41-4b8e-9a3c-2e6f1d8b4c07.md</span>
+            <span class="pane-tag">On disk</span>
+          </div>
+          <pre class="file" aria-label="The note's Markdown file"><span class="d">---</span><span><span class="k">id:</span> 5f0c2a9e-7d41-4b8e-9a3c-2e6f1d8b4c07</span><span data-l="title"><span class="k">title:</span> Half marathon training plan</span><span data-l="ctx"><span class="k">context:</span> personal</span><span data-l="goal"><span class="k">goalId:</span> 8d2a4e1b-3c5f-4a7d-b9e0-6f1c2d3a4b5e</span><span data-l="nb"><span class="k">notebookId:</span> 51c09f3e-2b8a-4d6c-a1e7-9f0b3c4d5e6a</span><span><span class="k">created:</span> 2026-07-06T08:12:31Z</span><span><span class="k">updated:</span> 2026-09-12T19:40:05Z</span><span><span class="k">attachments:</span> []</span><span class="d">---</span><span data-l="h">## Weeks 9–12</span><span> </span><span data-l="p">Base is solid — now it's about the long run.</span><span> </span><span data-l="b1">- Tue: easy 6 km + strides</span><span data-l="b2">- Thu: tempo 8 km</span><span> </span><span data-l="c1">- [x] Book physio for the shin niggle</span><span data-l="c2">- [ ] Sun: long run, 18 km</span><span> </span><span data-l="q">&gt; Don't chase race pace before mile 15.</span></pre>
+        </div>
+      </div>
+
+      <div class="data-foot">
+        <pre class="tree reveal" aria-label="The data folder"><span class="hi">Notes &amp; Goals/</span>
+├─ <span class="hi">tasks/</span>&lt;id&gt;.json      <span class="d">one file per task</span>
+├─ <span class="hi">notes/</span>&lt;id&gt;.md        <span class="d">frontmatter + Markdown</span>
+├─ <span class="hi">goals/</span>&lt;id&gt;.json      <span class="d">one file per goal</span>
+├─ <span class="hi">notebooks/</span>&lt;id&gt;.json  <span class="d">one file per notebook</span>
+└─ <span class="hi">.atlas/trash/</span>        <span class="d">deleted, never destroyed</span></pre>
+        <ul class="facts reveal" style="transition-delay:.06s">
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Sync it your way.</b> Put the folder in iCloud Drive, Dropbox or a git repo.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Deletes are recoverable.</b> Removed items move to a trash folder inside it.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Leave any time.</b> Deleting the app never touches your data folder.</span></li>
+        </ul>
       </div>
     </div>
   </section>
 
   <!-- ============================================================================ INSTALL -->
-  <section id="install">
+  <section class="section" id="install">
     <div class="container">
-      <div class="section-head reveal">
-        <p class="eyebrow">Install</p>
-        <h2>Four steps and you're working.</h2>
+      <div class="head-center reveal">
+        <p class="kicker">Install</p>
+        <h2 class="h2">Four steps and <em>you're working.</em></h2>
       </div>
-      <ol class="install-steps reveal" style="transition-delay:.06s">
+      <ol class="steps reveal" style="transition-delay:.06s">
         <li class="step">
           <span class="step-num" aria-hidden="true">1</span>
-          <div><h3>Download the .dmg</h3><p>Grab the latest universal build above — it runs natively on Intel and Apple Silicon.</p></div>
+          <h3 class="step-title">Download the .dmg</h3>
+          <p class="step-text">One universal build that runs natively on Apple Silicon and Intel Macs.</p>
         </li>
         <li class="step">
           <span class="step-num" aria-hidden="true">2</span>
-          <div><h3>Drag to Applications</h3><p>Open the disk image and drag <code>Notes &amp; Goals.app</code> into your Applications folder.</p></div>
+          <h3 class="step-title">Drag to Applications</h3>
+          <p class="step-text">Open the disk image and drag <span class="inline-code">Notes &amp; Goals.app</span> into Applications.</p>
         </li>
         <li class="step">
           <span class="step-num" aria-hidden="true">3</span>
-          <div><h3>Approve it once</h3><p>Double-click the app and click <b>Done</b> on the warning. Then open <b>System Settings → Privacy &amp; Security</b>, click <b>Open Anyway</b>, and confirm with your password.</p></div>
+          <h3 class="step-title">Approve it once</h3>
+          <p class="step-text">Double-click the app and click <b>Done</b> on the warning. In <b>System Settings → Privacy &amp; Security</b>, click <b>Open Anyway</b> and enter your password.</p>
         </li>
         <li class="step">
           <span class="step-num" aria-hidden="true">4</span>
-          <div><h3>Choose a data folder</h3><p>Pick or create the folder where your tasks, notes, and goals will live. Change it later from Settings (⌘,).</p></div>
+          <h3 class="step-title">Choose a data folder</h3>
+          <p class="step-text">Pick where your tasks, notes and goals live. Change it later in Settings <kbd>⌘,</kbd>.</p>
         </li>
       </ol>
       <div class="note-box reveal" style="transition-delay:.1s">
-        <svg><use href="#i-info"/></svg>
+        <svg aria-hidden="true"><use href="#i-info"/></svg>
         <p>
-          <b>Why the extra step?</b> Builds aren't notarized — that needs a paid Apple Developer account this
-          project doesn't have yet — so macOS says it can't verify the app. <b>Open Anyway</b> shows up in
-          Privacy &amp; Security for about an hour after you first try to open it, and approves the app for good.
-          Prefer Terminal? <code>xattr -dr com.apple.quarantine "/Applications/Notes &amp; Goals.app"</code> does
-          the same. Installing a new version may ask you to approve it again; your data folder is never touched.
+          <b>Why the extra step?</b> Builds aren't notarized by Apple yet, so macOS says it can't verify the app.
+          <b>Open Anyway</b> appears in Privacy &amp; Security for about an hour after your first try, and approves
+          the app for good. Prefer Terminal? <span class="inline-code">xattr -dr com.apple.quarantine "/Applications/Notes &amp; Goals.app"</span>
+          does the same. A new version may ask again; your data folder is never touched.
         </p>
       </div>
     </div>
   </section>
 
-  <!-- ============================================================================ BUILD FROM SOURCE -->
-  <section class="idea" id="source">
-    <div class="container source">
-      <div class="reveal">
-        <p class="eyebrow">Build from source</p>
-        <h2>It's MIT-licensed. Take it apart.</h2>
-        <p class="section-lede">
-          Tauri 2 and React on top, Rust underneath owning every file write. Clone it, build it,
-          make it yours.
-        </p>
+  <!-- ============================================================================ FAQ -->
+  <section class="section band" id="faq">
+    <div class="container">
+      <div class="head-center reveal">
+        <p class="kicker">FAQ</p>
+        <h2 class="h2">Before you <em>download.</em></h2>
       </div>
-      <pre class="code reveal" style="transition-delay:.06s"><code><span class="dim">git clone</span> https://github.com/Ashishjain608/notes-goals-app.git
-<span class="dim">cd</span> notes-goals-app
-<span class="hi">npm install</span>
-<span class="hi">npm run tauri:dev</span></code></pre>
+      <div class="faq reveal" style="transition-delay:.06s">
+        <details>
+          <summary>Is it really free?</summary>
+          <p class="faq-answer">Yes. Notes &amp; Goals is MIT-licensed open source — no paid tier, no trial, and no account.</p>
+        </details>
+        <details>
+          <summary>Can I use it on more than one Mac?</summary>
+          <p class="faq-answer">Put your data folder in iCloud Drive, Dropbox or a git repo and choose it on each Mac. The app picks up changes when you switch back to its window. It doesn't merge edits itself, so avoid changing the same item on two Macs at once.</p>
+        </details>
+        <details>
+          <summary>Why does macOS say it can't verify the app?</summary>
+          <p class="faq-answer">Notarizing needs a paid Apple Developer account, which this project doesn't have yet. Approve the app once, as shown in <a href="#install">Install</a>, and it opens like any other app from then on.</p>
+        </details>
+        <details>
+          <summary>Where does the scratchpad keep its text?</summary>
+          <p class="faq-answer">On that Mac only, inside the app — never in your data folder. It's for scraps in flight, so it doesn't sync.</p>
+        </details>
+        <details>
+          <summary>What happens to my data if I stop using it?</summary>
+          <p class="faq-answer">Nothing. Tasks and goals are JSON files and notes are Markdown, all in your folder. Open them in any editor, or point another tool at them.</p>
+        </details>
+        <details>
+          <summary>Is there an iPhone, Windows or web version?</summary>
+          <p class="faq-answer">Not today — Notes &amp; Goals is a Mac app. The <a href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">source is on GitHub</a> if you'd like to follow along.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================================ CTA + SOURCE -->
+  <section class="section cta" id="download">
+    <div class="container">
+      <div class="head-center reveal">
+        <h2 class="h2">Give your day a <em>finish line.</em></h2>
+        <p class="lede">Free, open source, and your files stay yours.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary js-download" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest">
+            <svg aria-hidden="true"><use href="#i-download"/></svg>Download for macOS
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">
+            <svg aria-hidden="true"><use href="#i-github"/></svg>View source
+          </a>
+        </div>
+      </div>
+      <div class="source reveal">
+        <div>
+          <h3 class="source-title">Build it yourself</h3>
+          <p class="source-text">Tauri 2 and React on top, Rust underneath owning every file write. Needs Rust, Node 18+ and the Xcode Command Line Tools.</p>
+        </div>
+        <pre class="code"><span class="d">$</span> git clone https://github.com/Ashishjain608/notes-goals-app.git
+<span class="d">$</span> cd notes-goals-app &amp;&amp; npm install
+<span class="d">$</span> npm run tauri:dev</pre>
+      </div>
     </div>
   </section>
 
@@ -483,45 +730,41 @@
 <footer class="site-footer">
   <div class="container footer-row">
     <div class="footer-brand">
-      <span class="brand-mark" style="width:24px;height:24px;border-radius:7px"><span aria-hidden="true" style="font-size:13px">&amp;</span></span>
+      <span class="brand-mark" style="width:24px;height:24px;border-radius:7px"><span aria-hidden="true" style="font-size:14px">&amp;</span></span>
       Notes &amp; Goals · © 2026 Ashish Jain
     </div>
-    <div class="footer-links">
-      <a href="https://github.com/Ashishjain608/notes-goals-app/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    <nav class="footer-links" aria-label="Project">
       <a href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">GitHub</a>
-    </div>
+      <a href="https://github.com/Ashishjain608/notes-goals-app/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="https://github.com/Ashishjain608/notes-goals-app/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+      <a href="https://github.com/Ashishjain608/notes-goals-app/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a>
+      <a href="https://github.com/Ashishjain608/notes-goals-app/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    </nav>
   </div>
 </footer>
 
 <script>
   (function () {
-    // Upgrade the download CTA to the latest .dmg asset; on any failure, keep
-    // the static releases/latest link — no error is shown to the visitor.
+    // Point every Download button straight at the latest .dmg. On any failure the
+    // buttons keep their releases/latest link and nothing is shown to the visitor.
     fetch('https://api.github.com/repos/Ashishjain608/notes-goals-app/releases/latest')
       .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
       .then(function (data) {
-        var asset = (data.assets || []).find(function (a) { return /\.dmg$/i.test(a.name); });
-        if (!asset) return;
-        var url = asset.browser_download_url;
-        ['download-cta', 'download-cta-top'].forEach(function (id) {
-          var el = document.getElementById(id);
-          if (el) el.href = url;
-        });
-        var v = document.getElementById('release-version');
-        if (v && data.tag_name) {
-          v.textContent = data.tag_name + ' · universal';
-          v.hidden = false;
+        var dmg = (data.assets || []).find(function (a) { return /\.dmg$/i.test(a.name); });
+        if (!dmg) return;
+        document.querySelectorAll('.js-download').forEach(function (el) { el.href = dmg.browser_download_url; });
+        var meta = document.getElementById('release-meta');
+        if (meta && data.tag_name) {
+          meta.textContent = data.tag_name + ' · ' + (dmg.size / 1048576).toFixed(1) + ' MB · Universal · macOS 12+';
         }
       })
-      .catch(function () { /* keep the default releases/latest link */ });
+      .catch(function () { /* keep the releases/latest links */ });
   })();
 
   (function () {
-    // Gentle scroll reveal. Skips straight to visible with no observer /
-    // reduced-motion support.
+    // Gentle rise-in on scroll; straight to visible without an observer or with reduced motion.
     var els = document.querySelectorAll('.reveal');
-    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced || !('IntersectionObserver' in window)) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
       els.forEach(function (el) { el.classList.add('in-view'); });
       return;
     }
@@ -531,6 +774,45 @@
       });
     }, { threshold: 0.12 });
     els.forEach(function (el) { io.observe(el); });
+  })();
+
+  (function () {
+    // "Same note, two views": light up a line and its twin. Until the visitor points
+    // at something, walk through the pairs on its own while the panes are on screen.
+    var twin = document.querySelector('.twin');
+    if (!twin) return;
+    var keys = [];
+    twin.querySelectorAll('.note [data-l]').forEach(function (el) {
+      if (keys.indexOf(el.dataset.l) === -1) keys.push(el.dataset.l);
+    });
+    var current = null, timer = null, step = 0, touched = false;
+
+    function light(key) {
+      if (key === current) return;
+      twin.querySelectorAll('.lit').forEach(function (el) { el.classList.remove('lit'); });
+      current = key;
+      if (key) twin.querySelectorAll('[data-l="' + key + '"]').forEach(function (el) { el.classList.add('lit'); });
+    }
+    function stopAuto() { clearInterval(timer); timer = null; }
+
+    twin.addEventListener('pointerover', function (e) {
+      touched = true;
+      stopAuto();
+      var el = e.target.closest('[data-l]');
+      light(el ? el.dataset.l : null);
+    });
+    twin.addEventListener('pointerleave', function () { light(null); });
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function (entries) {
+      var visible = entries[0].isIntersecting;
+      if (visible && !timer && !touched) {
+        timer = setInterval(function () { light(keys[step++ % keys.length]); }, 1500);
+      } else if (!visible && timer) {
+        stopAuto();
+        light(null);
+      }
+    }, { threshold: 0.35 }).observe(twin);
   })();
 </script>
 </body>
