@@ -18,4 +18,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 - **Settings** (⌘,) to see, change, and reveal the data folder.
 - A guided first run that walks through choosing the data folder.
 
+### Security
+
+- A Content Security Policy limits what the app's webview can load and run.
+
 [Unreleased]: https://github.com/Ashishjain608/notes-goals-app/commits/main

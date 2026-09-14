@@ -530,7 +530,7 @@
         </li>
         <li class="step">
           <span class="step-num" aria-hidden="true">3</span>
-          <div><h3>First launch</h3><p>Right-click the app and choose Open — macOS remembers your choice after that.</p></div>
+          <div><h3>Approve it once</h3><p>Double-click the app and click <b>Done</b> on the warning. Then open <b>System Settings → Privacy &amp; Security</b>, click <b>Open Anyway</b>, and confirm with your password.</p></div>
         </li>
         <li class="step">
           <span class="step-num" aria-hidden="true">4</span>
@@ -540,10 +540,11 @@
       <div class="note-box reveal" style="transition-delay:.1s">
         <svg><use href="#i-info"/></svg>
         <p>
-          Builds aren't code-signed yet — there's no Apple Developer account behind this project.
-          Gatekeeper will ask you to confirm once, via right-click → Open. If it still refuses, run
-          <code>xattr -dr com.apple.quarantine "/Applications/Notes &amp; Goals.app"</code> in Terminal.
-          One-time, harmless, and specific to this app.
+          <b>Why the extra step?</b> Builds aren't notarized — that needs a paid Apple Developer account this
+          project doesn't have yet — so macOS says it can't verify the app. <b>Open Anyway</b> shows up in
+          Privacy &amp; Security for about an hour after you first try to open it, and approves the app for good.
+          Prefer Terminal? <code>xattr -dr com.apple.quarantine "/Applications/Notes &amp; Goals.app"</code> does
+          the same. Installing a new version may ask you to approve it again; your data folder is never touched.
         </p>
       </div>
     </div>
