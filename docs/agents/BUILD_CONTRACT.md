@@ -40,8 +40,8 @@ Animations: `animate-panelIn|fadeIn|riseIn|overlayIn`. Theme is driven by a
 ## A) Shared components — `src/components/` (owned by Agent C)
 
 Presentational only. **No store imports, no IPC** — everything via props (so they are
-reusable in a future web app). Port visuals from `notes-goals-claude-design/project/ui.jsx`
-and `icons.jsx`, translated to TS + Tailwind tokens. Export each from `src/components/index.ts`.
+reusable in a future web app). Port visuals from the design prototype's `ui.jsx` and
+`icons.jsx` (that bundle is no longer in the repo), translated to TS + Tailwind tokens. Export each from `src/components/index.ts`.
 
 Required exports and their props:
 

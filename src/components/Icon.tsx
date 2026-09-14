@@ -1,7 +1,7 @@
 /**
  * Icon — the minimal, geometric line-icon set (1.6px stroke on a 24 grid).
  *
- * Ported verbatim from the design prototype (notes-goals-claude-design/icons.jsx)
+ * Ported verbatim from the original Claude Design prototype's icons.jsx
  * and extended with a `trash` glyph in the same style. Purely presentational:
  * renders an <svg> that inherits `currentColor`, so callers control color with a
  * Tailwind text-* utility on an ancestor.
