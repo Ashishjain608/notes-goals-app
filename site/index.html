@@ -9,9 +9,12 @@
 <meta name="description" content="A calm, local-first macOS app for tasks, notes and goals. The task is the source of truth — Today is a live query, not a daily page. Plain files, no cloud, no accounts.">
 <meta property="og:title" content="Notes & Goals — a calm, local-first macOS app">
 <meta property="og:description" content="The task is the source of truth. Today is a live query, not a daily page. Plain files in a folder you own — no cloud, no accounts, no telemetry.">
-<meta property="og:image" content="https://ashishjain608.github.io/notes-goals-app/icon.png">
+<meta property="og:image" content="https://ashishjain608.github.io/notes-goals-app/screenshots/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Notes &amp; Goals — the Today screen of a calm, local-first macOS app">
 <meta property="og:url" content="https://ashishjain608.github.io/notes-goals-app/">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -107,7 +110,9 @@
      just a qlmanage quirk: an absolutely-positioned z-index:0 layer paints
      after unpositioned in-flow siblings per CSS painting order). */
   .hero{position:relative;z-index:0;padding:76px 0 96px}
-  .hero-grid{display:grid;grid-template-columns:1fr 500px;gap:56px;align-items:center}
+  .hero-grid{display:grid;gap:52px;justify-items:center;text-align:center}
+  .hero-copy{max-width:720px;display:flex;flex-direction:column;align-items:center}
+  .hero-copy .hero-cta{justify-content:center}
   .eyebrow{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:14px}
   .hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(32px,4.6vw,48px);line-height:1.1;letter-spacing:-.015em}
   .hero-lede{margin-top:18px;font-size:17px;line-height:1.65;color:var(--ink-2);max-width:52ch}
@@ -117,58 +122,17 @@
   .release-line b{color:var(--ink-2);font-weight:600}
   .hero-req{margin-top:14px;font-size:12.5px;color:var(--ink-3)}
 
-  /* ------------------------------------------------------------------------- mock card */
-  .mock-wrap{display:flex;justify-content:center}
-  .mock{width:100%;max-width:480px;border-radius:14px;overflow:hidden;background:var(--surface);
-    border:1px solid var(--line);box-shadow:var(--shadow)}
-  .mock-titlebar{display:flex;align-items:center;height:36px;padding:0 14px;background:var(--surface-2);
-    border-bottom:1px solid var(--line);position:relative}
-  .mock-dots{display:flex;gap:6px}
-  .mock-dots i{width:9px;height:9px;border-radius:50%;display:block}
-  .mock-dots i:nth-child(1){background:#ff5f57}
-  .mock-dots i:nth-child(2){background:#febc2e}
-  .mock-dots i:nth-child(3){background:#28c840}
-  .mock-titlelabel{position:absolute;left:0;right:0;text-align:center;font-size:11px;color:var(--ink-3);font-weight:500}
-  .mock-body{display:flex;background:var(--bg)}
-  .mock-nav{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 0;width:56px;flex-shrink:0;border-right:1px solid var(--line)}
-  .mock-nav .nicon{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;color:var(--ink-3)}
-  .mock-nav .nicon svg{width:18px;height:18px}
-  .mock-nav .nicon.active{background:var(--accent-soft);color:var(--accent-ink)}
-  .mock-nav .nspacer{flex:1}
-  .mock-main{flex:1;min-width:0;padding:18px 18px 20px}
-  .mock-eyebrow{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:6px}
-  .mock-date{font-family:var(--serif);font-weight:400;font-size:21px;letter-spacing:-.01em;line-height:1.1}
-  .mock-summary{margin-top:8px;font-size:11.5px;color:var(--ink-2);display:flex;gap:10px;flex-wrap:wrap}
-  .mock-summary b{color:var(--ink);font-weight:600}
-  .mock-add{margin-top:14px;display:flex;align-items:center;gap:8px;border:1px solid var(--line-2);border-radius:9px;
-    padding:8px 10px;color:var(--ink-3);font-size:12px}
-  .mock-add svg{width:13px;height:13px;flex-shrink:0}
-  .mock-label{display:flex;align-items:baseline;gap:8px;font-size:10px;font-weight:600;letter-spacing:.07em;
-    text-transform:uppercase;color:var(--ink-3);margin:16px 0 4px}
-  .mock-label.accent{color:var(--accent-ink)}
-  .mock-label span.count{font-weight:400;letter-spacing:0;text-transform:none;color:var(--ink-3)}
-  .mock-slate{border-radius:9px;overflow:hidden}
-  .mrow{display:flex;align-items:flex-start;gap:9px;padding:7px 6px;border-radius:7px}
-  .mrow.priority{background:var(--accent-soft)}
-  .mcheck{width:15px;height:15px;border-radius:5px;border:1.5px solid var(--line-2);flex-shrink:0;margin-top:1px;
-    display:grid;place-items:center}
-  .mcheck.done{background:var(--accent);border-color:var(--accent)}
-  .mcheck.done svg{width:9px;height:9px;color:#fff}
-  .mrow-body{min-width:0;flex:1}
-  .mtitle{font-size:12.5px;color:var(--ink);line-height:1.3}
-  .mtitle.done{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--ink-3)}
-  .mmeta{margin-top:4px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:10px;color:var(--ink-3)}
-  .mdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-  .mdot.office{background:var(--ctx-office)}
-  .mdot.personal{background:var(--ctx-personal)}
-  .mchip{padding:1.5px 6px;border-radius:99px;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
-  .mchip.warn{background:var(--warn-soft);color:var(--warn-ink)}
-  .mflag{color:var(--accent);flex-shrink:0;margin-left:auto}
-  .mflag svg{width:11px;height:11px}
-  .mage{color:var(--age-aging-ink)}
-  .mcols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .mcol-head{display:flex;align-items:center;gap:6px;margin-bottom:2px}
-  .mcol-head span{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+  /* ----------------------------------------------------------------------- screenshots */
+  /* Each PNG is a framed window with ~48px of transparent shadow around it. */
+  .shot{display:block;width:100%}
+  .shot img{width:100%;height:auto}
+  .hero-shot{max-width:1100px}
+  .gallery{margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:24px 32px}
+  .gallery figure{margin:0}
+  .gallery .wide{grid-column:1/-1}
+  .gallery figcaption{margin-top:4px;text-align:center;font-size:14px;color:var(--ink-2)}
+  .gallery figcaption b{color:var(--ink);font-weight:600}
+  @media (max-width:760px){.gallery{grid-template-columns:1fr}}
 
   /* ------------------------------------------------------------------------- sections */
   main section{padding:88px 0}
@@ -230,13 +194,8 @@
   .footer-links a:hover{color:var(--accent-ink)}
 
   @media (max-width:920px){
-    .hero-grid{grid-template-columns:1fr}
-    .mock-wrap{margin-top:12px}
     .idea-grid, .data-grid, .source{grid-template-columns:1fr}
     .install-steps{grid-template-columns:1fr}
-  }
-  @media (max-width:700px){
-    .mcols{grid-template-columns:1fr}
   }
   @media (max-width:560px){
     main section{padding:60px 0}
@@ -252,9 +211,6 @@
     <symbol id="i-today" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>
       <rect x="9.8" y="12.4" width="4.4" height="4.4" rx="1.2" fill="currentColor" stroke="none"/>
-    </symbol>
-    <symbol id="i-tasks" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 7h14M5 12h14M5 17h9"/>
     </symbol>
     <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="8"/><path d="M12 8v4.2l3 1.8"/>
@@ -274,17 +230,8 @@
     <symbol id="i-scratch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4.5 7h7M4.5 11h4.5"/><path d="M13.5 16.5l1-3 5.5-5.5 2 2-5.5 5.5-3 1z"/>
     </symbol>
-    <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M6.5 21V4"/><path d="M6.5 4.5h11l-2.4 3.1 2.4 3.2h-11"/>
-    </symbol>
-    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>
-    </symbol>
     <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="m5 12.5 4.5 4.5L19 7"/>
-    </symbol>
-    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 5.5v13M5.5 12h13"/>
     </symbol>
     <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>
@@ -309,7 +256,7 @@
   <section class="hero">
     <div class="hero-wash" aria-hidden="true"></div>
     <div class="container hero-grid">
-      <div>
+      <div class="hero-copy">
         <p class="eyebrow reveal">For macOS · Local-first</p>
         <h1 class="reveal" style="transition-delay:.05s">The task is the source of truth.</h1>
         <p class="hero-lede reveal" style="transition-delay:.1s">
@@ -330,74 +277,11 @@
         </div>
       </div>
 
-      <!-- ---------------------------------------------------- Today mock (static CSS, fictional data) -->
-      <div class="mock-wrap reveal" style="transition-delay:.2s">
-        <div class="mock" role="img" aria-label="The app's Today screen: a nav rail on the left, and today's committed tasks above the open tasks for Office and Personal.">
-          <div class="mock-titlebar">
-            <div class="mock-dots"><i></i><i></i><i></i></div>
-            <span class="mock-titlelabel mono">Notes &amp; Goals</span>
-          </div>
-          <div class="mock-body">
-            <div class="mock-nav" aria-hidden="true">
-              <span class="nicon active"><svg><use href="#i-today"/></svg></span>
-              <span class="nicon"><svg><use href="#i-tasks"/></svg></span>
-              <span class="nicon"><svg><use href="#i-clock"/></svg></span>
-              <span class="nicon"><svg><use href="#i-notes"/></svg></span>
-              <span class="nicon"><svg><use href="#i-goals"/></svg></span>
-              <span class="nspacer"></span>
-              <span class="nicon"><svg><use href="#i-scratch"/></svg></span>
-              <span class="nicon"><svg><use href="#i-sun"/></svg></span>
-            </div>
-            <div class="mock-main" aria-hidden="true">
-              <div class="mock-eyebrow">Today</div>
-              <div class="mock-date">Wednesday, March 11</div>
-              <div class="mock-summary"><span><b>6</b> open</span><span>oldest has waited 6d</span><span>1 done today</span></div>
-
-              <div class="mock-add"><svg><use href="#i-plus"/></svg> Add a task…</div>
-
-              <div class="mock-label accent">Committed <span class="count">3 of 5 slots · 1 done</span></div>
-              <div class="mock-slate">
-                <div class="mrow">
-                  <span class="mcheck done"><svg><use href="#i-check"/></svg></span>
-                  <div class="mrow-body">
-                    <div class="mtitle done">Send the March invoice to Acme</div>
-                    <div class="mmeta"><span class="mdot office"></span>done</div>
-                  </div>
-                </div>
-                <div class="mrow priority">
-                  <span class="mcheck"></span>
-                  <div class="mrow-body">
-                    <div class="mtitle">Draft the board deck narrative outline</div>
-                    <div class="mmeta"><span class="mdot office"></span><span class="mchip warn">Due in 3d</span><span class="mchip">Q3 board deck</span></div>
-                  </div>
-                  <span class="mflag"><svg><use href="#i-flag"/></svg></span>
-                </div>
-                <div class="mrow">
-                  <span class="mcheck"></span>
-                  <div class="mrow-body">
-                    <div class="mtitle">Order new running shoes</div>
-                    <div class="mmeta"><span class="mdot personal"></span><span class="mchip">Half marathon</span></div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mock-label">Available <span class="count">4</span></div>
-              <div class="mcols">
-                <div>
-                  <div class="mcol-head"><span class="mdot office"></span><span>Office</span></div>
-                  <div class="mrow"><span class="mcheck"></span><div class="mrow-body"><div class="mtitle">Review the analytics dashboard PR</div><div class="mmeta">no due date</div></div></div>
-                  <div class="mrow"><span class="mcheck"></span><div class="mrow-body"><div class="mtitle">Prep 1:1 notes for Sana</div><div class="mmeta"><span class="mchip warn">Due today</span></div></div></div>
-                </div>
-                <div>
-                  <div class="mcol-head"><span class="mdot personal"></span><span>Personal</span></div>
-                  <div class="mrow"><span class="mcheck"></span><div class="mrow-body"><div class="mtitle">Book a dentist appointment</div><div class="mmeta"><span class="mage">11d</span></div></div></div>
-                  <div class="mrow"><span class="mcheck"></span><div class="mrow-body"><div class="mtitle">Plan the weekend trip to the coast</div><div class="mmeta"><span class="mchip">Due tomorrow</span></div></div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <picture class="shot hero-shot reveal" style="transition-delay:.2s">
+        <source srcset="screenshots/today-dark.png" media="(prefers-color-scheme: dark)">
+        <img src="screenshots/today-light.png" width="1296" height="896"
+             alt="Notes &amp; Goals on Today: the day's slate of committed tasks above the open tasks for Office and Personal, with the nav rail on the left.">
+      </picture>
     </div>
   </section>
 
@@ -478,6 +362,32 @@
           <p>One context filter runs across every view, so work and life stay legible without ever blurring.</p>
         </li>
       </ul>
+      <div class="gallery">
+        <figure class="wide reveal">
+          <picture class="shot">
+            <source srcset="screenshots/notes-dark.png" media="(prefers-color-scheme: dark)">
+            <img src="screenshots/notes-light.png" width="1296" height="896" loading="lazy"
+                 alt="The Notes screen: notebooks, a list of notes, and a note open in the editor with a heading, a checklist and a quote.">
+          </picture>
+          <figcaption><b>Notes</b> — a calm editor that saves plain Markdown underneath.</figcaption>
+        </figure>
+        <figure class="reveal">
+          <picture class="shot">
+            <source srcset="screenshots/goal-dark.png" media="(prefers-color-scheme: dark)">
+            <img src="screenshots/goal-light.png" width="1296" height="896" loading="lazy"
+                 alt="A goal page with its progress bar, linked tasks and notes.">
+          </picture>
+          <figcaption><b>Goals</b> — progress follows the tasks you link.</figcaption>
+        </figure>
+        <figure class="reveal" style="transition-delay:.06s">
+          <picture class="shot">
+            <source srcset="screenshots/search-dark.png" media="(prefers-color-scheme: dark)">
+            <img src="screenshots/search-light.png" width="1296" height="896" loading="lazy"
+                 alt="The ⌘K palette finding a task, a goal and a line inside a note.">
+          </picture>
+          <figcaption><b>Search</b> — ⌘K finds tasks, goals and words inside notes.</figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
