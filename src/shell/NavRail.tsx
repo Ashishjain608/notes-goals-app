@@ -1,7 +1,7 @@
 /**
  * Left navigation rail.
  *
- * Pinned (⌘B / SidebarToggle) drives `expanded`, same as always: a single <nav>
+ * Pinned (SidebarToggle) drives `expanded`, same as always: a single <nav>
  * whose width/padding tween between the 66px icon-only rail and the 228px
  * labelled list — in flow, so it reflows `<main>` on purpose.
  *

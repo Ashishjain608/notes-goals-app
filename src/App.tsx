@@ -61,10 +61,6 @@ export default function App(): JSX.Element {
         e.preventDefault();
         useStore.getState().openPalette();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
-        e.preventDefault();
-        useStore.getState().toggleNav();
-      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
         e.preventDefault();
         useStore.getState().toggleScratch();
