@@ -1,6 +1,6 @@
 name: Feature request
 description: Suggest an idea for Notes & Goals
-labels: [enhancement]
+labels: [enhancement, needs-triage]
 body:
   - type: markdown
     attributes:

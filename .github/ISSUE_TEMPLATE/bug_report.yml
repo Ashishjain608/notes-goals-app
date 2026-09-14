@@ -1,6 +1,6 @@
 name: Bug report
 description: Something in Notes & Goals doesn't work as expected
-labels: [bug]
+labels: [bug, needs-triage]
 body:
   - type: markdown
     attributes:

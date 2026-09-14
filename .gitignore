@@ -88,9 +88,15 @@ coverage/
 # Local session handoff notes (not part of the codebase)
 handoff/
 
-# Beads / Dolt files (added by bd init)
+# Maintainer-local agent and issue-tracker tooling (not part of the project)
+.beads/
+.beads-credential-key
 .dolt/
 *.db
-.beads-credential-key
-.beads/proxieddb/
 *.gate.lock*
+.claude/
+.codex/
+.cursor/
+.agents/
+CLAUDE.local.md
+notes-goals-claude-design/

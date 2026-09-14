@@ -4,32 +4,70 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/Ashishjain608/notes-goals-app)](https://github.com/Ashishjain608/notes-goals-app/releases/latest)
 
-A calm, local-first macOS app that unifies your daily **tasks**, **notes**, and longer-term **goals** — all stored as plain, inspectable files in a folder you choose. No database server, no cloud, no accounts, no sync. Things/Bear in spirit, never Notion/ClickUp.
+A calm, local-first macOS app that unifies your daily **tasks**, **notes**, and longer-term **goals** — all stored as plain, inspectable files in a folder you choose. No database server, no cloud, no accounts, no telemetry. Things/Bear in spirit, never Notion/ClickUp.
 
-## Download
+**[Download for macOS](https://github.com/Ashishjain608/notes-goals-app/releases/latest)** · [Website](https://ashishjain608.github.io/notes-goals-app/) · [Install guide](#install) · [Contributing](CONTRIBUTING.md)
 
-- **[Latest release](https://github.com/Ashishjain608/notes-goals-app/releases/latest)** — macOS 12 (Monterey) or later, Apple Silicon and Intel.
-- Or read more at **[the website](https://ashishjain608.github.io/notes-goals-app/)**.
-
-Download the `.dmg`, open it, and drag **Notes & Goals** into Applications. Release builds are unsigned unless noted otherwise on the release, so the first launch trips Gatekeeper ("Notes & Goals can't be opened because Apple cannot check it for malicious software"). Either:
-
-- Right-click (or Control-click) the app in Applications and choose **Open**, then confirm in the dialog that appears — only needed once, or
-- Run `xattr -dr com.apple.quarantine "/Applications/Notes & Goals.app"` in Terminal.
-
-On first launch you'll be asked to choose a data folder — you can change it later from **Settings (⌘,)**.
+![A short tour of Notes & Goals: adding a task and committing it to today's slate, finishing the slate until the day is complete, jumping to a goal with ⌘K, adding a checklist item to the goal's note, and switching to dark mode](site/screenshots/demo.gif)
 
 ## The idea
 
 The **task is the source of truth**, not a daily page. **Today** is a live query over all your tasks: an open task keeps appearing there until you mark it _done_ or _dropped_. Carry-forward is automatic and invisible — there's no copy-paste, no migration, ever. Tasks and notes connect to goals, and a goal's progress is computed live from its linked tasks.
 
-Your data lives in a folder ("vault") you pick on first launch:
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/notes-dark.png"><img alt="The Notes screen: notebooks, a note list, and a note open in the editor" src="site/screenshots/notes-light.png"></picture>
+      <p align="center"><b>Notes</b> — a WYSIWYG editor that saves portable Markdown</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/goal-dark.png"><img alt="A goal page: progress computed from linked tasks, with its tasks and notes" src="site/screenshots/goal-light.png"></picture>
+      <p align="center"><b>Goals</b> — progress computed from linked tasks</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/search-dark.png"><img alt="The ⌘K palette searching tasks, goals and note bodies" src="site/screenshots/search-light.png"></picture>
+      <p align="center"><b>Search (⌘K)</b> — tasks, goals, notebooks, and note bodies</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture><source media="(prefers-color-scheme: dark)" srcset="site/screenshots/today-light.png"><img alt="Today in the other theme" src="site/screenshots/today-dark.png"></picture>
+      <p align="center"><b>Light and dark</b> themes</p>
+    </td>
+  </tr>
+</table>
+
+## Install
+
+Requires macOS 12 (Monterey) or later, on Apple Silicon or Intel.
+
+1. Download the `.dmg` from the [latest release](https://github.com/Ashishjain608/notes-goals-app/releases/latest), open it, and drag **Notes & Goals** into **Applications**.
+2. Double-click the app. Builds aren't notarized by Apple yet, so macOS stops the first launch and says it can't verify the app — click **Done** (not *Move to Trash*).
+3. Open **System Settings → Privacy & Security**, scroll down to **Security**, click **Open Anyway**, and confirm with your login password. The button shows up for about an hour after step 2.
+4. The app opens and walks you through choosing a data folder. From then on it opens like any other app.
+
+Prefer Terminal? This replaces steps 2 and 3:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Notes & Goals.app"
+```
+
+A new version may ask for approval again. Installing, updating, or deleting the app never touches your data folder, and you can switch folders later from **Settings (⌘,)**.
+
+Notarizing needs a paid Apple Developer account, which this project doesn't have yet. Release builds are ad-hoc signed and built from the tagged source by the [Release workflow](.github/workflows/release.yml) — or [build it yourself](#build-from-source).
+
+## Your data
+
+Everything lives in the data folder you pick on first launch:
 
 ```
-<vault>/tasks/<uuid>.json      one file per task
-<vault>/notes/<uuid>.md        YAML frontmatter + markdown body
-<vault>/goals/<uuid>.json      one file per goal
-<vault>/notebooks/<uuid>.json  one file per notebook (groups notes; ADR-0008)
-<vault>/.atlas/trash/          deleted files (never hard-unlinked)
+<data folder>/tasks/<uuid>.json      one file per task
+<data folder>/notes/<uuid>.md        YAML frontmatter + markdown body
+<data folder>/goals/<uuid>.json      one file per goal
+<data folder>/notebooks/<uuid>.json  one file per notebook (groups notes; ADR-0008)
+<data folder>/.atlas/trash/          deleted files (never hard-unlinked)
 ```
 
 Plain files mean it's portable and git/Dropbox/iCloud-friendly — point the folder wherever you like; that's your call, not the app's.
@@ -43,8 +81,22 @@ Plain files mean it's portable and git/Dropbox/iCloud-friendly — point the fol
 - **Notes** — a WYSIWYG editor (headings, lists, checkboxes, quotes, a divider, links that open in your browser on ⌘-click, and smart `--`→— / `...`→…), organized into **context-scoped notebooks** with drag-and-drop filing.
 - **Goals** — progress computed live from linked tasks, plus notes you can **add and edit in place** (they also appear in Notes).
 - **Activity** — a read-only look back at the tasks you created and completed on any chosen day.
-- **Scratchpad** — a floating, draggable brain-dump pad (⌘J) that lives only on your device, never in the vault.
+- **Scratchpad** — a floating, draggable brain-dump pad (⌘J) that lives only on your device, never in the data folder.
 - An **Office / Personal** context filter across every view, light + dark themes, and a ⌘K command palette.
+
+## Build from source
+
+You need **Rust** (stable, via [rustup](https://rustup.rs)), **Node.js 18+**, and the **Xcode Command Line Tools** (`xcode-select --install`).
+
+```bash
+git clone https://github.com/Ashishjain608/notes-goals-app.git
+cd notes-goals-app
+npm install
+npm run tauri:dev     # launch in dev mode (the first Rust build takes a few minutes)
+npm run tauri:build   # .app and .dmg land in src-tauri/target/release/bundle/
+```
+
+Tests, conventions, and the project layout are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Tech stack
 
@@ -54,60 +106,17 @@ Plain files mean it's portable and git/Dropbox/iCloud-friendly — point the fol
 - **TipTap** WYSIWYG notes editor, serialized to portable Markdown
 - **Zustand** for state
 
-## Prerequisites
-
-- **Rust** (stable) — install via [rustup](https://rustup.rs)
-- **Node.js 18+** (developed on Node 26)
-- **Xcode Command Line Tools** — `xcode-select --install`
-
-## Getting started
-
-```bash
-npm install          # install frontend deps
-npm run tauri:dev    # launch the app (first Rust build takes a few minutes)
-```
-
-On first launch, choose a data folder. The app creates the `tasks/`, `notes/`, `goals/`, `notebooks/`, and `.atlas/` subfolders for you.
-
-## Build a distributable app
-
-```bash
-npm run tauri:build
-```
-
-The bundled `.app` and `.dmg` land in `src-tauri/target/release/bundle/`. A local build like this is unsigned — see the Gatekeeper workaround in [Download](#download) — unless you configure your own Apple signing identity.
-
-## Tests
-
-```bash
-npm test                                         # frontend: dates, selectors, components
-cargo test --manifest-path src-tauri/Cargo.toml  # backend: storage round-trips
-```
-
-## Project layout
-
-```
-design/        shared Tailwind preset + tokens.css (reusable by a future web app)
-src/
-  types.ts     shared domain contract
-  lib/         dates (local-day math), ipc (typed Rust commands), markdown
-  components/   presentational, store-free component library
-  store/        Zustand store + pure selectors (the live "queries")
-  views/        Today, Backlog, Activity, Notes, Goals, Capture (quick-add/palette/detail)
-  shell/        title bar, nav rail, sidebar toggle, scratchpad, vault gate
-src-tauri/     Rust backend: model, vault, store_io, commands
-```
-
 ## Documentation
 
 - [`CONTEXT.md`](CONTEXT.md) — domain glossary
 - [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — the full build plan
 - [`docs/adr/`](docs/adr/) — architectural decision records
 - [`docs/agents/BUILD_CONTRACT.md`](docs/agents/BUILD_CONTRACT.md) — frozen module interfaces
+- [`CHANGELOG.md`](CHANGELOG.md) — what changed in each release
 
 ## Contributing
 
-Contributions are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, conventions, and the checks a PR needs to pass.
+Bug reports, ideas, and pull requests are welcome. `main` is protected, so every change — the maintainer's included — lands through a pull request with passing CI. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), and report security issues privately as described in [`SECURITY.md`](SECURITY.md).
 
 ## License
 

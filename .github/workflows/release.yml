@@ -28,27 +28,26 @@ jobs:
         with:
           workspaces: src-tauri
 
-      # Apple signing/notarization is optional: tauri-action signs and notarises the
-      # build when these secrets are set, and produces an unsigned build (users then
-      # need the Gatekeeper workaround in the README) when they're left empty.
+      # Builds are ad-hoc signed (bundle.macOS.signingIdentity "-" in tauri.conf.json) but
+      # not notarized. Developer ID signing needs the APPLE_* secrets passed as env here and
+      # that signingIdentity removed: https://v2.tauri.app/distribute/sign/macos/
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Notes & Goals ${{ github.ref_name }}"
           releaseBody: |
-            See https://ashishjain608.github.io/notes-goals-app/ for details.
+            Open the `.dmg` and drag **Notes & Goals** into Applications. Universal build for macOS 12 or later.
 
-            This build is unsigned unless noted otherwise below. On first launch, either
-            right-click the app and choose Open, or run:
-            `xattr -dr com.apple.quarantine "/Applications/Notes & Goals.app"`
+            This build isn't notarized by Apple, so the first launch needs one extra step:
+            1. Double-click the app. macOS says it can't verify it — click **Done**.
+            2. Open **System Settings → Privacy & Security**, click **Open Anyway**, and confirm with your password.
+
+            Or, in Terminal: `xattr -dr com.apple.quarantine "/Applications/Notes & Goals.app"`
+
+            Full install guide: https://ashishjain608.github.io/notes-goals-app/#install
           releaseDraft: false
-          prerelease: false
+          # Tags like v0.2.0-rc.1 publish as prereleases, which never become "latest".
+          prerelease: ${{ contains(github.ref_name, '-') }}
           args: --target universal-apple-darwin
