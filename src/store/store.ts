@@ -54,6 +54,8 @@ export interface AppState {
   selectedNoteId: string | null;
   scratchOpen: boolean;
   settingsOpen: boolean;
+  /** A newer release, once found: downloading in the background, then ready to restart into. */
+  update: { version: string; phase: "downloading" | "ready" } | null;
 
   // lifecycle
   init: () => Promise<void>;
@@ -76,6 +78,8 @@ export interface AppState {
   closeScratch: () => void;
   openSettings: () => void;
   closeSettings: () => void;
+  checkForUpdate: () => Promise<void>;
+  restartToUpdate: () => Promise<void>;
   toggleSettings: () => void;
 
   // task actions
@@ -198,6 +202,7 @@ export const useStore = create<AppState>((set, get) => ({
   selectedNoteId: null,
   scratchOpen: false,
   settingsOpen: false,
+  update: null,
 
   /* ------------------------------------------------------------- lifecycle */
 
@@ -327,6 +332,23 @@ export const useStore = create<AppState>((set, get) => ({
   closeScratch: () => set({ scratchOpen: false }),
 
   openSettings: () => set({ settingsOpen: true }),
+
+  // Like t3code: once an update is found it downloads by itself; the nav rail
+  // then offers "Restart to update". A failed check or download is silent.
+  checkForUpdate: async () => {
+    if (get().update) return;
+    try {
+      const found = await ipc.checkForUpdate();
+      if (!found) return;
+      set({ update: { version: found.version, phase: "downloading" } });
+      await found.install();
+      set({ update: { version: found.version, phase: "ready" } });
+    } catch (err) {
+      console.error("update check failed", err);
+      set({ update: null });
+    }
+  },
+  restartToUpdate: () => ipc.relaunchApp(),
   closeSettings: () => set({ settingsOpen: false }),
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
 

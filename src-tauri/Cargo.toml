@@ -1,6 +1,6 @@
 [package]
 name = "notes-goals"
-version = "0.1.1"
+version = "0.2.0"
 description = "A calm, local-first macOS app to track notes and goals"
 authors = ["Ashish Jain"]
 edition = "2021"
@@ -23,6 +23,8 @@ serde_yaml = "0.9"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["clock"] }
 thiserror = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 
 [profile.release]
 panic = "abort"

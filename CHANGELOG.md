@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-15
+
+### Added
+
+- **Automatic updates.** The app checks GitHub for a newer release shortly after launch and
+  every few minutes, downloads it in the background, and then shows **Restart to update** in the
+  left rail above the scratchpad. Updates are signed; the app verifies the signature before
+  installing. Builds before 0.2.0 don't have the updater, so install this one by hand once.
+
 ## [0.1.1] - 2026-09-15
 
 ### Fixed
@@ -39,6 +48,7 @@ The first public release.
 
 - A Content Security Policy limits what the app's webview can load and run.
 
-[Unreleased]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Ashishjain608/notes-goals-app/releases/tag/v0.1.0

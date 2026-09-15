@@ -31,9 +31,14 @@ jobs:
       # Builds are ad-hoc signed (bundle.macOS.signingIdentity "-" in tauri.conf.json) but
       # not notarized. Developer ID signing needs the APPLE_* secrets passed as env here and
       # that signingIdentity removed: https://v2.tauri.app/distribute/sign/macos/
+      # TAURI_SIGNING_PRIVATE_KEY signs the updater artifacts (.app.tar.gz + .sig) and the
+      # action uploads latest.json, which the in-app updater reads. Generated with
+      # `npx tauri signer generate --ci`; the matching public key is plugins.updater.pubkey.
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Notes & Goals ${{ github.ref_name }}"

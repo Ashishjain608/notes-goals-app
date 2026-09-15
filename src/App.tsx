@@ -8,6 +8,10 @@
  */
 import { useEffect } from "react";
 import { useStore } from "@/store";
+
+// Same cadence as t3code: first check shortly after launch, then keep polling.
+const UPDATE_STARTUP_DELAY_MS = 15_000;
+const UPDATE_POLL_INTERVAL_MS = 4 * 60_000;
 import { NavRail } from "@/shell/NavRail";
 import { TitleBar } from "@/shell/TitleBar";
 import { SidebarToggle } from "@/shell/SidebarToggle";
@@ -48,11 +52,22 @@ export default function App(): JSX.Element {
   const reload = useStore((s) => s.reload);
   const navCollapsed = useStore((s) => s.navCollapsed);
   const toggleNav = useStore((s) => s.toggleNav);
+  const checkForUpdate = useStore((s) => s.checkForUpdate);
 
   // Boot: load config + vault + data.
   useEffect(() => {
     void init();
   }, [init]);
+
+  // Auto-update: look for a newer release and download it in the background.
+  useEffect(() => {
+    const first = setTimeout(() => void checkForUpdate(), UPDATE_STARTUP_DELAY_MS);
+    const poll = setInterval(() => void checkForUpdate(), UPDATE_POLL_INTERVAL_MS);
+    return () => {
+      clearTimeout(first);
+      clearInterval(poll);
+    };
+  }, [checkForUpdate]);
 
   // Global ⌘K (or Ctrl+K) opens the command palette.
   useEffect(() => {

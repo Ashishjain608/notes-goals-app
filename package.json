@@ -1,7 +1,7 @@
 {
   "name": "notes-goals",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "description": "A calm, local-first macOS app to track notes and goals",
   "license": "MIT",
@@ -29,6 +29,8 @@
     "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.5.4",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.11.0",
     "@tiptap/extension-link": "^2.10.3",
     "@tiptap/extension-paragraph": "^2.27.2",
     "@tiptap/extension-placeholder": "^2.27.2",

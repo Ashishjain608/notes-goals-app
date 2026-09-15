@@ -8,6 +8,8 @@
  */
 
 import { invoke } from "@tauri-apps/api/core";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check } from "@tauri-apps/plugin-updater";
 import type {
   Attachment,
   CreateGoalInput,
@@ -111,3 +113,21 @@ export const removeAttachment = (path: string): Promise<void> => invoke("remove_
 
 /** Open an attachment in the OS default app. `path` is the Attachment's `path` field. */
 export const openAttachment = (path: string): Promise<void> => invoke("open_attachment", { path });
+
+/* ------------------------------------------------------------------ Updates */
+
+/** A newer release found on GitHub. `install` downloads and swaps the bundle in place. */
+export interface AvailableUpdate {
+  version: string;
+  install: () => Promise<void>;
+}
+
+/** Ask the updater endpoint (releases/latest/download/latest.json) for a newer signed build. */
+export const checkForUpdate = async (): Promise<AvailableUpdate | null> => {
+  const update = await check();
+  if (!update) return null;
+  return { version: update.version, install: () => update.downloadAndInstall() };
+};
+
+/** Restart into the freshly installed bundle. */
+export const relaunchApp = (): Promise<void> => relaunch();
