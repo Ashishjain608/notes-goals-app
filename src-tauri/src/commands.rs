@@ -113,9 +113,12 @@ pub fn relocate_vault(app: AppHandle, path: String) -> AppResult<()> {
 /// Read the whole vault into one typed graph. Notes carry metadata only (bodies
 /// are lazy). Resilient: malformed individual files are skipped (logged), and
 /// dangling `goalId`s are returned verbatim for the frontend to tolerate.
-#[tauri::command]
+/// Runs off the main thread because an iCloud-synced vault may first have to
+/// download its files; the window keeps painting the loading screen meanwhile.
+#[tauri::command(async)]
 pub fn load_all(app: AppHandle) -> AppResult<StoreSnapshot> {
     let vault = vault::require_vault(&app)?;
+    vault::wait_for_cloud_files(&vault)?;
     Ok(StoreSnapshot {
         tasks: store_io::load_tasks(&vault),
         notes: store_io::load_notes(&vault),

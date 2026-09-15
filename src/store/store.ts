@@ -206,8 +206,9 @@ export const useStore = create<AppState>((set, get) => ({
     applyTheme(theme);
     set({ theme });
 
+    let vaultPath: string | null = null;
     try {
-      const vaultPath = await ipc.getVaultPath();
+      vaultPath = await ipc.getVaultPath();
       if (vaultPath === null) {
         // Distinguish "never configured" (first run) from "configured but
         // currently unreachable" (e.g. an unmounted drive) so VaultGate can
@@ -228,13 +229,14 @@ export const useStore = create<AppState>((set, get) => ({
         errorMessage: null,
       });
     } catch (err) {
-      set({ status: "error", errorMessage: errorMessageOf(err) });
+      set({ status: "error", errorMessage: errorMessageOf(err), missingVaultPath: vaultPath });
     }
   },
 
   chooseVault: async () => {
+    let vaultPath: string | null = null;
     try {
-      const vaultPath = await ipc.chooseVault();
+      vaultPath = await ipc.chooseVault();
       if (vaultPath === null) return; // user cancelled the picker
       const snapshot = await ipc.loadAll();
       set({
@@ -248,7 +250,7 @@ export const useStore = create<AppState>((set, get) => ({
         errorMessage: null,
       });
     } catch (err) {
-      set({ status: "error", errorMessage: errorMessageOf(err) });
+      set({ status: "error", errorMessage: errorMessageOf(err), missingVaultPath: vaultPath });
     }
   },
 
@@ -267,7 +269,7 @@ export const useStore = create<AppState>((set, get) => ({
         errorMessage: null,
       });
     } catch (err) {
-      set({ status: "error", errorMessage: errorMessageOf(err) });
+      set({ status: "error", errorMessage: errorMessageOf(err), missingVaultPath: path });
     }
   },
 

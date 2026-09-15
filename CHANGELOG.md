@@ -5,6 +5,19 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-15
+
+### Fixed
+
+- Choosing a data folder synced through iCloud Drive on another Mac no longer freezes the app.
+  Files iCloud has evicted are downloaded first, the loading screen stays responsive, and if
+  the download takes longer than a minute a "Try again" screen appears instead of a hang.
+
+### Changed
+
+- Every release now also uploads `Notes-Goals-macOS.dmg`, and the website's and README's
+  Download links point at that stable name, so they always fetch the latest release.
+
 ## [0.1.0] - 2026-09-14
 
 The first public release.
@@ -26,5 +39,6 @@ The first public release.
 
 - A Content Security Policy limits what the app's webview can load and run.
 
-[Unreleased]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Ashishjain608/notes-goals-app/releases/tag/v0.1.0

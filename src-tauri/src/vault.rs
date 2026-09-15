@@ -5,6 +5,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
@@ -117,6 +118,64 @@ pub fn ensure_subfolders(vault: &Path) -> AppResult<()> {
     Ok(())
 }
 
+/// The subfolders `load_all` reads in full. Attachments are opened lazily.
+const LOADED_SUBFOLDERS: [&str; 4] = ["tasks", "notes", "goals", "notebooks"];
+
+/// Files in the loaded subfolders that iCloud Drive has evicted to the cloud
+/// (`SF_DATALESS`). Reading one blocks until iCloud downloads it, about a
+/// second each, so a synced vault on a fresh Mac would freeze the app for
+/// minutes. `stat` doesn't trigger the download, so counting is instant.
+#[cfg(target_os = "macos")]
+fn dataless_files(vault: &Path) -> Vec<PathBuf> {
+    use std::os::macos::fs::MetadataExt;
+    const SF_DATALESS: u32 = 0x4000_0000;
+    LOADED_SUBFOLDERS
+        .iter()
+        .flat_map(|sub| fs::read_dir(vault.join(sub)).into_iter().flatten().flatten())
+        .filter(|entry| entry.metadata().is_ok_and(|m| m.st_flags() & SF_DATALESS != 0))
+        .map(|entry| entry.path())
+        .collect()
+}
+
+/// Ask iCloud Drive to download every evicted file the app is about to read,
+/// then wait (bounded) until they're local. `brctl download` ships with macOS,
+/// returns at once, and only works per file, not per folder (verified on
+/// macOS 26). Errors with `CloudPending` if files remain after the deadline,
+/// so the user gets a retry screen instead of a frozen window; downloads keep
+/// going in the background meanwhile.
+#[cfg(target_os = "macos")]
+pub fn wait_for_cloud_files(vault: &Path) -> AppResult<()> {
+    let pending = dataless_files(vault);
+    if pending.is_empty() {
+        return Ok(());
+    }
+    for file in &pending {
+        let _ = std::process::Command::new("brctl")
+            .arg("download")
+            .arg(file)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+    }
+    // ponytail: fixed 60 s budget; make it a setting if big vaults on slow links need more.
+    let deadline = Instant::now() + Duration::from_secs(60);
+    loop {
+        std::thread::sleep(Duration::from_millis(500));
+        let left = dataless_files(vault).len();
+        if left == 0 {
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err(AppError::CloudPending(left));
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn wait_for_cloud_files(_vault: &Path) -> AppResult<()> {
+    Ok(())
+}
+
 /// Initialize a folder as a vault: validate it's a readable directory, create
 /// the standard subfolders, and persist it as the active vault.
 pub fn initialize_vault(app: &AppHandle, vault: &Path) -> AppResult<String> {
@@ -167,5 +226,16 @@ mod tests {
         for dir in [empty, hidden, existing_vault, documents] {
             let _ = fs::remove_dir_all(dir);
         }
+    }
+
+    #[test]
+    fn local_files_never_wait_for_icloud() {
+        let vault = temp_dir("local");
+        ensure_subfolders(&vault).unwrap();
+        fs::write(vault.join("tasks/t.json"), "{}").unwrap();
+        let started = Instant::now();
+        wait_for_cloud_files(&vault).unwrap();
+        assert!(started.elapsed() < Duration::from_millis(400));
+        let _ = fs::remove_dir_all(vault);
     }
 }

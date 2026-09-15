@@ -26,6 +26,14 @@ pub enum AppError {
     #[error("no vault configured")]
     NoVault,
 
+    /// iCloud Drive still holds some of the vault's files in the cloud after we
+    /// asked for them and waited. Reading one would block until it downloads.
+    #[error(
+        "Your data folder is still downloading from iCloud Drive ({0} files to go). \
+         Keep this Mac online and try again in a moment."
+    )]
+    CloudPending(usize),
+
     /// An entity (or its backing file) could not be found.
     #[error("not found: {0}")]
     NotFound(String),
