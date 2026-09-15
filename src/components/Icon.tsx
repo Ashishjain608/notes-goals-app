@@ -29,6 +29,7 @@ export type IconName =
   | "x"
   | "dropped"
   | "arrowRight"
+  | "download"
   | "inbox"
   | "dot"
   | "flame"
@@ -146,6 +147,7 @@ const paths: Record<IconName, JSX.Element> = {
     </>
   ),
   arrowRight: <path d="M5 12h14M13 6l6 6-6 6" {...stroke} />,
+  download: <path d="M12 4v11M7 10l5 5 5-5M5 19h14" {...stroke} />,
   inbox: (
     <>
       <path d="M4 13l2.5-7h11L20 13v5H4z" {...stroke} />

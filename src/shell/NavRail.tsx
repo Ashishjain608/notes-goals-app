@@ -79,6 +79,46 @@ function ThemeToggle({
   );
 }
 
+/** Shows only once a newer release is found: downloading, then "Restart to update". */
+function UpdateButton({
+  expanded,
+  restrictTab,
+}: {
+  expanded: boolean;
+  restrictTab?: boolean;
+}): JSX.Element | null {
+  const update = useStore((s) => s.update);
+  const restartToUpdate = useStore((s) => s.restartToUpdate);
+  if (!update) return null;
+  const ready = update.phase === "ready";
+  const label = ready ? `Restart to update to ${update.version}` : `Downloading ${update.version}…`;
+  if (expanded) {
+    return (
+      <button
+        type="button"
+        disabled={!ready}
+        onClick={() => void restartToUpdate()}
+        className="flex w-full items-center gap-3 rounded-lg px-3 py-[9px] text-left text-accent transition-colors hover:bg-raise disabled:cursor-default disabled:text-ink-3"
+      >
+        <Icon name="download" size={18} />
+        <span className="whitespace-nowrap text-[14px] font-medium">{label}</span>
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      title={label}
+      disabled={!ready}
+      tabIndex={restrictTab ? -1 : undefined}
+      onClick={() => void restartToUpdate()}
+      className="grid h-[34px] w-[34px] place-items-center rounded-md text-accent transition-colors hover:bg-raise disabled:cursor-default disabled:text-ink-3"
+    >
+      <Icon name="download" size={18} />
+    </button>
+  );
+}
+
 /** Toggles the floating scratchpad — sits beside the theme toggle. */
 function ScratchToggle({
   expanded,
@@ -294,6 +334,7 @@ export function NavRail({ expanded }: { expanded: boolean }): JSX.Element {
       >
         {renderRows({ icon: !expanded, restrictTab: !expanded, assignFirstRef: !expanded })}
         <div className="mt-auto flex flex-col gap-1">
+          <UpdateButton expanded={expanded} restrictTab={!expanded} />
           <ScratchToggle expanded={expanded} restrictTab={!expanded} />
           <ThemeToggle expanded={expanded} restrictTab={!expanded} />
           <SettingsToggle expanded={expanded} restrictTab={!expanded} />
@@ -309,6 +350,7 @@ export function NavRail({ expanded }: { expanded: boolean }): JSX.Element {
         >
           {renderRows({ icon: false, restrictTab: false })}
           <div className="mt-auto flex flex-col gap-1">
+            <UpdateButton expanded />
             <ScratchToggle expanded />
             <ThemeToggle expanded />
             <SettingsToggle expanded />
