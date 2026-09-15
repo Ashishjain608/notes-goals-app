@@ -8,7 +8,10 @@
  *                   When a vault WAS configured but its folder is unreachable
  *                   (e.g. an unmounted drive): "Your data folder isn't
  *                   available" + the path + "Try again" / "Choose a different
- *                   folder" — never the first-run copy.
+ *                   folder" — never the first-run copy. The same screen shows
+ *                   when a known folder fails to load (e.g. it's still
+ *                   downloading from iCloud Drive), with the error in place of
+ *                   the unmounted-drive hint.
  *  - error        → the first-run walkthrough plus the message, so the user can pick again
  */
 import { useState, type JSX, type ReactNode } from "react";
@@ -71,7 +74,7 @@ export function VaultGate(): JSX.Element {
     );
   }
 
-  if (status === "needs-vault" && missingVaultPath) {
+  if ((status === "needs-vault" || status === "error") && missingVaultPath) {
     return (
       <Centered>
         <Brand />
@@ -80,7 +83,9 @@ export function VaultGate(): JSX.Element {
           {missingVaultPath}
         </p>
         <p className="mt-2 text-sm leading-relaxed text-ink-2">
-          It may be on a drive that&apos;s unplugged or unmounted right now.
+          {status === "error" && errorMessage
+            ? errorMessage
+            : "It may be on a drive that’s unplugged or unmounted right now."}
         </p>
         <div className="mt-6 flex gap-3">
           <button
@@ -141,7 +146,8 @@ export function VaultGate(): JSX.Element {
         Choose data folder…
       </button>
       <p className="mt-4 text-[12px] leading-relaxed text-ink-3">
-        Already use Notes &amp; Goals on another Mac? Choose the same synced folder.
+        Already use Notes &amp; Goals on another Mac? Choose the same synced folder; an iCloud
+        Drive folder downloads first, which can take a minute.
         <br />
         You can switch to a different folder later in Settings (⌘,).
       </p>

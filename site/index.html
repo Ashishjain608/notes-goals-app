@@ -359,7 +359,7 @@
       <a class="gh-link" href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener" title="View the source code on GitHub">
         <svg aria-hidden="true"><use href="#i-github"/></svg><span>View source</span>
       </a>
-      <a class="btn btn-primary btn-sm js-download" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest">Download</a>
+      <a class="btn btn-primary btn-sm" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest/download/Notes-Goals-macOS.dmg">Download</a>
     </div>
   </div>
 </header>
@@ -377,7 +377,7 @@
         you choose. No accounts, no cloud, and no daily page to copy forward.
       </p>
       <div class="cta-row reveal" style="transition-delay:.15s">
-        <a class="btn btn-primary js-download" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest">
+        <a class="btn btn-primary" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest/download/Notes-Goals-macOS.dmg">
           <svg aria-hidden="true"><use href="#i-download"/></svg>Download for macOS
         </a>
         <a class="btn btn-ghost" href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">
@@ -705,7 +705,7 @@
         <h2 class="h2">Give your day a <em>finish line.</em></h2>
         <p class="lede">Free, open source, and your files stay yours.</p>
         <div class="cta-row">
-          <a class="btn btn-primary js-download" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest">
+          <a class="btn btn-primary" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest/download/Notes-Goals-macOS.dmg">
             <svg aria-hidden="true"><use href="#i-download"/></svg>Download for macOS
           </a>
           <a class="btn btn-ghost" href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">
@@ -745,14 +745,14 @@
 
 <script>
   (function () {
-    // Point every Download button straight at the latest .dmg. On any failure the
-    // buttons keep their releases/latest link and nothing is shown to the visitor.
+    // The Download buttons link to releases/latest/download/Notes-Goals-macOS.dmg, a
+    // stable-named copy every release uploads, so they always fetch the newest build
+    // without depending on this (rate-limited) API call. It only fills in the meta line.
     fetch('https://api.github.com/repos/Ashishjain608/notes-goals-app/releases/latest')
       .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
       .then(function (data) {
         var dmg = (data.assets || []).find(function (a) { return /\.dmg$/i.test(a.name); });
         if (!dmg) return;
-        document.querySelectorAll('.js-download').forEach(function (el) { el.href = dmg.browser_download_url; });
         var meta = document.getElementById('release-meta');
         if (meta && data.tag_name) {
           meta.textContent = data.tag_name + ' · ' + (dmg.size / 1048576).toFixed(1) + ' MB · Universal · macOS 12+';

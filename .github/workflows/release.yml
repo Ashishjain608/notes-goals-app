@@ -51,3 +51,13 @@ jobs:
           # Tags like v0.2.0-rc.1 publish as prereleases, which never become "latest".
           prerelease: ${{ contains(github.ref_name, '-') }}
           args: --target universal-apple-darwin
+
+      # A stable-named copy of the dmg, so releases/latest/download/Notes-Goals-macOS.dmg
+      # (the website's and README's Download links) always resolves to the newest build.
+      - name: Upload Notes-Goals-macOS.dmg
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dmg=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name '*.dmg' | head -n 1)
+          cp -f "$dmg" Notes-Goals-macOS.dmg
+          gh release upload "${{ github.ref_name }}" Notes-Goals-macOS.dmg --clobber
