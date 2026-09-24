@@ -5,10 +5,20 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-24
+
 ### Added
 
 - **Choose how many slots today's slate has.** Settings → Today's slate sets the cap anywhere
   from 1 to 10 (default 5). Lowering it keeps what you've already committed today.
+
+### Fixed
+
+- Quick successive edits to a task no longer overwrite each other. Toggling priority twice in a
+  row, or adding two subtasks quickly, used to lose the second change.
+- Returning to the window while a save was still running could briefly undo that save.
+- Pasting several files into a task keeps going when one fails, and reports that file.
+- Today refreshes at midnight without needing another change first.
 
 ## [0.2.0] - 2026-09-15
 
@@ -53,7 +63,8 @@ The first public release.
 
 - A Content Security Policy limits what the app's webview can load and run.
 
-[Unreleased]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Ashishjain608/notes-goals-app/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Ashishjain608/notes-goals-app/releases/tag/v0.1.0
