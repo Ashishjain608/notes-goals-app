@@ -17,6 +17,7 @@ import { SubtaskMeta } from "./SubtaskMeta";
 import { GoalChip } from "./GoalChip";
 import { AgeTag } from "./AgeTag";
 import { Icon } from "./Icon";
+import { isOnSlate } from "@/store/slate";
 import { localToday } from "@/lib/dates";
 
 export interface TaskRowProps {
@@ -70,7 +71,7 @@ export function TaskRow({
   const padding = dense ? "py-2 pl-4 pr-3.5" : "py-[11px] pl-4 pr-3.5";
   // Derived, not passed: a task is on today's slate wherever it is rendered, so
   // every list says so — Today, All Tasks, a goal's task list (ADR-0009).
-  const onSlate = task.committedOn != null && task.committedOn === localToday();
+  const onSlate = isOnSlate(task, localToday());
   const showBar = a.barW > 0 && !muted && a.barColorClass;
 
   return (

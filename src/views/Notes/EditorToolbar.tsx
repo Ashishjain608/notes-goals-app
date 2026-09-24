@@ -15,15 +15,9 @@ import { useEffect, useRef, useState, type JSX, type ReactNode } from "react";
 import { BubbleMenu, type Editor } from "@tiptap/react";
 import { open as openFilePicker } from "@tauri-apps/plugin-dialog";
 import { Icon } from "@/components";
-import { attachFiles } from "@/lib/ipc";
+import { useStore } from "@/store";
+import { errorMessageOf } from "@/lib/errors";
 import type { Attachment } from "@/types";
-
-/** Coerce a thrown value into a short user-facing message (mirrors the store's own convention). */
-function errorMessageOf(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === "string") return err;
-  return "Something went wrong.";
-}
 
 export interface EditorToolbarProps {
   editor: Editor | null;
@@ -39,6 +33,7 @@ export interface EditorToolbarProps {
 /** The full editor toolbar + bubble menu + link popover. */
 export function EditorToolbar({ editor, noteId, onAttach, onDelete }: EditorToolbarProps): JSX.Element {
   const [linkOpen, setLinkOpen] = useState(false);
+  const attachPickedFiles = useStore((s) => s.attachPickedFiles);
 
   /** Pick one or more files, copy them into the vault, and hand the created
    *  records to `onAttach`. */
@@ -48,7 +43,7 @@ export function EditorToolbar({ editor, noteId, onAttach, onDelete }: EditorTool
       if (!selection) return; // cancelled
       const paths = Array.isArray(selection) ? selection : [selection];
       if (paths.length === 0) return;
-      const created = await attachFiles(noteId, paths);
+      const created = await attachPickedFiles(noteId, paths);
       onAttach(created);
     } catch (err) {
       window.alert(`Couldn't attach the file: ${errorMessageOf(err)}`);

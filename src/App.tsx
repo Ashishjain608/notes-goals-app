@@ -12,6 +12,10 @@ import { useStore } from "@/store";
 // Same cadence as t3code: first check shortly after launch, then keep polling.
 const UPDATE_STARTUP_DELAY_MS = 15_000;
 const UPDATE_POLL_INTERVAL_MS = 4 * 60_000;
+
+// How often to re-check the local calendar day, so Today/the slate notice
+// midnight even when nothing else changes the store.
+const DAY_POLL_INTERVAL_MS = 60_000;
 import { NavRail } from "@/shell/NavRail";
 import { TitleBar } from "@/shell/TitleBar";
 import { SidebarToggle } from "@/shell/SidebarToggle";
@@ -53,11 +57,25 @@ export default function App(): JSX.Element {
   const navCollapsed = useStore((s) => s.navCollapsed);
   const toggleNav = useStore((s) => s.toggleNav);
   const checkForUpdate = useStore((s) => s.checkForUpdate);
+  const refreshDay = useStore((s) => s.refreshDay);
 
   // Boot: load config + vault + data.
   useEffect(() => {
     void init();
   }, [init]);
+
+  // Midnight correctness: re-check the local day on a slow poll and whenever
+  // the window regains focus (the common case — the app was just sitting in
+  // the background overnight).
+  useEffect(() => {
+    refreshDay();
+    const poll = setInterval(refreshDay, DAY_POLL_INTERVAL_MS);
+    window.addEventListener("focus", refreshDay);
+    return () => {
+      clearInterval(poll);
+      window.removeEventListener("focus", refreshDay);
+    };
+  }, [refreshDay]);
 
   // Auto-update: look for a newer release and download it in the background.
   useEffect(() => {

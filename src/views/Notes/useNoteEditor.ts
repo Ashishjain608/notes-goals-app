@@ -27,7 +27,7 @@ import type { EditorProps } from "@tiptap/pm/view";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { Attachment, Context, Note } from "@/types";
 import { buildNoteExtensions } from "@/lib/markdown";
-import { attachBytes, openAttachment, removeAttachment as removeAttachmentFile } from "@/lib/ipc";
+import { errorMessageOf } from "@/lib/errors";
 
 /** ~800ms debounce window for autosave (ADR-0005). */
 const AUTOSAVE_DEBOUNCE_MS = 800;
@@ -44,39 +44,20 @@ function isAttachmentHref(href: string): boolean {
   return href.startsWith("attachments/");
 }
 
-/** Coerce a thrown value into a short user-facing message (mirrors the store's own convention). */
-function errorMessageOf(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === "string") return err;
-  return "Something went wrong.";
-}
-
-/** Best-guess filename extension for a pasted file's MIME type (clipboard files often arrive unnamed). */
-function extensionForMime(mime: string): string {
-  const known: Record<string, string> = {
-    "image/png": "png",
-    "image/jpeg": "jpg",
-    "image/gif": "gif",
-    "image/webp": "webp",
-    "image/svg+xml": "svg",
-  };
-  return known[mime] ?? mime.split("/")[1] ?? "bin";
-}
-
 /**
- * Attach one pasted file to `noteId` and hand the created record to
- * `addAttachment` — same handoff the toolbar's Attach button uses, just fed by
- * a paste instead of the file picker. No content is inserted into the editor.
+ * Attach one pasted file to `noteId` via the store and hand the created
+ * record to `addAttachment` — same handoff the toolbar's Attach button uses,
+ * just fed by a paste instead of the file picker. No content is inserted into
+ * the editor. `attachToStore` already names the file (store.attachPastedFile).
  */
 async function attachPastedFile(
   noteId: string,
   file: File,
+  attachToStore: (entityId: string, file: File) => Promise<Attachment>,
   addAttachment: (created: Attachment) => void,
 ): Promise<void> {
   try {
-    const bytes = Array.from(new Uint8Array(await file.arrayBuffer()));
-    const name = file.name.trim() || `pasted-${Date.now()}.${extensionForMime(file.type)}`;
-    const attachment = await attachBytes(noteId, name, bytes);
+    const attachment = await attachToStore(noteId, file);
     addAttachment(attachment);
   } catch (err) {
     window.alert(`Couldn't attach the pasted file: ${errorMessageOf(err)}`);
@@ -90,10 +71,11 @@ async function attachPastedFile(
  * the live note id through `getNoteId` at event time (rather than closing
  * over one fixed id) keeps paste-to-attach correct across switches without
  * recreating the editor.
- * - Cmd/Ctrl-click a link opens it: an attachment href via `ipc.openAttachment`,
- *   any other via the OS default browser (Tauri opener). Plain click keeps
- *   editing the text. This stays for legacy notes whose body already contains
- *   an inline `attachments/...` link from before the attachment strip existed.
+ * - Cmd/Ctrl-click a link opens it: an attachment href via the store's
+ *   `openAttachment`, any other via the OS default browser (Tauri opener).
+ *   Plain click keeps editing the text. This stays for legacy notes whose
+ *   body already contains an inline `attachments/...` link from before the
+ *   attachment strip existed.
  * - Pasting a file/image attaches it via `getAddAttachment()` (see
  *   attachPastedFile) — nothing is inserted into the editor.
  * - Pasting a URL over a non-empty selection links the selection instead of
@@ -102,6 +84,8 @@ async function attachPastedFile(
 function createNoteEditorProps(
   getNoteId: () => string | null,
   getAddAttachment: () => (created: Attachment) => void,
+  getAttachPastedFile: () => (entityId: string, file: File) => Promise<Attachment>,
+  getOpenAttachment: () => (path: string) => Promise<void>,
 ): EditorProps {
   return {
     handleDOMEvents: {
@@ -112,7 +96,7 @@ function createNoteEditorProps(
         if (!href) return false;
         event.preventDefault();
         if (isAttachmentHref(href)) {
-          void openAttachment(decodeURI(href)).catch((err: unknown) => {
+          void getOpenAttachment()(decodeURI(href)).catch((err: unknown) => {
             window.alert(`Couldn't open the attachment: ${errorMessageOf(err)}`);
           });
         } else {
@@ -127,7 +111,8 @@ function createNoteEditorProps(
         const noteId = getNoteId();
         if (!noteId) return false; // nothing loaded to attach against yet
         const addAttachment = getAddAttachment();
-        for (const file of files) void attachPastedFile(noteId, file, addAttachment);
+        const attachToStore = getAttachPastedFile();
+        for (const file of files) void attachPastedFile(noteId, file, attachToStore, addAttachment);
         return true;
       }
       const text = event.clipboardData?.getData("text/plain")?.trim() ?? "";
@@ -146,6 +131,12 @@ function createNoteEditorProps(
 export interface NoteEditorStore {
   getNoteBody: (id: string) => Promise<string>;
   saveNote: (note: Note, body: string) => Promise<void>;
+  /** Attach a pasted file's bytes only — no entity patch; the caller (this hook) holds its own list. */
+  attachPastedFile: (entityId: string, file: File) => Promise<Attachment>;
+  /** Move an attachment file to trash — no entity patch; the caller updates its own list. */
+  trashAttachment: (path: string) => Promise<void>;
+  /** Open an attachment in the OS default app. */
+  openAttachment: (path: string) => Promise<void>;
 }
 
 export interface UseNoteEditorOptions {
@@ -173,6 +164,11 @@ export interface UseNoteEditorResult {
   flush: () => void;
   /** Cancel a pending autosave without persisting (discard an empty draft). */
   discard: () => void;
+  /**
+   * Discard any pending autosave and persist `{...note, ...patch}` with the
+   * live body in ONE save, so a separate metadata write can't race the flush.
+   */
+  saveWith: (patch: Partial<Note>) => void;
   /** The editor's current markdown body (for a host that writes its own patch). */
   getBody: () => string;
   /** True when the working title and body are both blank (an empty draft). */
@@ -210,11 +206,19 @@ export function useNoteEditor(
   // is created exactly once, so paste must read this indirectly rather than
   // closing over a callback that changes identity across renders.
   const addAttachmentsRef = useRef<(created: Attachment[]) => void>(() => {});
+  // Forward to the live store methods the same way, since `store` may change
+  // identity across renders but the editor (and its props) is created once.
+  const attachPastedFileRef = useRef(store.attachPastedFile);
+  attachPastedFileRef.current = store.attachPastedFile;
+  const openAttachmentRef = useRef(store.openAttachment);
+  openAttachmentRef.current = store.openAttachment;
   const editorProps = useMemo(
     () =>
       createNoteEditorProps(
         () => loadedIdRef.current,
         () => (created: Attachment) => addAttachmentsRef.current([created]),
+        () => attachPastedFileRef.current,
+        () => openAttachmentRef.current,
       ),
     [],
   );
@@ -282,6 +286,24 @@ export function useNoteEditor(
     pendingNoteRef.current = null;
   }, []);
 
+  /**
+   * Discard any pending autosave and persist `{...note, ...patch}` with the
+   * live body in one save — used for a metadata change (e.g. clearing the
+   * goal link) that must land atomically with whatever's currently typed,
+   * with no separate write that could race the debounce.
+   */
+  const saveWith = useCallback(
+    (patch: Partial<Note>): void => {
+      discard();
+      if (!note) return;
+      const body = editor ? getMarkdown(editor) : "";
+      bodyCache.current.set(note.id, body);
+      onBodyRef.current?.(note.id, body);
+      void store.saveNote({ ...note, ...patch }, body);
+    },
+    [note, editor, store, discard],
+  );
+
   /** The editor's current markdown body. */
   const getBody = useCallback((): string => (editor ? getMarkdown(editor) : ""), [editor]);
 
@@ -343,7 +365,7 @@ export function useNoteEditor(
     (path: string) => {
       void (async () => {
         try {
-          await removeAttachmentFile(path);
+          await store.trashAttachment(path);
         } catch (err) {
           window.alert(`Couldn't remove the attachment: ${errorMessageOf(err)}`);
           return;
@@ -356,7 +378,7 @@ export function useNoteEditor(
         flush();
       })();
     },
-    [note, flush],
+    [note, flush, store],
   );
 
   // Body edits → schedule a save. Registered once; reads live refs internally.
@@ -441,6 +463,7 @@ export function useNoteEditor(
     loadingBody,
     flush,
     discard,
+    saveWith,
     getBody,
     isEmpty,
     attachments,

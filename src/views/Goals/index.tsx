@@ -11,7 +11,7 @@
  */
 import { useMemo, useState, type JSX } from "react";
 import type { Goal } from "@/types";
-import { useStore, selectGoalsOverview, selectGoalProgress } from "@/store";
+import { useStore, selectGoalsOverview, selectGoalProgress, type GoalProgress } from "@/store";
 import { ProgressBar, ContextDot, Icon } from "@/components";
 import { formatShortDate } from "@/lib/dates";
 import { NewGoalDialog } from "./NewGoalDialog";
@@ -152,6 +152,13 @@ export default function GoalsOverview(): JSX.Element {
     [goals, contextFilter],
   );
 
+  // Computed once per goals/tasks change rather than per card in render.
+  const progressByGoal = useMemo(() => {
+    const map: Record<string, GoalProgress> = {};
+    for (const goal of goals) map[goal.id] = selectGoalProgress(goal.id, tasks);
+    return map;
+  }, [goals, tasks]);
+
   const openGoal = (goalId: string): void => navigate("goal", goalId);
 
   return (
@@ -183,7 +190,7 @@ export default function GoalsOverview(): JSX.Element {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {live.map((goal) => {
-              const { done, total } = selectGoalProgress(goal.id, tasks);
+              const { done, total } = progressByGoal[goal.id] ?? { done: 0, total: 0, pct: 0 };
               return (
                 <GoalCard key={goal.id} goal={goal} done={done} total={total} onOpen={openGoal} />
               );

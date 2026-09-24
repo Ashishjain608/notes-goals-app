@@ -46,6 +46,9 @@ export default function Notes(): JSX.Element {
   const deleteNote = useStore((s) => s.deleteNote);
   const getNoteBody = useStore((s) => s.getNoteBody);
   const saveNote = useStore((s) => s.saveNote);
+  const attachPastedFile = useStore((s) => s.attachPastedFile);
+  const trashAttachment = useStore((s) => s.trashAttachment);
+  const openAttachment = useStore((s) => s.openAttachment);
   const selectedId = useStore((s) => s.selectedNoteId);
   const selectNote = useStore((s) => s.selectNote);
   const navigate = useStore((s) => s.navigate);
@@ -102,8 +105,8 @@ export default function Notes(): JSX.Element {
   const goalIndex = useMemo(() => goalsById(goals), [goals]);
 
   const noteStore = useMemo<NoteEditorStore>(
-    () => ({ getNoteBody, saveNote }),
-    [getNoteBody, saveNote],
+    () => ({ getNoteBody, saveNote, attachPastedFile, trashAttachment, openAttachment }),
+    [getNoteBody, saveNote, attachPastedFile, trashAttachment, openAttachment],
   );
 
   /** Cache of body text per note id, populated as cards become visible. */

@@ -7,15 +7,19 @@
 //! `config.json` on every call.
 //!
 //! Module map:
-//! - `error`    — the `AppError` returned by every command.
-//! - `model`    — serde structs mirroring `src/types.ts`.
-//! - `vault`    — vault config (`config.json`) + path resolution.
+//! - `error` — the `AppError` returned by every command.
+//! - `model` — serde structs mirroring `src/types.ts`.
+//! - `vault` — vault config (`config.json`) + path resolution.
 //! - `store_io` — parse/serialize, atomic writes, trash, `load_all` helpers.
-//! - `commands` — the `#[tauri::command]` surface registered below.
+//! - `ops` — vault-touching domain logic, `fn(vault: &Path, ...)` (no
+//!   `AppHandle`), called by `commands`.
+//! - `commands` — the `#[tauri::command]` surface registered below; each is a
+//!   thin adapter that resolves the vault and calls `ops`.
 
 mod commands;
 mod error;
 mod model;
+mod ops;
 mod store_io;
 mod vault;
 

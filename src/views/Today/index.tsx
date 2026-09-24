@@ -13,7 +13,7 @@
  * `selectToday` / `selectSlate` / `goalsById` selectors, and renders shared
  * components. All mutations route through store actions.
  */
-import type { JSX } from "react";
+import { useMemo, type JSX } from "react";
 import type { ContextFilter, Goal, Task } from "@/types";
 import {
   useStore,
@@ -339,6 +339,7 @@ export default function Today(): JSX.Element {
   const tasks = useStore((s) => s.tasks);
   const goals = useStore((s) => s.goals);
   const contextFilter = useStore((s) => s.contextFilter);
+  const day = useStore((s) => s.day);
   const toggleTaskStatus = useStore((s) => s.toggleTaskStatus);
   const toggleTaskPriority = useStore((s) => s.toggleTaskPriority);
   const toggleTaskCommit = useStore((s) => s.toggleTaskCommit);
@@ -346,10 +347,13 @@ export default function Today(): JSX.Element {
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const navigate = useStore((s) => s.navigate);
 
-  const view = selectToday(tasks, contextFilter);
+  // Re-derive at local midnight: `day` is in the deps even though selectToday /
+  // selectSlate default to `new Date()` themselves, so the view actually notices
+  // the day rolling over rather than only re-rendering on the next data change.
+  const view = useMemo(() => selectToday(tasks, contextFilter), [tasks, contextFilter, day]);
   // The slate is measured across every context — the cap is on your hours, not
   // on the filter you happen to be looking through.
-  const slate = selectSlate(tasks, slateCap);
+  const slate = useMemo(() => selectSlate(tasks, slateCap), [tasks, slateCap, day]);
   const gById = goalsById(goals);
 
   const handlers: RowHandlers = {

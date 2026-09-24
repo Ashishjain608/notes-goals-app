@@ -7,8 +7,8 @@
  * as the first, pre-selected row, so Enter after typing still captures exactly
  * as it always has. Arrow keys move the selection; Enter activates it.
  *
- * Note bodies are lazy (ADR-0006), so they're searched in Rust via
- * `ipc.searchNoteBodies` on a short debounce and merged in by `searchAll`.
+ * Note bodies are lazy (ADR-0006), so they're searched in Rust via the store's
+ * `searchNoteBodies` on a short debounce and merged in by `searchAll`.
  */
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import type { Context, NoteBodyHit } from "@/types";
@@ -16,7 +16,6 @@ import type { Screen } from "@/store";
 import type { IconName } from "@/components";
 import { useStore } from "@/store";
 import { Icon } from "@/components";
-import * as ipc from "@/lib/ipc";
 import { searchAll, MIN_QUERY, type SearchHit, type SearchKind } from "@/lib/search";
 import { OptionRow } from "./OptionRow";
 
@@ -64,6 +63,7 @@ export function CommandPalette(): JSX.Element | null {
   const navigate = useStore((s) => s.navigate);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const selectNote = useStore((s) => s.selectNote);
+  const searchNoteBodies = useStore((s) => s.searchNoteBodies);
 
   const [title, setTitle] = useState("");
   const [bodyHits, setBodyHits] = useState<NoteBodyHit[]>([]);
@@ -91,8 +91,7 @@ export function CommandPalette(): JSX.Element | null {
     }
     let cancelled = false;
     const timer = setTimeout(() => {
-      void ipc
-        .searchNoteBodies(trimmed)
+      void searchNoteBodies(trimmed)
         .then((hits) => {
           if (!cancelled) setBodyHits(hits);
         })
@@ -104,7 +103,7 @@ export function CommandPalette(): JSX.Element | null {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, trimmed]);
+  }, [open, trimmed, searchNoteBodies]);
 
   const hits = useMemo(
     () => searchAll(trimmed, { tasks, notes, goals, notebooks }, bodyHits),
