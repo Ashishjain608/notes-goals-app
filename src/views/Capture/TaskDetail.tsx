@@ -8,41 +8,20 @@
  * blur, an Open/Done/Dropped segmented control, collapsible due / snooze / goal
  * rows, single-level subtasks, and a confirmed Delete (distinct from "dropped").
  */
-import { useEffect, useLayoutEffect, useRef, useState, type JSX, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 import { open as openFilePicker } from "@tauri-apps/plugin-dialog";
 import type { Attachment, Goal, IsoDate, Subtask, Task, TaskStatus } from "@/types";
-import { useStore, selectSlate } from "@/store";
-import * as ipc from "@/lib/ipc";
-import { ageInDays, dueLabel, formatShortDate, localToday } from "@/lib/dates";
+import { useStore, selectSlate, isOnSlate } from "@/store";
+import { ageInDays, dueLabel, formatShortDate } from "@/lib/dates";
+import { errorMessageOf } from "@/lib/errors";
 import { confirmDestructive } from "@/lib/confirm";
 import { AttachmentList, Checkbox, ContextDot, DatePicker, Icon, type IconName } from "@/components";
 import { OptionRow } from "./OptionRow";
 import { dateKeyDaysAhead } from "./dueDates";
-
-/** Coerce a thrown value into a short user-facing message (mirrors the store's own convention). */
-function errorMessageOf(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === "string") return err;
-  return "Something went wrong.";
-}
-
-/** Best-guess filename extension for a pasted file's MIME type (clipboard files often arrive unnamed). */
-function extensionForMime(mime: string): string {
-  const known: Record<string, string> = {
-    "image/png": "png",
-    "image/jpeg": "jpg",
-    "image/gif": "gif",
-    "image/webp": "webp",
-    "image/svg+xml": "svg",
-  };
-  return known[mime] ?? mime.split("/")[1] ?? "bin";
-}
+import { useSlidePanel } from "@/views/useSlidePanel";
 
 /** Which collapsible option menu is currently expanded. */
 type Menu = "due" | "snooze" | "goal" | null;
-
-/** Slightly longer than the slide-out (0.24s) so the panel unmounts after it finishes. */
-const PANEL_EXIT_MS = 260;
 
 /** Status segments, paired with their glyph; values are the lowercase domain enum. */
 const STATUS_SEGMENTS: ReadonlyArray<{ value: TaskStatus; label: string; icon: IconName }> = [
@@ -426,73 +405,39 @@ export function TaskDetail(): JSX.Element | null {
   const tasks = useStore((s) => s.tasks);
   const goals = useStore((s) => s.goals);
   const theme = useStore((s) => s.theme);
+  const day = useStore((s) => s.day);
   const patchTask = useStore((s) => s.patchTask);
+  const toggleTaskPriority = useStore((s) => s.toggleTaskPriority);
   const toggleTaskCommit = useStore((s) => s.toggleTaskCommit);
   const slateCap = useStore((s) => s.slateCap);
   const setTaskStatus = useStore((s) => s.setTaskStatus);
   const deleteTask = useStore((s) => s.deleteTask);
   const closeTaskDetail = useStore((s) => s.closeTaskDetail);
+  const attachFilesToTask = useStore((s) => s.attachFilesToTask);
+  const attachPastedToTask = useStore((s) => s.attachPastedToTask);
+  const removeTaskAttachment = useStore((s) => s.removeTaskAttachment);
+  const openAttachmentAction = useStore((s) => s.openAttachment);
 
   const [menu, setMenu] = useState<Menu>(null);
 
   const liveTask = detailTaskId ? tasks.find((t) => t.id === detailTaskId) : undefined;
   const open = liveTask != null;
 
-  // Stay mounted through the slide-out so closing is animated, not abrupt.
-  const [mounted, setMounted] = useState(open);
-  const [closing, setClosing] = useState(false);
+  // Stay mounted through the slide-out so closing is animated, not abrupt; Escape
+  // closes the panel from anywhere (shared lifecycle, also used by the goal drawer).
+  const { mounted, closing } = useSlidePanel(open, closeTaskDetail);
   const lastTaskRef = useRef<Task | undefined>(liveTask);
   if (liveTask) lastTaskRef.current = liveTask;
 
-  useEffect(() => {
-    if (open) {
-      setMounted(true);
-      setClosing(false);
-      return;
-    }
-    setClosing(true);
-    const timer = setTimeout(() => {
-      setMounted(false);
-      setClosing(false);
-    }, PANEL_EXIT_MS);
-    return () => clearTimeout(timer);
-  }, [open]);
+  // The slate is measured across every context and re-derives at local midnight.
+  const slate = useMemo(() => selectSlate(tasks, slateCap), [tasks, slateCap, day]);
 
-  // Escape closes the panel from anywhere, not just when focus is inside it.
-  // Listens on window so a click-away-then-Escape still works; the command
-  // palette owns Escape while it's open, and surfaces layered above (the
-  // scratchpad) stop the event before it reaches us.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== "Escape" || useStore.getState().paletteOpen) return;
-      e.preventDefault();
-      closeTaskDetail();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, closeTaskDetail]);
-
-  // Attach clipboard-pasted files one at a time, threading each new record through
-  // `patchTask` so a multi-file paste doesn't drop earlier files to a stale merge.
-  const attachPastedFiles = async (
-    entityId: string,
-    attachments: Attachment[],
-    files: File[],
-  ): Promise<void> => {
-    let acc = attachments;
-    for (const file of files) {
-      try {
-        const bytes = Array.from(new Uint8Array(await file.arrayBuffer()));
-        const name = file.name.trim() || `pasted-${Date.now()}.${extensionForMime(file.type)}`;
-        const created = await ipc.attachBytes(entityId, name, bytes);
-        acc = [...acc, created];
-        await patchTask(entityId, { attachments: acc });
-      } catch (err) {
-        window.alert(`Couldn't attach the pasted file: ${errorMessageOf(err)}`);
-      }
-    }
-  };
+  // Attach clipboard-pasted files, appended in order by the store action (it
+  // reads the latest attachments per file so a multi-file paste never drops one).
+  const attachPastedFiles = (entityId: string, files: File[]): Promise<void> =>
+    attachPastedToTask(entityId, files, (err) =>
+      window.alert(`Couldn't attach the pasted file: ${errorMessageOf(err)}`),
+    );
 
   // Paste-to-attach: only wired up while this task's panel is actually open.
   // Ordinary text paste (into the title/details/subtask fields) is untouched —
@@ -504,7 +449,7 @@ export function TaskDetail(): JSX.Element | null {
       const files = e.clipboardData?.files;
       if (!files || files.length === 0) return;
       e.preventDefault();
-      void attachPastedFiles(currentTask.id, currentTask.attachments, Array.from(files));
+      void attachPastedFiles(currentTask.id, Array.from(files));
     };
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
@@ -544,22 +489,22 @@ export function TaskDetail(): JSX.Element | null {
     if (details !== task.details) void patchTask(task.id, { details });
   };
 
-  const togglePriority = (): void => void patchTask(task.id, { priority: !task.priority });
-  const slate = selectSlate(tasks, slateCap);
-  const onSlate = task.committedOn === localToday();
+  const togglePriority = (): void => void toggleTaskPriority(task.id);
+  const onSlate = isOnSlate(task, day);
 
   const toggleSubtask = (subtaskId: string): void => {
-    const subtasks = task.subtasks.map((s) =>
-      s.id === subtaskId
-        ? { ...s, status: s.status === "done" ? ("open" as const) : ("done" as const) }
-        : s,
-    );
-    void patchTask(task.id, { subtasks });
+    void patchTask(task.id, (t) => ({
+      subtasks: t.subtasks.map((s) =>
+        s.id === subtaskId
+          ? { ...s, status: s.status === "done" ? ("open" as const) : ("done" as const) }
+          : s,
+      ),
+    }));
   };
 
   const addSubtask = (title: string): void => {
     const subtask: Subtask = { id: crypto.randomUUID(), title, status: "open" };
-    void patchTask(task.id, { subtasks: [...task.subtasks, subtask] });
+    void patchTask(task.id, (t) => ({ subtasks: [...t.subtasks, subtask] }));
   };
 
   const confirmDelete = async (): Promise<void> => {
@@ -576,8 +521,7 @@ export function TaskDetail(): JSX.Element | null {
       if (!selection) return;
       const paths = Array.isArray(selection) ? selection : [selection];
       if (paths.length === 0) return;
-      const created = await ipc.attachFiles(task.id, paths);
-      await patchTask(task.id, { attachments: [...task.attachments, ...created] });
+      await attachFilesToTask(task.id, paths);
     } catch (err) {
       window.alert(`Couldn't attach the file: ${errorMessageOf(err)}`);
     }
@@ -585,7 +529,7 @@ export function TaskDetail(): JSX.Element | null {
 
   /** Open an attachment in the OS default app. */
   const openAttachment = (attachment: Attachment): void => {
-    void ipc.openAttachment(attachment.path).catch((err: unknown) => {
+    void openAttachmentAction(attachment.path).catch((err: unknown) => {
       window.alert(`Couldn't open “${attachment.name}”: ${errorMessageOf(err)}`);
     });
   };
@@ -596,10 +540,7 @@ export function TaskDetail(): JSX.Element | null {
   const removeAttachment = (attachment: Attachment): void => {
     void (async () => {
       try {
-        await ipc.removeAttachment(attachment.path);
-        await patchTask(task.id, {
-          attachments: task.attachments.filter((a) => a.path !== attachment.path),
-        });
+        await removeTaskAttachment(task.id, attachment.path);
       } catch (err) {
         window.alert(`Couldn't remove “${attachment.name}”: ${errorMessageOf(err)}`);
       }

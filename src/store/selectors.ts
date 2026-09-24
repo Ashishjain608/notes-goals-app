@@ -17,6 +17,20 @@ import {
   localToday,
   toLocalDateKeyFromIso,
 } from "@/lib/dates";
+import { isOnSlate } from "./slate";
+
+// Slate types/constants/selectors now live in ./slate (pure, no store import);
+// re-exported here so existing `from "@/store"` / `from "./selectors"` imports
+// keep working unchanged.
+export {
+  clampSlateCap,
+  DEFAULT_SLATE_CAP,
+  isOnSlate,
+  MAX_SLATE_CAP,
+  MIN_SLATE_CAP,
+  selectSlate,
+  type SlateSummary,
+} from "./slate";
 
 /* ---------------------------------------------------------------- utilities */
 
@@ -57,74 +71,6 @@ export function goalsById(goals: Goal[]): Record<string, Goal> {
 }
 
 /* -------------------------------------------------------------------- TODAY */
-
-/**
- * How many tasks may sit on one day's slate. The cap IS the mechanism: a day
- * you can finish needs a small number of slots, and committing one more thing
- * than fits has to cost you something else. The user picks the number in
- * Settings (ADR-0010); it stays within these bounds so the slate stays small.
- */
-export const DEFAULT_SLATE_CAP = 5;
-export const MIN_SLATE_CAP = 1;
-export const MAX_SLATE_CAP = 10;
-
-/** Coerce any stored or typed value to a whole cap within the bounds. */
-export function clampSlateCap(value: number): number {
-  if (!Number.isFinite(value)) return DEFAULT_SLATE_CAP;
-  return Math.min(MAX_SLATE_CAP, Math.max(MIN_SLATE_CAP, Math.round(value)));
-}
-
-/** True when this task is committed to the local day `day`. */
-function isOnSlate(task: Task, day: IsoDate): boolean {
-  return task.committedOn != null && toLocalDateKeyFromIso(task.committedOn) === day;
-}
-
-export interface SlateSummary {
-  /** Tasks committed to today, done ones included — what the cap counts. */
-  count: number;
-  /** Still to do. */
-  openCount: number;
-  /** Finished today, from the slate. */
-  doneCount: number;
-  /** True once every committed task is done: the day's finish line. */
-  complete: boolean;
-  /** True when no further task may be committed today. */
-  full: boolean;
-  /** The cap the slate was measured against. */
-  cap: number;
-}
-
-/**
- * The state of today's slate across ALL contexts. Global on purpose, and
- * deliberately NOT part of TodayView: the scarce thing is your hours, not your
- * office/personal split, so the cap and the finish line must not move when the
- * context filter does. Dropped tasks free their slot.
- */
-export function selectSlate(
-  tasks: Task[],
-  cap: number = DEFAULT_SLATE_CAP,
-  now: Date = new Date(),
-): SlateSummary {
-  const today = localToday(now);
-  let openCount = 0;
-  let doneCount = 0;
-
-  for (const task of tasks) {
-    if (task.status === "dropped" || !isOnSlate(task, today)) continue;
-    if (task.status === "done") doneCount += 1;
-    else openCount += 1;
-  }
-
-  const count = openCount + doneCount;
-  return {
-    count,
-    openCount,
-    doneCount,
-    complete: openCount === 0 && doneCount > 0,
-    full: count >= cap,
-    cap,
-  };
-}
 
 export interface TodayView {
   /** Open tasks committed to today, in the standard active-list order. */

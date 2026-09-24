@@ -13,17 +13,10 @@ import { useEffect, type JSX, type MutableRefObject, type ReactNode } from "reac
 import { EditorContent } from "@tiptap/react";
 import type { Attachment, Context, Note } from "@/types";
 import { ageInDays } from "@/lib/dates";
-import { openAttachment } from "@/lib/ipc";
+import { errorMessageOf } from "@/lib/errors";
 import { AttachmentList, ContextDot } from "@/components";
 import { EditorToolbar } from "./EditorToolbar";
 import { useNoteEditor, type NoteEditorStore } from "./useNoteEditor";
-
-/** Coerce a thrown value into a short user-facing message (mirrors the store's own convention). */
-function errorMessageOf(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === "string") return err;
-  return "Something went wrong.";
-}
 
 const NOTE_CONTEXTS: ReadonlyArray<{ value: Context; label: string }> = [
   { value: "office", label: "Office" },
@@ -34,6 +27,8 @@ const NOTE_CONTEXTS: ReadonlyArray<{ value: Context; label: string }> = [
 export interface NoteEditorApi {
   flush: () => void;
   discard: () => void;
+  /** Discard any pending autosave and save `{...note, ...patch}` with the live body in one save. */
+  saveWith: (patch: Partial<Note>) => void;
   getBody: () => string;
   isEmpty: () => boolean;
 }
@@ -99,6 +94,7 @@ export function NoteEditor({
     loadingBody,
     flush,
     discard,
+    saveWith,
     getBody,
     isEmpty,
     attachments,
@@ -108,12 +104,12 @@ export function NoteEditor({
 
   // Expose the editor handle so a host can persist / discard / patch on close.
   useEffect(() => {
-    if (apiRef) apiRef.current = { flush, discard, getBody, isEmpty };
-  }, [apiRef, flush, discard, getBody, isEmpty]);
+    if (apiRef) apiRef.current = { flush, discard, saveWith, getBody, isEmpty };
+  }, [apiRef, flush, discard, saveWith, getBody, isEmpty]);
 
   /** Open an attachment in the OS default app. */
   const handleOpenAttachment = (attachment: Attachment): void => {
-    void openAttachment(attachment.path).catch((err: unknown) => {
+    void store.openAttachment(attachment.path).catch((err: unknown) => {
       window.alert(`Couldn't open "${attachment.name}": ${errorMessageOf(err)}`);
     });
   };

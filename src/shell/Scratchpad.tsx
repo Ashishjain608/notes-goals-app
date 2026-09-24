@@ -31,8 +31,10 @@ import {
   switchTab,
   tabTitle,
   type ScratchState,
+  type ScratchStorage,
 } from "./scratchTabs";
 import { confirmDestructive } from "@/lib/confirm";
+import { readJson, writeJson } from "@/lib/prefs";
 
 const RECT_KEY = "ng-scratch-rect";
 const MIN_W = 280;
@@ -56,21 +58,35 @@ function viewport(): { w: number; h: number } {
 }
 
 function readRect(): Rect | null {
-  try {
-    const raw = localStorage.getItem(RECT_KEY);
-    return raw ? (JSON.parse(raw) as Rect) : null;
-  } catch {
-    return null;
-  }
+  return readJson<Rect | null>(RECT_KEY, null);
 }
 
 function writeRect(rect: Rect): void {
-  try {
-    localStorage.setItem(RECT_KEY, JSON.stringify(rect));
-  } catch {
-    // ignore
-  }
+  writeJson(RECT_KEY, rect);
 }
+
+/**
+ * A `ScratchStorage` over `globalThis.localStorage` that can never throw —
+ * neither on the property access itself (absent in a non-browser context)
+ * nor on `getItem`/`setItem` (privacy mode, quota). Mirrors `lib/prefs.ts`'s
+ * own safe-storage convention for `scratchTabs`' injectable storage contract.
+ */
+const safeLocalStorage: ScratchStorage = {
+  getItem(key) {
+    try {
+      return globalThis.localStorage?.getItem(key) ?? null;
+    } catch {
+      return null;
+    }
+  },
+  setItem(key, value) {
+    try {
+      globalThis.localStorage?.setItem(key, value);
+    } catch {
+      // ignore: storage may be unavailable
+    }
+  },
+};
 
 /** The default spot: tucked into the bottom-right, near the trigger. */
 function defaultRect(): Rect {
@@ -239,7 +255,7 @@ export function Scratchpad(): JSX.Element | null {
   const [mounted, setMounted] = useState(open);
   const [closing, setClosing] = useState(false);
 
-  const [state, setState] = useState<ScratchState>(() => loadState(localStorage));
+  const [state, setState] = useState<ScratchState>(() => loadState(safeLocalStorage));
   const [rect, setRect] = useState<Rect>(() => clampRect(readRect() ?? defaultRect()));
   const [copied, setCopied] = useState(false);
 
@@ -276,7 +292,7 @@ export function Scratchpad(): JSX.Element | null {
   /** Apply a pure scratchTabs transition, persisting the result. */
   const update = (next: ScratchState): void => {
     setState(next);
-    saveState(localStorage, next);
+    saveState(safeLocalStorage, next);
   };
 
   const updateText = (value: string): void => update(setTabText(state, tab.id, value));

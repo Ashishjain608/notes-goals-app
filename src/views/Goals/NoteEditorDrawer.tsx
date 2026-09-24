@@ -12,9 +12,7 @@ import { Icon } from "@/components";
 import { confirmDestructive } from "@/lib/confirm";
 import { NoteEditor, type NoteEditorApi } from "@/views/Notes/NoteEditor";
 import type { NoteEditorStore } from "@/views/Notes/useNoteEditor";
-
-/** Slightly longer than the slide-out so the drawer unmounts after it finishes. */
-const EXIT_MS = 260;
+import { useSlidePanel } from "@/views/useSlidePanel";
 
 export interface NoteEditorDrawerProps {
   /** The note being edited, or null when closed. */
@@ -62,54 +60,34 @@ export function NoteEditorDrawer({
   const deleteNote = useStore((s) => s.deleteNote);
   const navigate = useStore((s) => s.navigate);
   const selectNote = useStore((s) => s.selectNote);
+  const attachPastedFile = useStore((s) => s.attachPastedFile);
+  const trashAttachment = useStore((s) => s.trashAttachment);
+  const openAttachment = useStore((s) => s.openAttachment);
 
   const liveNote = noteId ? notes.find((n) => n.id === noteId) : undefined;
   const open = liveNote != null;
 
-  // Stay mounted through the slide-out (same pattern as the task panel).
-  const [mounted, setMounted] = useState(open);
-  const [closing, setClosing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const lastNoteRef = useRef<Note | undefined>(liveNote);
   if (liveNote) lastNoteRef.current = liveNote;
 
   const apiRef = useRef<NoteEditorApi | null>(null);
   // `close` is defined below the early returns (it needs the resolved note), so
-  // the window-level Escape handler reaches it through a ref.
+  // the window-level Escape handler (inside useSlidePanel) reaches it through a ref.
   const closeRef = useRef<() => void>(() => {});
 
-  // Escape closes the drawer from anywhere, not only when focus is inside it.
-  // The command palette owns Escape while open; the scratchpad sits above this
-  // drawer and stops the event before it reaches window.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== "Escape" || useStore.getState().paletteOpen) return;
-      e.preventDefault();
-      closeRef.current();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  // Stay mounted through the slide-out + Escape-closes-from-anywhere (same
+  // pattern as the task panel).
+  const { mounted, closing } = useSlidePanel(open, () => closeRef.current());
 
+  // Reset the ⋯ menu each time the drawer (re)opens.
   useEffect(() => {
-    if (open) {
-      setMounted(true);
-      setClosing(false);
-      setMenuOpen(false);
-      return;
-    }
-    setClosing(true);
-    const timer = setTimeout(() => {
-      setMounted(false);
-      setClosing(false);
-    }, EXIT_MS);
-    return () => clearTimeout(timer);
+    if (open) setMenuOpen(false);
   }, [open]);
 
   const noteStore = useMemo<NoteEditorStore>(
-    () => ({ getNoteBody, saveNote }),
-    [getNoteBody, saveNote],
+    () => ({ getNoteBody, saveNote, attachPastedFile, trashAttachment, openAttachment }),
+    [getNoteBody, saveNote, attachPastedFile, trashAttachment, openAttachment],
   );
 
   if (!mounted) return null;
@@ -138,9 +116,7 @@ export function NoteEditorDrawer({
   const removeFromGoal = (): void => {
     // Clear the goal link in a single save using the editor's current body, so a
     // separate metadata write can't race the flush and clobber recent edits.
-    const api = apiRef.current;
-    api?.discard();
-    void saveNote({ ...note, goalId: null }, api ? api.getBody() : "");
+    apiRef.current?.saveWith({ goalId: null });
     onClose();
   };
 
