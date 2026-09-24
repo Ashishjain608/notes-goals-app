@@ -85,7 +85,7 @@ Plain files mean it's portable and git/Dropbox/iCloud-friendly — point the fol
 ## Highlights
 
 - **Today** — a live view of open, un-snoozed tasks; carry-forward is automatic, there's no daily page.
-- **The day's slate** — commit up to five tasks (office and personal mixed) to today; finish them all and the day is done. No points, no streaks, no penalties — just a finish line.
+- **The day's slate** — commit up to five tasks (office and personal mixed) to today — the number is yours to change in Settings; finish them all and the day is done. No points, no streaks, no penalties — just a finish line.
 - **Global search** — ⌘K searches tasks, goals, notebooks and notes, note *bodies* included, and jumps straight to the result.
 - **Tasks** — priority flags, due dates, snooze, single-level subtasks, and a slide-in detail panel.
 - **Notes** — a WYSIWYG editor (headings, lists, checkboxes, quotes, a divider, links that open in your browser on ⌘-click, and smart `--`→— / `...`→…), organized into **context-scoped notebooks** with drag-and-drop filing.

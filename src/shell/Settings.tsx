@@ -1,6 +1,7 @@
 /**
  * Settings — a centred modal for the app's few configurable things: where the
- * data folder lives, light/dark appearance, and app info. Self-gating overlay
+ * data folder lives, light/dark appearance, how many slots today's slate has,
+ * and app info. Self-gating overlay
  * mounted beside the command palette (App.tsx): renders nothing while closed,
  * no exit-animation state machine, same as CommandPalette.
  */
@@ -8,7 +9,7 @@ import { useEffect, useState, type JSX } from "react";
 import { homeDir } from "@tauri-apps/api/path";
 import { getVersion } from "@tauri-apps/api/app";
 import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
-import { useStore, type Theme } from "@/store";
+import { useStore, MAX_SLATE_CAP, MIN_SLATE_CAP, type Theme } from "@/store";
 import { Icon } from "@/components";
 
 const REPO_URL = "https://github.com/Ashishjain608/notes-goals-app";
@@ -26,6 +27,9 @@ export function shortenHome(path: string, home: string | null): string {
   return path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
 }
 
+const STEP_BUTTON =
+  "grid h-7 w-7 place-items-center rounded-md text-[16px] leading-none text-ink-2 transition-colors hover:bg-raise disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent";
+
 function SectionHeading({ children }: { children: string }): JSX.Element {
   return (
     <h2 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[.06em] text-ink-3">
@@ -41,6 +45,8 @@ export function Settings(): JSX.Element | null {
   const theme = useStore((s) => s.theme);
   const setTheme = useStore((s) => s.setTheme);
   const chooseVault = useStore((s) => s.chooseVault);
+  const slateCap = useStore((s) => s.slateCap);
+  const setSlateCap = useStore((s) => s.setSlateCap);
 
   const [home, setHome] = useState<string | null>(null);
   const [version, setVersion] = useState<string | null>(null);
@@ -145,6 +151,55 @@ export function Settings(): JSX.Element | null {
                 </button>
               ))}
             </div>
+          </section>
+
+          <section className="mb-6">
+            <SectionHeading>Today&rsquo;s slate</SectionHeading>
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center rounded-lg border border-line p-0.5">
+                <button
+                  type="button"
+                  aria-label="One fewer slot"
+                  title={
+                    slateCap <= MIN_SLATE_CAP
+                      ? `At least ${MIN_SLATE_CAP} slot`
+                      : `One fewer slot — Today holds ${slateCap - 1}`
+                  }
+                  disabled={slateCap <= MIN_SLATE_CAP}
+                  onClick={() => setSlateCap(slateCap - 1)}
+                  className={STEP_BUTTON}
+                >
+                  &minus;
+                </button>
+                <span
+                  aria-live="polite"
+                  className="w-8 text-center text-[14px] font-medium tabular-nums text-ink"
+                >
+                  {slateCap}
+                </span>
+                <button
+                  type="button"
+                  aria-label="One more slot"
+                  title={
+                    slateCap >= MAX_SLATE_CAP
+                      ? `At most ${MAX_SLATE_CAP} slots`
+                      : `One more slot — Today holds ${slateCap + 1}`
+                  }
+                  disabled={slateCap >= MAX_SLATE_CAP}
+                  onClick={() => setSlateCap(slateCap + 1)}
+                  className={STEP_BUTTON}
+                >
+                  +
+                </button>
+              </div>
+              <span className="text-[13px] text-ink-2">
+                {slateCap === 1 ? "task" : "tasks"} you can commit to each day
+              </span>
+            </div>
+            <p className="mt-2.5 text-[12px] leading-relaxed text-ink-3">
+              A small slate is a day you can finish. Lowering it keeps what you&rsquo;ve already
+              committed today; it only stops new commitments. Saved on this Mac.
+            </p>
           </section>
 
           <section>

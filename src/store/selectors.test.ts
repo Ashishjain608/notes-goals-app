@@ -21,7 +21,8 @@ import {
   selectNotesByNotebook,
   selectSlate,
   selectToday,
-  SLATE_CAP,
+  DEFAULT_SLATE_CAP,
+  clampSlateCap,
 } from "./selectors";
 import { toLocalDateKey } from "@/lib/dates";
 
@@ -123,7 +124,7 @@ describe("selectSlate", () => {
       makeTask({ committedOn: null }),
     ];
 
-    const slate = selectSlate(tasks, NOW);
+    const slate = selectSlate(tasks, DEFAULT_SLATE_CAP, NOW);
 
     expect(slate.count).toBe(2);
     expect(slate.openCount).toBe(1);
@@ -132,24 +133,34 @@ describe("selectSlate", () => {
   });
 
   it("is complete only when something was committed and all of it is done", () => {
-    const empty = selectSlate([makeTask()], NOW);
+    const empty = selectSlate([makeTask()], DEFAULT_SLATE_CAP, NOW);
     expect(empty.complete).toBe(false); // an empty day is not a finished day
 
     const finished = selectSlate(
       [makeTask({ committedOn: TODAY, status: "done", completed: "2026-06-07T10:00:00Z" })],
+      DEFAULT_SLATE_CAP,
       NOW,
     );
     expect(finished.complete).toBe(true);
   });
 
-  it("fills at SLATE_CAP, and a dropped task gives its slot back", () => {
-    const full = Array.from({ length: SLATE_CAP }, () => makeTask({ committedOn: TODAY }));
-    expect(selectSlate(full, NOW).full).toBe(true);
+  it("fills at the cap, and a dropped task gives its slot back", () => {
+    const full = Array.from({ length: DEFAULT_SLATE_CAP }, () => makeTask({ committedOn: TODAY }));
+    expect(selectSlate(full, DEFAULT_SLATE_CAP, NOW).full).toBe(true);
 
     const [first, ...rest] = full;
     const withDrop = [{ ...first!, status: "dropped" as const }, ...rest];
-    expect(selectSlate(withDrop, NOW).full).toBe(false);
-    expect(selectSlate(withDrop, NOW).count).toBe(SLATE_CAP - 1);
+    expect(selectSlate(withDrop, DEFAULT_SLATE_CAP, NOW).full).toBe(false);
+    expect(selectSlate(withDrop, DEFAULT_SLATE_CAP, NOW).count).toBe(DEFAULT_SLATE_CAP - 1);
+  });
+
+  it("fills at whatever cap it is given, and reports that cap", () => {
+    const three = Array.from({ length: 3 }, () => makeTask({ committedOn: TODAY }));
+    expect(selectSlate(three, 3, NOW)).toMatchObject({ full: true, cap: 3 });
+    expect(selectSlate(three, 4, NOW)).toMatchObject({ full: false, cap: 4 });
+    // Lowering the cap below what's already committed keeps the commitments
+    // and simply refuses new ones.
+    expect(selectSlate(three, 2, NOW)).toMatchObject({ count: 3, full: true });
   });
 
   it("ignores the context filter entirely — the cap is on hours, not contexts", () => {
@@ -157,7 +168,22 @@ describe("selectSlate", () => {
       makeTask({ context: "office", committedOn: TODAY }),
       makeTask({ context: "personal", committedOn: TODAY }),
     ];
-    expect(selectSlate(tasks, NOW).count).toBe(2);
+    expect(selectSlate(tasks, DEFAULT_SLATE_CAP, NOW).count).toBe(2);
+  });
+});
+
+describe("clampSlateCap", () => {
+  it("keeps a whole number inside the bounds", () => {
+    expect(clampSlateCap(3)).toBe(3);
+    expect(clampSlateCap(0)).toBe(1);
+    expect(clampSlateCap(-4)).toBe(1);
+    expect(clampSlateCap(99)).toBe(10);
+    expect(clampSlateCap(4.6)).toBe(5);
+  });
+
+  it("falls back to the default for garbage", () => {
+    expect(clampSlateCap(Number.NaN)).toBe(DEFAULT_SLATE_CAP);
+    expect(clampSlateCap(Number("abc"))).toBe(DEFAULT_SLATE_CAP);
   });
 });
 

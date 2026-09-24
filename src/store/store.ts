@@ -4,7 +4,8 @@
  * truth and every mutating action persists through `@/lib/ipc` (await-then-
  * update, no optimistic UI — local writes are sub-ms per ADR-0006).
  *
- * Theme + vault are app config: theme is mirrored to localStorage; the vault
+ * Theme, slate cap + vault are app config: theme and slate cap are mirrored to
+ * localStorage; the vault
  * path is owned by Rust. `reload()` is the focus-reload; it is guarded by a
  * module-level `savePending` flag so a focus event never clobbers an in-flight
  * edit (docs/IMPLEMENTATION_PLAN.md §6).
@@ -25,7 +26,13 @@ import type {
 } from "@/types";
 import * as ipc from "@/lib/ipc";
 import { localToday } from "@/lib/dates";
-import { reconcileNoteGoal, reconcileNoteNotebook, selectSlate } from "./selectors";
+import {
+  clampSlateCap,
+  DEFAULT_SLATE_CAP,
+  reconcileNoteGoal,
+  reconcileNoteNotebook,
+  selectSlate,
+} from "./selectors";
 
 export type AppStatus = "loading" | "needs-vault" | "ready" | "error";
 export type Screen = "today" | "tasks" | "notes" | "goals" | "goal" | "activity";
@@ -48,6 +55,8 @@ export interface AppState {
   contextFilter: ContextFilter;
   theme: Theme;
   navCollapsed: boolean;
+  /** How many tasks today's slate holds — the user's choice, per Mac (ADR-0010). */
+  slateCap: number;
   route: { screen: Screen; goalId: string | null };
   detailTaskId: string | null;
   paletteOpen: boolean;
@@ -68,6 +77,7 @@ export interface AppState {
   setTheme: (t: Theme) => void;
   toggleTheme: () => void;
   toggleNav: () => void;
+  setSlateCap: (cap: number) => void;
   navigate: (screen: Screen, goalId?: string | null) => void;
   openTaskDetail: (id: string) => void;
   closeTaskDetail: () => void;
@@ -98,7 +108,7 @@ export interface AppState {
   toggleTaskPriority: (id: string) => Promise<void>;
   /**
    * Put a task on today's slate, or take it off. Resolves false when the slate
-   * is already at SLATE_CAP — the caller shows why rather than silently doing
+   * is already at `slateCap` — the caller shows why rather than silently doing
    * nothing.
    */
   toggleTaskCommit: (id: string) => Promise<boolean>;
@@ -164,6 +174,20 @@ function readNavCollapsed(): boolean {
   }
 }
 
+/* ------------------------------------------------------ slate cap config */
+
+const SLATE_CAP_KEY = "ng-slate-cap";
+
+/** Read the persisted slate cap, defaulting to 5. Safe when localStorage is absent. */
+function readSlateCap(): number {
+  try {
+    const raw = localStorage.getItem(SLATE_CAP_KEY);
+    return raw === null ? DEFAULT_SLATE_CAP : clampSlateCap(Number(raw));
+  } catch {
+    return DEFAULT_SLATE_CAP;
+  }
+}
+
 /* ----------------------------------------------------------- save guard ---
    Module-level so a window-focus reload can tell whether a mutation is mid-
    flight and skip itself rather than overwrite the optimistic local state. */
@@ -196,6 +220,7 @@ export const useStore = create<AppState>((set, get) => ({
   contextFilter: "all",
   theme: "light",
   navCollapsed: readNavCollapsed(),
+  slateCap: readSlateCap(),
   route: { screen: "today", goalId: null },
   detailTaskId: null,
   paletteOpen: false,
@@ -318,6 +343,16 @@ export const useStore = create<AppState>((set, get) => ({
     set({ navCollapsed: next });
   },
 
+  setSlateCap: (cap) => {
+    const next = clampSlateCap(cap);
+    try {
+      localStorage.setItem(SLATE_CAP_KEY, String(next));
+    } catch {
+      // ignore: storage may be unavailable
+    }
+    set({ slateCap: next });
+  },
+
   navigate: (screen, goalId = null) => set({ route: { screen, goalId } }),
 
   openTaskDetail: (id) => set({ detailTaskId: id }),
@@ -401,7 +436,7 @@ export const useStore = create<AppState>((set, get) => ({
 
     const today = localToday();
     const onSlate = current.committedOn === today;
-    if (!onSlate && selectSlate(get().tasks).full) return false;
+    if (!onSlate && selectSlate(get().tasks, get().slateCap).full) return false;
 
     // Re-committing something you promised on an earlier day and didn't finish
     // is what `carried` counts — the honest record, not a punishment.

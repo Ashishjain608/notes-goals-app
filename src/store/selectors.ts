@@ -60,10 +60,19 @@ export function goalsById(goals: Goal[]): Record<string, Goal> {
 
 /**
  * How many tasks may sit on one day's slate. The cap IS the mechanism: a day
- * you can finish needs a small, fixed number of slots, and committing a sixth
- * thing has to cost you a fifth. Change this number, not the model, to tune it.
+ * you can finish needs a small number of slots, and committing one more thing
+ * than fits has to cost you something else. The user picks the number in
+ * Settings (ADR-0010); it stays within these bounds so the slate stays small.
  */
-export const SLATE_CAP = 5;
+export const DEFAULT_SLATE_CAP = 5;
+export const MIN_SLATE_CAP = 1;
+export const MAX_SLATE_CAP = 10;
+
+/** Coerce any stored or typed value to a whole cap within the bounds. */
+export function clampSlateCap(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_SLATE_CAP;
+  return Math.min(MAX_SLATE_CAP, Math.max(MIN_SLATE_CAP, Math.round(value)));
+}
 
 /** True when this task is committed to the local day `day`. */
 function isOnSlate(task: Task, day: IsoDate): boolean {
@@ -81,6 +90,8 @@ export interface SlateSummary {
   complete: boolean;
   /** True when no further task may be committed today. */
   full: boolean;
+  /** The cap the slate was measured against. */
+  cap: number;
 }
 
 /**
@@ -89,7 +100,11 @@ export interface SlateSummary {
  * office/personal split, so the cap and the finish line must not move when the
  * context filter does. Dropped tasks free their slot.
  */
-export function selectSlate(tasks: Task[], now: Date = new Date()): SlateSummary {
+export function selectSlate(
+  tasks: Task[],
+  cap: number = DEFAULT_SLATE_CAP,
+  now: Date = new Date(),
+): SlateSummary {
   const today = localToday(now);
   let openCount = 0;
   let doneCount = 0;
@@ -106,7 +121,8 @@ export function selectSlate(tasks: Task[], now: Date = new Date()): SlateSummary
     openCount,
     doneCount,
     complete: openCount === 0 && doneCount > 0,
-    full: count >= SLATE_CAP,
+    full: count >= cap,
+    cap,
   };
 }
 
