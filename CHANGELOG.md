@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Adding a task opens its detail panel straight away, so you can set a due date, goal or
+  details without hunting for it in the list. Escape or a click outside closes it.
+
 ## [0.3.0] - 2026-09-24
 
 ### Added

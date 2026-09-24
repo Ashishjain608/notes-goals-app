@@ -12,6 +12,7 @@ import type { Task } from "@/types";
 const ipc = vi.hoisted(() => ({
   updateTask: vi.fn(),
   loadAll: vi.fn(),
+  createTask: vi.fn(),
 }));
 vi.mock("@/lib/ipc", () => ipc);
 
@@ -143,5 +144,14 @@ describe("reload() and the in-flight save counter", () => {
 
     await useStore.getState().reload();
     expect(ipc.loadAll).toHaveBeenCalledTimes(1); // now both are done
+  });
+});
+
+describe("addTask", () => {
+  it("opens the new task's detail panel", async () => {
+    useStore.setState({ tasks: [], detailTaskId: null });
+    ipc.createTask.mockResolvedValue(task({ id: "new" }));
+    await useStore.getState().addTask({ title: "Task", context: "office" });
+    expect(useStore.getState().detailTaskId).toBe("new");
   });
 });
