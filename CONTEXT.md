@@ -55,7 +55,7 @@ The hero view. A live query over all Tasks, not a stored page — it shows the o
 _Avoid_: daily note, daily page, inbox.
 
 **Slate**:
-The set of Tasks committed to a single local day — the day's payload, capped at five (ADR-0009). Not a stored page and not a Status: a Task carries the day it was committed to (`committedOn`), so the slate is a live query exactly like Today. A commitment from an earlier day is not a commitment today; that Task falls back into the pool.
+The set of Tasks committed to a single local day — the day's payload, capped at five by default; the user picks 1–10 in Settings (ADR-0009, ADR-0010). Not a stored page and not a Status: a Task carries the day it was committed to (`committedOn`), so the slate is a live query exactly like Today. A commitment from an earlier day is not a commitment today; that Task falls back into the pool.
 _Avoid_: daily page, daily plan, MIT list, sprint.
 
 **Commit** (a Task):
@@ -94,7 +94,7 @@ _Avoid_: database, library, store (those refer to the in-memory representation);
 - A **Note** links to **at most one Goal**; a **Goal** has many Notes (computed live by matching `goalId`). A Note's **Context must match its linked Goal's** — changing the Note's Context unlinks it from the Goal (symmetric to the Notebook rule). Notes are added/edited from the Goal in place and also appear in the Notes module.
 - A **Task** has zero or more single-level **Subtasks**.
 - **Today** is a query over **Tasks** — it owns no data of its own.
-- The **slate** is a query over **Tasks** too: those whose `committedOn` is the current local day. At most five at a time, counted across both Contexts.
+- The **slate** is a query over **Tasks** too: those whose `committedOn` is the current local day. At most the chosen cap at a time (five by default), counted across both Contexts.
 - A **Goal**'s progress is `done ÷ non-dropped` over its linked **Tasks** (dropped Tasks excluded entirely, snoozed Tasks still count, Subtasks do not contribute). A Goal's own **Status** is independent of this progress — the user may mark a Goal done while leaving stragglers open.
 - A **Goal**'s **Status** never cascades: closing or holding a Goal leaves its linked Tasks and Notes untouched, and they keep behaving exactly as before (open Tasks still surface in Today).
 

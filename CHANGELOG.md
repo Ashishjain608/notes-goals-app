@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Choose how many slots today's slate has.** Settings → Today's slate sets the cap anywhere
+  from 1 to 10 (default 5). Lowering it keeps what you've already committed today.
+
 ## [0.2.0] - 2026-09-15
 
 ### Added

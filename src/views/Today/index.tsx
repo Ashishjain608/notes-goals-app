@@ -2,7 +2,7 @@
  * Today — the hero screen.
  *
  * Two bands. The **slate** on top: the handful of tasks you committed to today
- * (ADR-0009), capped at SLATE_CAP so the day is finishable — when they're all
+ * (ADR-0009), capped at the user's slate cap (ADR-0010) so the day is finishable — when they're all
  * done the band becomes the day's finish line, the one thing a live query over
  * every open task can never say on its own. Below it, everything else open and
  * un-snoozed within the context filter, in the "columns" layout (Office |
@@ -20,7 +20,6 @@ import {
   selectToday,
   selectSlate,
   goalsById,
-  SLATE_CAP,
   type SlateSummary,
   type TodayView,
 } from "@/store";
@@ -107,14 +106,14 @@ function DayComplete({ slate }: { slate: SlateSummary }): JSX.Element {
  * the commit control is a small icon on the row, and nobody discovers an icon
  * by guessing.
  */
-function SlateInvite(): JSX.Element {
+function SlateInvite({ cap }: { cap: number }): JSX.Element {
   return (
     <div className="rounded-lg border border-dashed border-line-2 px-5 py-[14px] text-[13.5px] text-ink-2">
       <span className="font-medium text-ink">Pick today&rsquo;s work.</span> Tap the{" "}
       <span className="inline-flex translate-y-[3px] text-accent">
         <Icon name="today" size={15} />
       </span>{" "}
-      on any task below &mdash; up to {SLATE_CAP} &mdash; and finishing them ends the day. Task
+      on any task below &mdash; up to {cap} &mdash; and finishing them ends the day. Task
       details have the same control, spelled out.
     </div>
   );
@@ -135,14 +134,14 @@ function Slate({
   hasAvailable: boolean;
 }): JSX.Element | null {
   if (slate.complete) return <DayComplete slate={slate} />;
-  if (slate.count === 0) return hasAvailable ? <SlateInvite /> : null;
+  if (slate.count === 0) return hasAvailable ? <SlateInvite cap={slate.cap} /> : null;
 
   return (
     <div>
       <div className="mb-0.5 flex items-baseline gap-2 px-4">
         <SectionLabel accent>Committed</SectionLabel>
         <span className="text-[11px] tabular-nums text-ink-3">
-          {slate.count} of {SLATE_CAP} slots
+          {slate.count} of {slate.cap} slots
           {slate.doneCount > 0 && ` · ${slate.doneCount} done`}
         </span>
       </div>
@@ -343,13 +342,14 @@ export default function Today(): JSX.Element {
   const toggleTaskStatus = useStore((s) => s.toggleTaskStatus);
   const toggleTaskPriority = useStore((s) => s.toggleTaskPriority);
   const toggleTaskCommit = useStore((s) => s.toggleTaskCommit);
+  const slateCap = useStore((s) => s.slateCap);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const navigate = useStore((s) => s.navigate);
 
   const view = selectToday(tasks, contextFilter);
   // The slate is measured across every context — the cap is on your hours, not
   // on the filter you happen to be looking through.
-  const slate = selectSlate(tasks);
+  const slate = selectSlate(tasks, slateCap);
   const gById = goalsById(goals);
 
   const handlers: RowHandlers = {

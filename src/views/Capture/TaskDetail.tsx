@@ -11,7 +11,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type JSX, type ReactNode } from "react";
 import { open as openFilePicker } from "@tauri-apps/plugin-dialog";
 import type { Attachment, Goal, IsoDate, Subtask, Task, TaskStatus } from "@/types";
-import { useStore, selectSlate, SLATE_CAP } from "@/store";
+import { useStore, selectSlate } from "@/store";
 import * as ipc from "@/lib/ipc";
 import { ageInDays, dueLabel, formatShortDate, localToday } from "@/lib/dates";
 import { confirmDestructive } from "@/lib/confirm";
@@ -344,10 +344,12 @@ function Attachments({
 function CommitToggle({
   on,
   full,
+  cap,
   onToggle,
 }: {
   on: boolean;
   full: boolean;
+  cap: number;
   onToggle: () => void;
 }): JSX.Element {
   const blocked = !on && full;
@@ -367,7 +369,7 @@ function CommitToggle({
         {on
           ? "On today's slate"
           : blocked
-            ? `Today's slate is full (${SLATE_CAP}) — free a slot first`
+            ? `Today's slate is full (${cap}) — free a slot first`
             : "Commit to today"}
       </span>
       {on && (
@@ -426,6 +428,7 @@ export function TaskDetail(): JSX.Element | null {
   const theme = useStore((s) => s.theme);
   const patchTask = useStore((s) => s.patchTask);
   const toggleTaskCommit = useStore((s) => s.toggleTaskCommit);
+  const slateCap = useStore((s) => s.slateCap);
   const setTaskStatus = useStore((s) => s.setTaskStatus);
   const deleteTask = useStore((s) => s.deleteTask);
   const closeTaskDetail = useStore((s) => s.closeTaskDetail);
@@ -542,7 +545,7 @@ export function TaskDetail(): JSX.Element | null {
   };
 
   const togglePriority = (): void => void patchTask(task.id, { priority: !task.priority });
-  const slate = selectSlate(tasks);
+  const slate = selectSlate(tasks, slateCap);
   const onSlate = task.committedOn === localToday();
 
   const toggleSubtask = (subtaskId: string): void => {
@@ -644,6 +647,7 @@ export function TaskDetail(): JSX.Element | null {
             <CommitToggle
               on={onSlate}
               full={slate.full}
+              cap={slate.cap}
               onToggle={() => void toggleTaskCommit(task.id)}
             />
           )}
