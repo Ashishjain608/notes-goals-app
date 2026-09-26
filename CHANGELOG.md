@@ -5,12 +5,6 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Changed
-
-- **Releases are signed and notarized by Apple.** The app now opens with a normal double-click —
-  no more *Open Anyway* in Privacy & Security or `xattr` in Terminal. If macOS asks again for
-  access to your data folder after this update, that's the new signature; allow it once.
-
 ## [0.3.0] - 2026-09-24
 
 ### Added
