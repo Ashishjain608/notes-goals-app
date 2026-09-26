@@ -442,7 +442,8 @@ export const useStore = create<AppState>((set, get) => {
 
     addTask: async (input) => {
       const created = await withSaveGuard(() => ipc.createTask(input));
-      set((s) => ({ tasks: [...s.tasks, created] }));
+      // Every add path (quick-add, palette, goal page) lands in the new task's detail panel.
+      set((s) => ({ tasks: [...s.tasks, created], detailTaskId: created.id }));
       return created;
     },
 
