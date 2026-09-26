@@ -384,7 +384,7 @@
           <svg aria-hidden="true"><use href="#i-github"/></svg>View source
         </a>
       </div>
-      <p class="release-meta mono reveal" id="release-meta" style="transition-delay:.15s">Universal · Apple Silicon &amp; Intel · macOS 12+</p>
+      <p class="release-meta mono reveal" id="release-meta" style="transition-delay:.15s">Universal · Apple Silicon &amp; Intel · macOS 12+ · Notarized by Apple</p>
 
       <figure class="hero-media reveal" style="transition-delay:.22s">
         <div class="window">
@@ -697,7 +697,7 @@
     <div class="container">
       <div class="head-center reveal">
         <h2 class="h2">Give your day a <em>finish line.</em></h2>
-        <p class="lede">Free, open source, and your files stay yours.</p>
+        <p class="lede">Free, open source, notarized by Apple, and your files stay yours.</p>
         <div class="cta-row">
           <a class="btn btn-primary" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest/download/Notes-Goals-macOS.dmg">
             <svg aria-hidden="true"><use href="#i-download"/></svg>Download for macOS
@@ -749,7 +749,7 @@
         if (!dmg) return;
         var meta = document.getElementById('release-meta');
         if (meta && data.tag_name) {
-          meta.textContent = data.tag_name + ' · ' + (dmg.size / 1048576).toFixed(1) + ' MB · Universal · macOS 12+';
+          meta.textContent = data.tag_name + ' · ' + (dmg.size / 1048576).toFixed(1) + ' MB · Universal · macOS 12+ · Notarized by Apple';
         }
       })
       .catch(function () { /* keep the releases/latest links */ });
