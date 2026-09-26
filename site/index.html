@@ -641,8 +641,8 @@
         </li>
         <li class="step">
           <span class="step-num" aria-hidden="true">3</span>
-          <h3 class="step-title">Approve it once</h3>
-          <p class="step-text">Double-click the app and click <b>Done</b> on the warning. In <b>System Settings → Privacy &amp; Security</b>, click <b>Open Anyway</b> and enter your password.</p>
+          <h3 class="step-title">Open it</h3>
+          <p class="step-text">Double-click the app. macOS asks once whether to open an app downloaded from the internet — click <b>Open</b>.</p>
         </li>
         <li class="step">
           <span class="step-num" aria-hidden="true">4</span>
@@ -653,10 +653,8 @@
       <div class="note-box reveal" style="transition-delay:.1s">
         <svg aria-hidden="true"><use href="#i-info"/></svg>
         <p>
-          <b>Why the extra step?</b> Builds aren't notarized by Apple yet, so macOS says it can't verify the app.
-          <b>Open Anyway</b> appears in Privacy &amp; Security for about an hour after your first try, and approves
-          the app for good. Prefer Terminal? <span class="inline-code">xattr -dr com.apple.quarantine "/Applications/Notes &amp; Goals.app"</span>
-          does the same. A new version may ask again; your data folder is never touched.
+          <b>Signed and notarized.</b> Every release is signed with a Developer ID and checked by Apple, so it
+          opens like any other app. Updates install from inside the app; your data folder is never touched.
         </p>
       </div>
     </div>
@@ -677,10 +675,6 @@
         <details>
           <summary>Can I use it on more than one Mac?</summary>
           <p class="faq-answer">Put your data folder in iCloud Drive, Dropbox or a git repo and choose it on each Mac. The app picks up changes when you switch back to its window. It doesn't merge edits itself, so avoid changing the same item on two Macs at once.</p>
-        </details>
-        <details>
-          <summary>Why does macOS say it can't verify the app?</summary>
-          <p class="faq-answer">Notarizing needs a paid Apple Developer account, which this project doesn't have yet. Approve the app once, as shown in <a href="#install">Install</a>, and it opens like any other app from then on.</p>
         </details>
         <details>
           <summary>Where does the scratchpad keep its text?</summary>
