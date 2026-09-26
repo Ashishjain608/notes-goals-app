@@ -28,9 +28,9 @@ jobs:
         with:
           workspaces: src-tauri
 
-      # Builds are ad-hoc signed (bundle.macOS.signingIdentity "-" in tauri.conf.json) but
-      # not notarized. Developer ID signing needs the APPLE_* secrets passed as env here and
-      # that signingIdentity removed: https://v2.tauri.app/distribute/sign/macos/
+      # APPLE_CERTIFICATE (base64 .p12) and APPLE_SIGNING_IDENTITY sign the app with the
+      # Developer ID certificate; APPLE_ID, APPLE_PASSWORD (app-specific) and APPLE_TEAM_ID
+      # notarize and staple it: https://v2.tauri.app/distribute/sign/macos/
       # TAURI_SIGNING_PRIVATE_KEY signs the updater artifacts (.app.tar.gz + .sig) and the
       # action uploads latest.json, which the in-app updater reads. Generated with
       # `npx tauri signer generate --ci`; the matching public key is plugins.updater.pubkey.
@@ -39,17 +39,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Notes & Goals ${{ github.ref_name }}"
           releaseBody: |
-            Open the `.dmg` and drag **Notes & Goals** into Applications. Universal build for macOS 12 or later.
-
-            This build isn't notarized by Apple, so the first launch needs one extra step:
-            1. Double-click the app. macOS says it can't verify it — click **Done**.
-            2. Open **System Settings → Privacy & Security**, click **Open Anyway**, and confirm with your password.
-
-            Or, in Terminal: `xattr -dr com.apple.quarantine "/Applications/Notes & Goals.app"`
+            Open the `.dmg` and drag **Notes & Goals** into Applications. Universal build for macOS 12 or later, signed with a Developer ID and notarized by Apple.
 
             Full install guide: https://ashishjain608.github.io/notes-goals-app/#install
           releaseDraft: false
