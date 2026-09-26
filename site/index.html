@@ -11,12 +11,130 @@
 <meta name="description" content="A calm, local-first macOS app for tasks, notes and goals. Today is a live view, not a daily page. Plain files in a folder you choose — no cloud, no accounts, free and open source.">
 <meta property="og:title" content="Notes & Goals — a calm, local-first macOS app">
 <meta property="og:description" content="Tasks, notes and goals in one calm window. Plain files in a folder you own — no cloud, no accounts, no telemetry.">
-<meta property="og:image" content="https://ashishjain608.github.io/notes-goals-app/screenshots/og.png">
+<meta property="og:image" content="https://qriousguy.com/notes-goals-app/screenshots/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Notes &amp; Goals — the Today screen of a calm, local-first macOS app">
-<meta property="og:url" content="https://ashishjain608.github.io/notes-goals-app/">
+<meta property="og:url" content="https://qriousguy.com/notes-goals-app/">
+<link rel="canonical" href="https://qriousguy.com/notes-goals-app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Notes &amp; Goals">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@Ashi608">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "SoftwareApplication",
+   "@id": "https://qriousguy.com/notes-goals-app/#app",
+   "name": "Notes & Goals",
+   "url": "https://qriousguy.com/notes-goals-app/",
+   "description": "A calm, local-first macOS app for tasks, notes and goals. Today is a live view of every open task, not a daily page. Tasks and goals are JSON files and notes are Markdown, in a folder you choose — no cloud, no accounts.",
+   "applicationCategory": "ProductivityApplication",
+   "operatingSystem": "macOS 12 or later",
+   "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+   },
+   "downloadUrl": "https://github.com/Ashishjain608/notes-goals-app/releases/latest/download/Notes-Goals-macOS.dmg",
+   "installUrl": "https://qriousguy.com/notes-goals-app/",
+   "license": "https://opensource.org/licenses/MIT",
+   "isAccessibleForFree": true,
+   "image": "https://qriousguy.com/notes-goals-app/screenshots/og.png",
+   "screenshot": [
+    "https://qriousguy.com/notes-goals-app/screenshots/today-light.png",
+    "https://qriousguy.com/notes-goals-app/screenshots/notes-light.png",
+    "https://qriousguy.com/notes-goals-app/screenshots/goal-light.png",
+    "https://qriousguy.com/notes-goals-app/screenshots/search-light.png"
+   ],
+   "featureList": [
+    "Today as a live query over all open tasks, with automatic carry-forward",
+    "Goals with progress computed from linked tasks",
+    "Markdown notes linked to tasks and goals",
+    "⌘K palette search across tasks, goals and notes",
+    "⌘J scratchpad",
+    "Light and dark mode",
+    "Plain files you can sync with iCloud Drive, Dropbox or git"
+   ],
+   "author": {
+    "@type": "Person",
+    "name": "Ashish Jain",
+    "url": "https://qriousguy.com/",
+    "sameAs": [
+     "https://github.com/Ashishjain608",
+     "https://x.com/Ashi608",
+     "https://www.linkedin.com/in/ashishjain608"
+    ]
+   },
+   "sameAs": [
+    "https://github.com/Ashishjain608/notes-goals-app"
+   ]
+  },
+  {
+   "@type": "SoftwareSourceCode",
+   "name": "notes-goals-app",
+   "codeRepository": "https://github.com/Ashishjain608/notes-goals-app",
+   "programmingLanguage": [
+    "Rust",
+    "TypeScript"
+   ],
+   "runtimePlatform": "Tauri 2",
+   "license": "https://opensource.org/licenses/MIT",
+   "targetProduct": {
+    "@id": "https://qriousguy.com/notes-goals-app/#app"
+   }
+  },
+  {
+   "@type": "FAQPage",
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "Is Notes & Goals free?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Yes. Notes & Goals is MIT-licensed open source — no paid tier, no trial, and no account."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Can I use it on more than one Mac?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Put your data folder in iCloud Drive, Dropbox or a git repo and choose it on each Mac. The app picks up changes when you switch back to its window. It doesn't merge edits itself, so avoid changing the same item on two Macs at once."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Where does the scratchpad keep its text?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "On that Mac only, inside the app — never in your data folder. It's for scraps in flight, so it doesn't sync."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "What happens to my data if I stop using it?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Nothing. Tasks and goals are JSON files and notes are Markdown, all in your folder. Open them in any editor, or point another tool at them."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Is there an iPhone, Windows or web version?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Not today — Notes & Goals is a Mac app. The source is on GitHub if you'd like to follow along."
+     }
+    }
+   ]
+  }
+ ]
+}
+</script>
+<script src="/analytics.js" async></script><!-- shared GA4 tag from qriousguy.com; tracks visits and .dmg downloads -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
