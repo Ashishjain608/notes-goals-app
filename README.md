@@ -54,19 +54,12 @@ The **task is the source of truth**, not a daily page. **Today** is a live query
 Requires macOS 12 (Monterey) or later, on Apple Silicon or Intel.
 
 1. Download the `.dmg` from the [latest release](https://github.com/Ashishjain608/notes-goals-app/releases/latest), open it, and drag **Notes & Goals** into **Applications**.
-2. Double-click the app. Builds aren't notarized by Apple yet, so macOS stops the first launch and says it can't verify the app — click **Done** (not *Move to Trash*).
-3. Open **System Settings → Privacy & Security**, scroll down to **Security**, click **Open Anyway**, and confirm with your login password. The button shows up for about an hour after step 2.
-4. The app opens and walks you through choosing a data folder. From then on it opens like any other app.
+2. Open the app. macOS asks once whether to open an app downloaded from the internet — click **Open**.
+3. The app walks you through choosing a data folder.
 
-Prefer Terminal? This replaces steps 2 and 3:
+Installing, updating, or deleting the app never touches your data folder, and you can switch folders later from **Settings (⌘,)**.
 
-```bash
-xattr -dr com.apple.quarantine "/Applications/Notes & Goals.app"
-```
-
-A new version may ask for approval again. Installing, updating, or deleting the app never touches your data folder, and you can switch folders later from **Settings (⌘,)**.
-
-Notarizing needs a paid Apple Developer account, which this project doesn't have yet. Release builds are ad-hoc signed and built from the tagged source by the [Release workflow](.github/workflows/release.yml) — or [build it yourself](#build-from-source).
+Release builds are signed with a Developer ID, notarized by Apple, and built from the tagged source by the [Release workflow](.github/workflows/release.yml) — or [build it yourself](#build-from-source).
 
 ## Your data
 
