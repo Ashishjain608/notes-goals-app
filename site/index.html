@@ -253,10 +253,6 @@
   .step-text{margin-top:8px;font-size:14px;line-height:1.62;color:var(--ink-2)}
   .inline-code{padding:1px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);
     font-family:var(--mono);font-size:12px;color:var(--ink);overflow-wrap:anywhere}
-  .note-box{margin-top:20px;display:flex;align-items:flex-start;gap:12px;padding:18px 20px;border:1px solid var(--line);
-    border-radius:14px;background:var(--warn-soft)}
-  .note-box svg{width:18px;height:18px;margin-top:2px;color:var(--warn-ink)}
-  .note-box p{font-size:14px;line-height:1.7;color:var(--ink-2)}
   @media (max-width:1000px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media (max-width:560px){.steps{grid-template-columns:minmax(0,1fr)}}
 
@@ -325,9 +321,6 @@
     <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="m5 12.5 4.5 4.5L19 7"/>
     </symbol>
-    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>
-    </symbol>
     <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 3v13m0 0-4.5-4.5M12 16l4.5-4.5"/><path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
     </symbol>
@@ -384,7 +377,7 @@
           <svg aria-hidden="true"><use href="#i-github"/></svg>View source
         </a>
       </div>
-      <p class="release-meta mono reveal" id="release-meta" style="transition-delay:.15s">Universal · Apple Silicon &amp; Intel · macOS 12+ · Notarized by Apple</p>
+      <p class="release-meta mono reveal" id="release-meta" style="transition-delay:.15s">Universal · Apple Silicon &amp; Intel · macOS 12+</p>
 
       <figure class="hero-media reveal" style="transition-delay:.22s">
         <div class="window">
@@ -650,13 +643,6 @@
           <p class="step-text">Pick where your tasks, notes and goals live. Change it later in Settings <kbd>⌘,</kbd>.</p>
         </li>
       </ol>
-      <div class="note-box reveal" style="transition-delay:.1s">
-        <svg aria-hidden="true"><use href="#i-info"/></svg>
-        <p>
-          <b>Signed and notarized.</b> Every release is signed with a Developer ID and checked by Apple, so it
-          opens like any other app. Updates install from inside the app; your data folder is never touched.
-        </p>
-      </div>
     </div>
   </section>
 
@@ -697,7 +683,7 @@
     <div class="container">
       <div class="head-center reveal">
         <h2 class="h2">Give your day a <em>finish line.</em></h2>
-        <p class="lede">Free, open source, notarized by Apple, and your files stay yours.</p>
+        <p class="lede">Free, open source, and your files stay yours.</p>
         <div class="cta-row">
           <a class="btn btn-primary" href="https://github.com/Ashishjain608/notes-goals-app/releases/latest/download/Notes-Goals-macOS.dmg">
             <svg aria-hidden="true"><use href="#i-download"/></svg>Download for macOS
@@ -749,7 +735,7 @@
         if (!dmg) return;
         var meta = document.getElementById('release-meta');
         if (meta && data.tag_name) {
-          meta.textContent = data.tag_name + ' · ' + (dmg.size / 1048576).toFixed(1) + ' MB · Universal · macOS 12+ · Notarized by Apple';
+          meta.textContent = data.tag_name + ' · ' + (dmg.size / 1048576).toFixed(1) + ' MB · Universal · macOS 12+';
         }
       })
       .catch(function () { /* keep the releases/latest links */ });

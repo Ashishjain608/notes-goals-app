@@ -6,7 +6,7 @@
 
 A calm, local-first macOS app that unifies your daily **tasks**, **notes**, and longer-term **goals** — all stored as plain, inspectable files in a folder you choose. No database server, no cloud, no accounts, no telemetry. Things/Bear in spirit, never Notion/ClickUp.
 
-**[Download for macOS](https://github.com/Ashishjain608/notes-goals-app/releases/latest/download/Notes-Goals-macOS.dmg)** (signed and notarized by Apple) · [Website](https://qriousguy.com/notes-goals-app/) · [Install guide](#install) · [Contributing](CONTRIBUTING.md)
+**[Download for macOS](https://github.com/Ashishjain608/notes-goals-app/releases/latest/download/Notes-Goals-macOS.dmg)** · [Website](https://ashishjain608.github.io/notes-goals-app/) · [Install guide](#install) · [Contributing](CONTRIBUTING.md)
 
 ![A short tour of Notes & Goals: adding a task and committing it to today's slate, finishing the slate until the day is complete, jumping to a goal with ⌘K and adding a checklist item to its note, jotting in the ⌘J scratchpad with a second tab and dragging it aside, and switching to dark mode](site/screenshots/demo.gif)
 
@@ -51,7 +51,7 @@ The **task is the source of truth**, not a daily page. **Today** is a live query
 
 ## Install
 
-Requires macOS 12 (Monterey) or later, on Apple Silicon or Intel. Releases are signed and notarized by Apple, so the app installs like any other: no security workarounds.
+Requires macOS 12 (Monterey) or later, on Apple Silicon or Intel.
 
 1. Download the `.dmg` from the [latest release](https://github.com/Ashishjain608/notes-goals-app/releases/latest), open it, and drag **Notes & Goals** into **Applications**.
 2. Open the app. macOS asks once whether to open an app downloaded from the internet — click **Open**.
@@ -59,7 +59,7 @@ Requires macOS 12 (Monterey) or later, on Apple Silicon or Intel. Releases are s
 
 Installing, updating, or deleting the app never touches your data folder, and you can switch folders later from **Settings (⌘,)**.
 
-Release builds are signed with a Developer ID, notarized by Apple, and built from the tagged source by the [Release workflow](.github/workflows/release.yml) — or [build it yourself](#build-from-source).
+Release builds are made from the tagged source by the [Release workflow](.github/workflows/release.yml) — or [build it yourself](#build-from-source).
 
 ## Your data
 
