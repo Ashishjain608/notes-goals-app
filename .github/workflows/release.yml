@@ -57,12 +57,21 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
           args: --target universal-apple-darwin
 
-      # A stable-named copy of the dmg, so releases/latest/download/Notes-Goals-macOS.dmg
-      # (the website's and README's Download links) always resolves to the newest build.
-      - name: Upload Notes-Goals-macOS.dmg
+      # tauri-action notarizes the app but only signs the dmg around it, and Gatekeeper rejects
+      # an unnotarized dmg. Notarize and staple the dmg, replace the uploaded one, and add a
+      # stable-named copy so releases/latest/download/Notes-Goals-macOS.dmg (the website's and
+      # README's Download links) always resolves to the newest build.
+      - name: Notarize and upload the dmg
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           dmg=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name '*.dmg' | head -n 1)
+          xcrun notarytool submit "$dmg" --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun stapler staple "$dmg"
+          asset=$(gh release view "${{ github.ref_name }}" --json assets --jq '.assets[].name | select(endswith("_universal.dmg"))')
+          cp -f "$dmg" "$asset"
           cp -f "$dmg" Notes-Goals-macOS.dmg
-          gh release upload "${{ github.ref_name }}" Notes-Goals-macOS.dmg --clobber
+          gh release upload "${{ github.ref_name }}" "$asset" Notes-Goals-macOS.dmg --clobber
