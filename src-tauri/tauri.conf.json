@@ -56,8 +56,7 @@
       "icons/icon.icns"
     ],
     "macOS": {
-      "minimumSystemVersion": "12.0",
-      "signingIdentity": "-"
+      "minimumSystemVersion": "12.0"
     },
     "createUpdaterArtifacts": true
   },

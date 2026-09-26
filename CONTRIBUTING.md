@@ -151,7 +151,8 @@ on its author for 30 days with no reply may be closed — it can always be reope
 4. `git tag vX.Y.Z && git push origin vX.Y.Z` — the Release workflow builds the universal
    `.dmg` and publishes the GitHub Release.
 
-Builds are currently unsigned (no Apple Developer ID).
+The workflow signs the app with the maintainer's Developer ID and notarizes it; the `APPLE_*`
+repository secrets it reads are listed in [`release.yml`](.github/workflows/release.yml).
 
 ## License
 
