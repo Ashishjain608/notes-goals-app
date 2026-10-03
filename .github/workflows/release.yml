@@ -75,3 +75,19 @@ jobs:
           cp -f "$dmg" "$asset"
           cp -f "$dmg" Notes-Goals-macOS.dmg
           gh release upload "${{ github.ref_name }}" "$asset" Notes-Goals-macOS.dmg --clobber
+
+      # tauri-action points latest.json at api.github.com asset URLs. GitHub allows 60
+      # unauthenticated API requests an hour per IP, so the in-app updater's download fails
+      # silently for anyone behind a shared IP (VPN, office network). Point every platform at
+      # the plain release download URL instead, which isn't rate limited.
+      - name: Point latest.json at direct download links
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ github.ref_name }}"
+          gh release download "$tag" -p latest.json -O latest.json --clobber
+          tarball=$(gh release view "$tag" --json assets --jq '.assets[].name | select(endswith(".app.tar.gz"))')
+          jq --arg url "https://github.com/${{ github.repository }}/releases/download/$tag/$tarball" \
+            '.platforms[].url = $url' latest.json > latest.direct.json
+          mv -f latest.direct.json latest.json
+          gh release upload "$tag" latest.json --clobber
