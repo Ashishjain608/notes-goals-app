@@ -61,6 +61,20 @@
 
   /* optional background gradient (apply to the app root if you want the wash) */
   --bg-gradient: linear-gradient(135deg, #fef1f6 0%, #eef1ff 46%, #ecfdf7 100%);
+
+  /* PHONE SHELL (ADR-0012) — glass chrome, scrims, tints */
+  --glass:              rgba(255,255,255,0.72);
+  --glass-strong:       rgba(255,255,255,0.94);
+  --glass-line:         rgba(217,220,228,0.8);
+  --glass-shadow:       inset 0 0 0 1px var(--glass-line), 0 1px 2px rgba(40,40,90,0.05), 0 16px 38px -16px rgba(40,40,90,0.18);
+  --scrim:              rgba(20,18,15,0.28);
+  --ctx-personal-soft:  rgba(5,150,105,0.10);
+  --ink-6:              rgba(28,34,48,0.06);
+  --meter-empty:        #e2e4ec;
+  --menu-primary:       #e9e8fc;
+  --fab-shadow:         0 1px 2px rgba(40,40,90,0.10), 0 12px 28px -12px rgba(79,70,229,0.55);
+  --card-shadow:        0 1px 2px rgba(40,40,90,0.06), 0 8px 20px -14px rgba(40,40,90,0.18);
+  --fade:               linear-gradient(to bottom, rgba(243,243,247,0), rgba(243,243,247,0.9) 55%, #f3f3f7);
 }
 
 /* ------------------------------------------------------------- SPECTRUM DARK */
@@ -106,4 +120,18 @@
                  radial-gradient(50% 56% at 96% 12%, #122036 0%, rgba(18,32,54,0) 56%),
                  radial-gradient(60% 64% at 80% 108%, #0d2620 0%, rgba(13,38,32,0) 56%),
                  #0d0f16;
+
+  /* PHONE SHELL (ADR-0012) — glass chrome, scrims, tints */
+  --glass:              rgba(24,27,38,0.72);
+  --glass-strong:       rgba(24,27,38,0.94);
+  --glass-line:         rgba(38,43,56,0.8);
+  --glass-shadow:       inset 0 0 0 1px var(--glass-line), 0 1px 2px rgba(0,0,0,0.5), 0 16px 38px -16px rgba(0,0,0,0.6);
+  --scrim:              rgba(0,0,0,0.55);
+  --ctx-personal-soft:  rgba(52,211,153,0.14);
+  --ink-6:              rgba(232,234,242,0.08);
+  --meter-empty:        #21252f;
+  --menu-primary:       #292d48;
+  --fab-shadow:         0 1px 2px rgba(0,0,0,0.5), 0 12px 28px -12px rgba(129,140,248,0.35);
+  --card-shadow:        0 1px 2px rgba(0,0,0,0.5), 0 8px 20px -14px rgba(0,0,0,0.6);
+  --fade:               linear-gradient(to bottom, rgba(13,15,22,0), rgba(13,15,22,0.9) 55%, #0d0f16);
 }

@@ -41,7 +41,8 @@ import { localToday } from "@/lib/dates";
 import { errorMessageOf } from "@/lib/errors";
 import { fileBytes, pastedFileName } from "@/lib/attachments";
 import * as prefs from "@/lib/prefs";
-import { clampSlateCap, commitTransition } from "./slate";
+import { clampSlateCap, commitTransition, releaseSnoozedSlot } from "./slate";
+import { createUndoSlice, type UndoSlice } from "./undo";
 import { reconcileNoteGoal, reconcileNoteNotebook } from "./selectors";
 
 export type AppStatus = "loading" | "needs-vault" | "ready" | "error";
@@ -50,10 +51,18 @@ export type Theme = "light" | "dark";
 
 /** The Task fields a view may patch directly. */
 export type TaskPatch = Partial<
-  Pick<Task, "title" | "details" | "due" | "snoozeUntil" | "goalId" | "subtasks" | "priority" | "attachments">
+  Pick<
+    Task,
+    "title" | "details" | "due" | "snoozeUntil" | "goalId" | "subtasks" | "priority" | "attachments" | "context"
+  >
 >;
 
-export interface AppState {
+export interface AddTaskOptions {
+  /** Land in the new task's detail panel (default). The phone composer stays put instead. */
+  openDetail?: boolean;
+}
+
+export interface AppState extends UndoSlice {
   // data
   vaultPath: string | null;
   /** The configured path when it's currently unreachable (e.g. an unmounted
@@ -123,7 +132,7 @@ export interface AppState {
   toggleSettings: () => void;
 
   // task actions
-  addTask: (input: CreateTaskInput) => Promise<Task>;
+  addTask: (input: CreateTaskInput, options?: AddTaskOptions) => Promise<Task>;
   toggleTaskStatus: (id: string) => Promise<void>;
   setTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
   /**
@@ -187,11 +196,16 @@ export interface AppState {
 /** The app's light/dark mode maps onto Spectrum's two `data-theme` values. */
 const DOM_THEME: Record<Theme, string> = { light: "spectrum", dark: "spectrum-dark" };
 
+/** The browser chrome colour per theme (the phone's status bar area): `--bg`. */
+const THEME_COLOR: Record<Theme, string> = { light: "#f3f3f7", dark: "#0d0f16" };
+
 /** Apply the theme to the document (the shell reads `data-theme`) + persist it. */
 function applyTheme(theme: Theme): void {
   prefs.writeTheme(theme);
   if (typeof document !== "undefined" && document.documentElement) {
     document.documentElement.setAttribute("data-theme", DOM_THEME[theme]);
+    // index.html ships the light colour; the CSP forbids an inline script to set it early.
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLOR[theme]);
   }
 }
 
@@ -278,6 +292,7 @@ export const useStore = create<AppState>((set, get) => {
   }
 
   return {
+    ...createUndoSlice(set, get),
     // data
     vaultPath: null,
     missingVaultPath: null,
@@ -498,10 +513,11 @@ export const useStore = create<AppState>((set, get) => {
 
     /* ---------------------------------------------------------- task actions */
 
-    addTask: async (input) => {
+    addTask: async (input, { openDetail = true } = {}) => {
       const created = await withSaveGuard(() => ipc.createTask(input));
-      // Every add path (quick-add, palette, goal page) lands in the new task's detail panel.
-      set((s) => ({ tasks: [...s.tasks, created], detailTaskId: created.id }));
+      // Every desktop add path (quick-add, palette, goal page) lands in the new
+      // task's detail panel; the phone composer opts out to keep capturing.
+      set((s) => ({ tasks: [...s.tasks, created], ...(openDetail ? { detailTaskId: created.id } : {}) }));
       return created;
     },
 
@@ -515,7 +531,9 @@ export const useStore = create<AppState>((set, get) => {
     },
 
     patchTask: async (id, patch) => {
-      await mutateTask(id, (t) => ({ ...t, ...(typeof patch === "function" ? patch(t) : patch) }));
+      await mutateTask(id, (t) =>
+        releaseSnoozedSlot({ ...t, ...(typeof patch === "function" ? patch(t) : patch) }, localToday()),
+      );
     },
 
     toggleTaskPriority: async (id) => {

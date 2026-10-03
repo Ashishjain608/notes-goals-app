@@ -17,6 +17,8 @@ const ipc = vi.hoisted(() => ({
 vi.mock("@/lib/ipc", () => ipc);
 
 import { useStore } from "./store";
+import { localToday } from "@/lib/dates";
+import { dateKeyDaysAhead } from "@/views/Capture/dueDates";
 
 function task(overrides: Partial<Task> = {}): Task {
   return {
@@ -153,5 +155,32 @@ describe("addTask", () => {
     ipc.createTask.mockResolvedValue(task({ id: "new" }));
     await useStore.getState().addTask({ title: "Task", context: "office" });
     expect(useStore.getState().detailTaskId).toBe("new");
+  });
+});
+
+describe("addTask with { openDetail: false } (the phone composer)", () => {
+  it("adds the task without opening the detail panel", async () => {
+    useStore.setState({ tasks: [], detailTaskId: null });
+    ipc.createTask.mockResolvedValue(task({ id: "quiet" }));
+    await useStore.getState().addTask({ title: "Task", context: "office" }, { openDetail: false });
+    expect(useStore.getState().detailTaskId).toBeNull();
+    expect(useStore.getState().tasks.map((t) => t.id)).toEqual(["quiet"]);
+  });
+});
+
+describe("patchTask", () => {
+  it("can change a task's context", async () => {
+    useStore.setState({ tasks: [task()] });
+    ipc.updateTask.mockImplementation(async (t: Task) => t);
+    await useStore.getState().patchTask("t1", { context: "personal" });
+    expect(useStore.getState().tasks[0]?.context).toBe("personal");
+  });
+
+  it("snoozing a task on today's slate takes it off the slate (D2)", async () => {
+    const today = localToday();
+    useStore.setState({ tasks: [task({ committedOn: today })] });
+    ipc.updateTask.mockImplementation(async (t: Task) => t);
+    await useStore.getState().patchTask("t1", { snoozeUntil: dateKeyDaysAhead(1) });
+    expect(useStore.getState().tasks[0]?.committedOn).toBeNull();
   });
 });

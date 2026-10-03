@@ -426,3 +426,57 @@ export function reconcileNoteGoal(note: Note, goals: Goal[]): Note {
   if (!goal || goal.context === note.context) return note;
   return { ...note, goalId: null };
 }
+
+/* --------------------------------------------- PHONE (ADR-0012) */
+
+export interface BacklogGoalGroup {
+  goal: Goal | null;
+  tasks: Task[];
+  progress: GoalProgress | null;
+}
+
+/**
+ * Group an already filtered + sorted backlog by goal for the phone list. Groups
+ * appear in order of their first task (most urgent goal first); tasks with no
+ * goal or a dangling goalId (ADR-0003) form the last group. Progress is computed
+ * from `allTasks`, so done tasks outside `rows` still count.
+ */
+export function selectBacklogByGoal(rows: Task[], goals: Goal[], allTasks: Task[]): BacklogGoalGroup[] {
+  const byId = goalsById(goals);
+  const groups = new Map<string, BacklogGoalGroup>();
+  const noGoal: BacklogGoalGroup = { goal: null, tasks: [], progress: null };
+
+  for (const task of rows) {
+    const goal = task.goalId === null ? undefined : byId[task.goalId];
+    if (!goal) {
+      noGoal.tasks.push(task);
+      continue;
+    }
+    let group = groups.get(goal.id);
+    if (!group) {
+      group = { goal, tasks: [], progress: selectGoalProgress(goal.id, allTasks) };
+      groups.set(goal.id, group);
+    }
+    group.tasks.push(task);
+  }
+
+  return noGoal.tasks.length > 0 ? [...groups.values(), noGoal] : [...groups.values()];
+}
+
+/** The goal's next task: first open task (priority/due order) that isn't snoozed on `now`. */
+export function selectGoalNext(goalId: string, tasks: Task[], now: Date = new Date()): Task | null {
+  return selectGoalTasks(goalId, tasks).open.find((t) => !isSnoozed(t.snoozeUntil, now)) ?? null;
+}
+
+/** Goals split into active / on-hold / closed sections for the phone Goals tab. */
+export function selectGoalSections(
+  goals: Goal[],
+  filter: ContextFilter,
+): { active: Goal[]; onHold: Goal[]; closed: Goal[] } {
+  const { live, closed } = selectGoalsOverview(goals, filter);
+  return {
+    active: live.filter((g) => g.status === "active"),
+    onHold: live.filter((g) => g.status === "onhold"),
+    closed,
+  };
+}
