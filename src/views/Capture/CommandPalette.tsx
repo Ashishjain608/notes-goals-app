@@ -179,13 +179,13 @@ export function CommandPalette(): JSX.Element | null {
   return (
     <div
       onClick={closePalette}
-      className="animate-overlayIn fixed inset-0 z-[60] flex items-start justify-center bg-[rgba(20,18,15,.28)] pt-[16vh] backdrop-blur-[3px]"
+      className="animate-overlayIn fixed inset-0 z-[60] flex items-start justify-center bg-[rgba(20,18,15,.28)] pt-[16vh] backdrop-blur-[3px] max-md:pt-[max(env(safe-area-inset-top),12px)]"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="animate-riseIn w-[560px] max-w-[90vw] overflow-hidden rounded-xl border border-line bg-surface shadow"
+        className="animate-riseIn w-[560px] max-w-[90vw] overflow-hidden max-md:w-[calc(100vw-24px)] max-md:max-w-none rounded-xl border border-line bg-surface shadow"
       >
-        <div className="flex items-center gap-3 border-b border-line px-[18px] py-4">
+        <div className="flex items-center gap-3 border-b border-line px-[18px] py-4 max-md:px-3 max-md:py-2">
           <span className="text-accent">
             <Icon name={trimmed ? "search" : "plus"} size={20} />
           </span>
@@ -198,13 +198,20 @@ export function CommandPalette(): JSX.Element | null {
             }}
             onKeyDown={onKeyDown}
             placeholder="Search anything, or add a task…"
-            className="flex-1 border-none bg-transparent text-[16.5px] tracking-[-.01em] text-ink outline-none placeholder:text-ink-3"
+            className="flex-1 border-none bg-transparent text-[16.5px] max-md:h-11 max-md:text-[16px] tracking-[-.01em] text-ink outline-none placeholder:text-ink-3"
           />
-          <kbd className="rounded-sm border border-line-2 px-1.5 py-0.5 font-mono text-[11px] text-ink-3">
+          <kbd className="rounded-sm border border-line-2 px-1.5 py-0.5 font-mono text-[11px] text-ink-3 max-md:hidden">
             esc
           </kbd>
+          <button
+            type="button"
+            onClick={closePalette}
+            className="hidden min-h-[44px] px-2 text-[14px] font-medium text-accent-ink max-md:block"
+          >
+            Cancel
+          </button>
         </div>
-        <div className="max-h-[52vh] overflow-y-auto p-2">
+        <div className="max-h-[52vh] overflow-y-auto p-2 max-md:max-h-[calc(100dvh-140px)]">
           {trimmed ? (
             <>
               <OptionRow

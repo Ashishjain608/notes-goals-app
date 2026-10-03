@@ -102,7 +102,7 @@ function ClosedSection({ closed, onOpen }: ClosedSectionProps): JSX.Element | nu
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.07em] text-ink-3 transition-colors hover:text-ink-2"
+        className="flex items-center gap-2 max-md:min-h-11 text-xs font-semibold uppercase tracking-[.07em] text-ink-3 transition-colors hover:text-ink-2"
       >
         <Icon
           name="chevron"
@@ -120,7 +120,7 @@ function ClosedSection({ closed, onOpen }: ClosedSectionProps): JSX.Element | nu
               <button
                 type="button"
                 onClick={() => onOpen(goal.id)}
-                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left transition-colors hover:bg-raise"
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 max-md:py-3 text-left transition-colors hover:bg-raise"
               >
                 <ContextDot context={goal.context} />
                 <span className="min-w-0 flex-1 truncate text-[14px] text-ink-2">
@@ -162,21 +162,21 @@ export default function GoalsOverview(): JSX.Element {
   const openGoal = (goalId: string): void => navigate("goal", goalId);
 
   return (
-    <div className="scroll h-full pt-10 pb-[120px]">
-      <div className="mx-auto max-w-[760px] px-10">
-        <header className="mb-[26px] flex items-end justify-between gap-4">
+    <div className="scroll h-full pt-10 pb-[120px] max-md:pt-6 max-md:pb-[calc(6rem+env(safe-area-inset-bottom))]">
+      <div className="mx-auto max-w-[760px] px-10 max-md:px-4">
+        <header className="mb-[26px] flex items-end justify-between gap-4 max-md:flex-wrap">
           <div>
             <div className="mb-2 text-xs font-semibold uppercase tracking-[.1em] text-accent-ink">
               Goals
             </div>
-            <h1 className="m-0 font-serif text-[32px] font-normal tracking-[-.01em] text-ink">
+            <h1 className="m-0 font-serif text-[32px] max-md:text-[28px] font-normal tracking-[-.01em] text-ink">
               What I&apos;m working toward
             </h1>
           </div>
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 py-2 text-[13px] font-medium text-ink-2 shadow-sm transition-colors duration-150 hover:text-ink"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 py-2 max-md:py-3 text-[13px] font-medium text-ink-2 shadow-sm transition-colors duration-150 hover:text-ink"
           >
             <Icon name="plus" size={16} />
             New goal
@@ -188,7 +188,7 @@ export default function GoalsOverview(): JSX.Element {
             No active goals in this context yet.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
             {live.map((goal) => {
               const { done, total } = progressByGoal[goal.id] ?? { done: 0, total: 0, pct: 0 };
               return (

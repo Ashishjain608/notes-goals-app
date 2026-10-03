@@ -13,9 +13,11 @@
  * pointer events and therefore click normally instead of dragging.
  */
 import { ContextDot, Icon } from "@/components";
+import { isTauri } from "@/lib/platform";
 import { useStore } from "@/store";
 import type { ContextFilter } from "@/types";
 import { Brand } from "./Brand";
+import { SyncIndicator } from "./SyncIndicator";
 import { useIsFullscreen } from "./useIsFullscreen";
 
 const FILTERS: { value: ContextFilter; label: string }[] = [
@@ -36,7 +38,7 @@ function ContextFilterControl(): JSX.Element {
           <button
             key={f.value}
             onClick={() => setContextFilter(f.value)}
-            className={`flex items-center gap-1.5 rounded px-3 py-1 text-[13px] font-medium transition-colors ${
+            className={`flex items-center gap-1.5 rounded px-3 py-1 text-[13px] max-md:px-2.5 max-md:py-[11px] font-medium transition-colors ${
               on ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink-2"
             }`}
           >
@@ -56,28 +58,37 @@ export function TitleBar(): JSX.Element {
   const fullscreen = useIsFullscreen();
   return (
     <header
-      data-tauri-drag-region
-      className={`flex h-[52px] shrink-0 select-none items-center gap-3 border-b border-line bg-bg pr-4 ${
-        fullscreen ? "pl-4" : "pl-[80px]"
+      {...(isTauri ? { "data-tauri-drag-region": true } : {})}
+      className={`flex h-[52px] shrink-0 select-none items-center gap-3 border-b border-line bg-bg pr-4 max-md:h-[calc(52px+env(safe-area-inset-top))] max-md:gap-2 max-md:pl-3 max-md:pr-2 max-md:pt-[env(safe-area-inset-top)] ${
+        !isTauri || fullscreen ? "pl-4" : "pl-[80px]"
       }`}
     >
       {/* Identity + the empty middle: non-interactive, so the whole span is a drag handle. */}
       <div className="pointer-events-none flex flex-1 items-center gap-2.5">
         <Brand small />
-        <span className="font-serif text-[14.5px] font-medium tracking-[-.01em] text-ink">
+        <span className="font-serif text-[14.5px] max-md:hidden font-medium tracking-[-.01em] text-ink">
           Notes &amp; Goals
         </span>
       </div>
 
       <button
         onClick={openPalette}
-        className="flex w-[240px] items-center gap-2 rounded-md border border-line bg-surface px-3 py-1.5 text-[13px] text-ink-3 shadow-sm transition-colors hover:text-ink-2"
+        className="flex w-[240px] items-center gap-2 max-md:hidden rounded-md border border-line bg-surface px-3 py-1.5 text-[13px] text-ink-3 shadow-sm transition-colors hover:text-ink-2"
       >
         <Icon name="search" size={16} />
         <span className="flex-1 text-left">Search or capture…</span>
         <kbd className="rounded border border-line-2 px-1.5 py-px font-mono text-[11px]">⌘K</kbd>
       </button>
 
+      <button
+        onClick={openPalette}
+        aria-label="Search"
+        className="hidden h-11 w-11 shrink-0 place-items-center rounded-md text-ink-2 max-md:grid"
+      >
+        <Icon name="search" size={20} />
+      </button>
+
+      <SyncIndicator />
       <ContextFilterControl />
     </header>
   );

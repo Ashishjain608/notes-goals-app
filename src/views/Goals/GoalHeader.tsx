@@ -118,7 +118,7 @@ function StatusMenu({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-[9px] py-[2px] text-xs font-semibold text-accent-ink transition-opacity hover:opacity-80"
+        className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-[9px] py-[2px] max-md:px-3 max-md:py-1.5 text-xs font-semibold text-accent-ink transition-opacity hover:opacity-80"
       >
         {statusLabel(status)}
         <Icon name="chevronDown" size={11} />
@@ -185,7 +185,7 @@ function GoalMeta({
             onClick={() => onTarget(null)}
             aria-label="Clear target date"
             title="Clear the target date"
-            className="text-ink-3 transition-colors hover:text-accent-ink"
+            className="text-ink-3 transition-colors hover:text-accent-ink max-md:grid max-md:h-9 max-md:w-9 max-md:place-items-center"
           >
             <Icon name="x" size={12} />
           </button>
@@ -220,7 +220,7 @@ export function GoalHeader({ goal, onSave }: GoalHeaderProps): JSX.Element {
         fieldKey={goal.id}
         defaultValue={goal.title}
         onBlur={saveTitle}
-        className="m-0 mb-3.5 w-full resize-none overflow-hidden border-none bg-transparent font-serif text-[38px] font-medium leading-[1.08] tracking-[-.015em] text-ink outline-none"
+        className="m-0 mb-3.5 w-full resize-none overflow-hidden border-none bg-transparent font-serif text-[38px] max-md:text-[30px] font-medium leading-[1.08] tracking-[-.015em] text-ink outline-none"
       />
       <GrowField
         fieldKey={goal.id}

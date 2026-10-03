@@ -7,6 +7,7 @@
  * shortcut and a guarded reload-on-window-focus (docs/adr/0004/0006).
  */
 import { useEffect } from "react";
+import { useIsPhone } from "@/lib/platform";
 import { useStore } from "@/store";
 
 // Same cadence as t3code: first check shortly after launch, then keep polling.
@@ -18,10 +19,13 @@ const UPDATE_POLL_INTERVAL_MS = 4 * 60_000;
 const DAY_POLL_INTERVAL_MS = 60_000;
 import { NavRail } from "@/shell/NavRail";
 import { TitleBar } from "@/shell/TitleBar";
+import { BottomBar } from "@/shell/BottomBar";
 import { SidebarToggle } from "@/shell/SidebarToggle";
 import { Scratchpad } from "@/shell/Scratchpad";
 import { Settings } from "@/shell/Settings";
 import { VaultGate } from "@/shell/VaultGate";
+import { PhoneOnboarding } from "@/shell/PhoneOnboarding";
+import { isTauri } from "@/lib/platform";
 import { CommandPalette, TaskDetail } from "@/views/Capture";
 import Today from "@/views/Today";
 import Backlog from "@/views/Backlog";
@@ -58,6 +62,7 @@ export default function App(): JSX.Element {
   const toggleNav = useStore((s) => s.toggleNav);
   const checkForUpdate = useStore((s) => s.checkForUpdate);
   const refreshDay = useStore((s) => s.refreshDay);
+  const phone = useIsPhone();
 
   // Boot: load config + vault + data.
   useEffect(() => {
@@ -114,23 +119,25 @@ export default function App(): JSX.Element {
     return () => window.removeEventListener("focus", onFocus);
   }, [reload]);
 
+  if (status === "needs-vault" && !isTauri) return <PhoneOnboarding />;
   if (status !== "ready") return <VaultGate />;
 
   return (
-    <div className="flex h-screen flex-col bg-bg text-ink">
+    <div className="flex h-screen flex-col max-md:h-[100dvh] bg-bg text-ink">
       <TitleBar />
       <div className="flex min-h-0 flex-1">
-        <NavRail expanded={!navCollapsed} />
-        <SidebarToggle collapsed={navCollapsed} onToggle={toggleNav} />
+        {!phone && <NavRail expanded={!navCollapsed} />}
+        {!phone && <SidebarToggle collapsed={navCollapsed} onToggle={toggleNav} />}
         <main className="flex min-w-0 flex-1 flex-col">
           <div className="min-h-0 flex-1">
             <CurrentView />
           </div>
         </main>
       </div>
+      {phone && <BottomBar />}
       <CommandPalette />
       <TaskDetail />
-      <Scratchpad />
+      {!phone && <Scratchpad />}
       <Settings />
     </div>
   );

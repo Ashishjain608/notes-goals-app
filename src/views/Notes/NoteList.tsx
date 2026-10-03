@@ -4,7 +4,7 @@
  * Renders notes grouped into collapsible Notebook sections plus an Unfiled
  * group, with drag-and-drop filing: drag a note card onto a notebook to file it
  * (only same-Context drops are accepted), or onto Unfiled to take it out. New
- * notebooks are created inline; a notebook can be renamed (double-click its
+ * notebooks are created inline; a notebook can be renamed (its pencil button, or double-click its
  * name) or deleted (its notes survive as Unfiled). While a search query is
  * active the grouping collapses to a flat result list. With no notebooks yet,
  * the pane is a plain flat list — identical to the pre-notebook behavior.
@@ -86,8 +86,8 @@ export function NoteList({
   );
 
   return (
-    <div className="scroll w-80 flex-shrink-0 border-r border-line py-7 pb-16">
-      <div className="mb-4 px-[22px]">
+    <div className="scroll w-80 flex-shrink-0 border-r border-line py-7 pb-16 max-md:w-full max-md:border-r-0 max-md:pb-[calc(5rem+env(safe-area-inset-bottom))] max-md:pt-4">
+      <div className="mb-4 px-[22px] max-md:px-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="text-xs font-semibold uppercase tracking-[0.1em] text-accent-ink">
             Notes
@@ -102,13 +102,13 @@ export function NoteList({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-md bg-surface-2 px-[11px] py-2">
+        <div className="flex items-center gap-2 rounded-md bg-surface-2 px-[11px] py-2 max-md:py-2.5">
           <Icon name="search" size={16} className="text-ink-3" />
           <input
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder="Search notes"
-            className="flex-1 border-none bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
+            className="flex-1 border-none bg-transparent text-sm text-ink outline-none placeholder:text-ink-3 max-md:text-base"
           />
         </div>
 
@@ -124,7 +124,7 @@ export function NoteList({
         )}
       </div>
 
-      <div className="px-3">
+      <div className="px-3 max-md:px-2">
         {nothingToShow ? (
           <ListMessage>
             {searching
@@ -232,7 +232,7 @@ function NotebookRow({
           onClick={onToggle}
           aria-label={collapsed ? "Expand notebook" : "Collapse notebook"}
           title={collapsed ? "Expand notebook" : "Collapse notebook"}
-          className="grid h-5 w-4 place-items-center text-ink-3 hover:text-ink-2"
+          className="grid h-5 w-4 place-items-center text-ink-3 hover:text-ink-2 max-md:h-9 max-md:w-6"
         >
           <Icon name={collapsed ? "chevron" : "chevronDown"} size={14} />
         </button>
@@ -260,7 +260,10 @@ function NotebookRow({
         )}
 
         <span className="tabular-nums text-[11.5px] text-ink-3">{notes.length}</span>
-        <span className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover/nb:opacity-100">
+        <span className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover/nb:opacity-100 max-md:opacity-100">
+          <RowAction label="Rename notebook" onClick={() => setEditing(true)}>
+            <Icon name="pencil" size={13} />
+          </RowAction>
           <RowAction label="New note in notebook" onClick={() => onAddNote(notebook)}>
             <Icon name="plus" size={13} />
           </RowAction>
@@ -336,7 +339,7 @@ function UnfiledRow({
           onClick={onToggle}
           aria-label={collapsed ? "Expand Unfiled" : "Collapse Unfiled"}
           title={collapsed ? "Expand Unfiled" : "Collapse Unfiled"}
-          className="grid h-5 w-4 place-items-center text-ink-3 hover:text-ink-2"
+          className="grid h-5 w-4 place-items-center text-ink-3 hover:text-ink-2 max-md:h-9 max-md:w-6"
         >
           <Icon name={collapsed ? "chevron" : "chevronDown"} size={14} />
         </button>
@@ -378,7 +381,7 @@ function NoteCard({ note, active, body, onClick, onDragStart, onDragEnd }: NoteC
       }}
       onDragEnd={onDragEnd}
       onClick={onClick}
-      className={`mb-0.5 block w-full rounded-lg px-3 py-3 text-left transition-colors duration-150 ${
+      className={`mb-0.5 block w-full rounded-lg px-3 py-3 max-md:py-3.5 text-left transition-colors duration-150 ${
         active ? "bg-raise" : "hover:bg-surface-2"
       }`}
     >
@@ -435,7 +438,7 @@ function NewNotebookForm({ contextFilter, onCreate, onCancel }: NewNotebookFormP
           if (e.key === "Escape") onCancel();
         }}
         placeholder="Notebook name…"
-        className="w-full border-none bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+        className="w-full border-none bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3 max-md:text-base"
       />
       {contextFilter === "all" && (
         <div className="mt-2 flex gap-0.5 rounded-md bg-surface p-0.5">
@@ -504,7 +507,7 @@ function RenameInput({ initial, onCommit, onCancel }: RenameInputProps): JSX.Ele
         if (e.key === "Enter") onCommit(value.trim());
         if (e.key === "Escape") onCancel();
       }}
-      className="min-w-0 flex-1 rounded border border-accent-line bg-surface px-1.5 py-0.5 text-[13px] font-semibold text-ink outline-none"
+      className="min-w-0 flex-1 rounded border border-accent-line bg-surface px-1.5 py-0.5 text-[13px] max-md:text-base font-semibold text-ink outline-none"
     />
   );
 }
@@ -527,7 +530,7 @@ function HeaderButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="grid h-7 w-7 place-items-center rounded-md text-ink-2 transition-colors duration-150 hover:bg-raise hover:text-ink"
+      className="grid h-7 w-7 place-items-center rounded-md text-ink-2 transition-colors duration-150 hover:bg-raise hover:text-ink max-md:h-11 max-md:w-11"
     >
       {children}
     </button>
@@ -555,7 +558,7 @@ function RowAction({
       }}
       aria-label={label}
       title={label}
-      className={`grid h-6 w-6 place-items-center rounded transition-colors duration-150 ${
+      className={`grid h-6 w-6 place-items-center rounded transition-colors duration-150 max-md:h-9 max-md:w-9 ${
         warn ? "text-ink-3 hover:bg-warn-soft hover:text-warn-ink" : "text-ink-3 hover:bg-raise hover:text-ink"
       }`}
     >

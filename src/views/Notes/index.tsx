@@ -22,6 +22,7 @@ import {
 } from "@/store";
 import { EmptyState, GoalChip, Icon } from "@/components";
 import { confirmDestructive } from "@/lib/confirm";
+import { useIsPhone } from "@/lib/platform";
 import { NoteList } from "./NoteList";
 import { NoteEditor } from "./NoteEditor";
 import type { NoteEditorStore } from "./useNoteEditor";
@@ -57,6 +58,7 @@ export default function Notes(): JSX.Element {
   const deleteNotebook = useStore((s) => s.deleteNotebook);
   const moveNoteToNotebook = useStore((s) => s.moveNoteToNotebook);
 
+  const isPhone = useIsPhone();
   const [query, setQuery] = useState("");
 
   const data = useMemo(
@@ -80,10 +82,12 @@ export default function Notes(): JSX.Element {
 
   // Seed the selection to the first visible note, and re-seed when the active
   // filter/search drops the current selection from view.
+  // On a phone nothing is auto-selected: no selection means the list is showing.
   useEffect(() => {
+    if (isPhone) return;
     const stillVisible = visibleNotes.some((n) => n.id === selectedId);
     if (!stillVisible) selectNote(visibleNotes[0]?.id ?? null);
-  }, [visibleNotes, selectedId, selectNote]);
+  }, [isPhone, visibleNotes, selectedId, selectNote]);
 
   const selectedNote = useMemo(
     () => notes.find((n) => n.id === selectedId) ?? null,
@@ -161,7 +165,8 @@ export default function Notes(): JSX.Element {
   const handleDelete = async (note: Note): Promise<void> => {
     const ok = await confirmDestructive(`Delete "${note.title || "Untitled"}"? This cannot be undone.`);
     if (!ok) return;
-    const fallback = visibleNotes.find((n) => n.id !== note.id)?.id ?? null;
+    // On a phone, deleting returns to the list instead of opening a neighbour.
+    const fallback = isPhone ? null : visibleNotes.find((n) => n.id !== note.id)?.id ?? null;
     await deleteNote(note.id);
     selectNote(fallback);
   };
@@ -177,6 +182,39 @@ export default function Notes(): JSX.Element {
   };
 
   const openGoal = (goalId: string): void => navigate("goal", goalId);
+
+  const editorPane = (
+    <NoteEditorPane
+      note={selectedNote}
+      notebook={selectedNotebook}
+      goal={selectedNote?.goalId ? goalIndex[selectedNote.goalId] ?? null : null}
+      store={noteStore}
+      onBody={rememberBody}
+      onOpenGoal={openGoal}
+      onDelete={handleDelete}
+    />
+  );
+
+  // Phone: the editor takes the whole screen, with a Back button to the list.
+  if (isPhone && selectedNote) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="px-2 pt-1">
+          <button
+            type="button"
+            onClick={() => selectNote(null)}
+            aria-label="Back to notes"
+            title="Back to the notes list"
+            className="inline-flex h-11 items-center gap-1 rounded-md pl-2 pr-3 text-[15px] font-medium text-accent-ink"
+          >
+            <Icon name="chevron" size={18} className="rotate-180" />
+            Notes
+          </button>
+        </div>
+        <div className="min-h-0 flex-1">{editorPane}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full">
@@ -196,15 +234,7 @@ export default function Notes(): JSX.Element {
         onDeleteNotebook={handleDeleteNotebook}
         onMoveNote={(id, notebookId) => void moveNoteToNotebook(id, notebookId)}
       />
-      <NoteEditorPane
-        note={selectedNote}
-        notebook={selectedNotebook}
-        goal={selectedNote?.goalId ? goalIndex[selectedNote.goalId] ?? null : null}
-        store={noteStore}
-        onBody={rememberBody}
-        onOpenGoal={openGoal}
-        onDelete={handleDelete}
-      />
+      {!isPhone && editorPane}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import type { Attachment, Goal, IsoDate, Subtask, Task, TaskStatus } from "@/typ
 import { useStore, selectSlate, isOnSlate } from "@/store";
 import { ageInDays, dueLabel, formatShortDate } from "@/lib/dates";
 import { errorMessageOf } from "@/lib/errors";
+import { isTauri, useIsPhone } from "@/lib/platform";
 import { confirmDestructive } from "@/lib/confirm";
 import { AttachmentList, Checkbox, ContextDot, DatePicker, Icon, type IconName } from "@/components";
 import { OptionRow } from "./OptionRow";
@@ -116,7 +117,7 @@ function DetailRow({
       <button
         type="button"
         onClick={onToggle}
-        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-100 hover:bg-raise ${
+        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 max-md:min-h-[44px] text-left transition-colors duration-100 hover:bg-raise ${
           open ? "bg-raise" : ""
         }`}
       >
@@ -141,7 +142,7 @@ function MenuBox({ children }: { children: ReactNode }): JSX.Element {
 function DetailHeader({ task, onClose }: { task: Task; onClose: () => void }): JSX.Element {
   const age = ageInDays(task.created);
   return (
-    <div className="flex items-center justify-between border-b border-line px-4 py-3.5">
+    <div className="flex items-center justify-between border-b border-line px-4 py-3.5 max-md:pt-[calc(10px+env(safe-area-inset-top))] max-md:pb-2.5">
       <div className="flex items-center gap-2 text-[12.5px] text-ink-2">
         <ContextDot context={task.context} size={7} />
         {task.context === "personal" ? "Personal" : "Office"}
@@ -155,9 +156,10 @@ function DetailHeader({ task, onClose }: { task: Task; onClose: () => void }): J
         onClick={onClose}
         aria-label="Close"
         title="Close (Esc)"
-        className="rounded-[6px] p-1 text-ink-3 transition-colors duration-100 hover:bg-raise"
+        className="flex items-center gap-1.5 rounded-[6px] p-1 text-ink-3 transition-colors duration-100 hover:bg-raise max-md:min-h-[44px] max-md:bg-surface-2 max-md:px-4 max-md:text-[15px] max-md:font-medium max-md:text-ink"
       >
         <Icon name="x" size={18} />
+        <span className="hidden max-md:inline">Close</span>
       </button>
     </div>
   );
@@ -181,7 +183,7 @@ function StatusControl({
             key={s.value}
             type="button"
             onClick={() => onSet(s.value)}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-[7px] py-2 text-[13px] font-semibold transition-all duration-150 ${
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-[7px] py-2 max-md:min-h-[44px] text-[13px] font-semibold transition-all duration-150 ${
               active ? `bg-surface shadow-sm ${activeColor}` : "bg-transparent text-ink-3"
             }`}
           >
@@ -204,6 +206,7 @@ function Subtasks({
   onAdd: (title: string) => void;
 }): JSX.Element {
   const [draft, setDraft] = useState("");
+  const phone = useIsPhone();
   const doneCount = subtasks.filter((s) => s.status === "done").length;
 
   const commit = (): void => {
@@ -227,7 +230,12 @@ function Subtasks({
       {subtasks.map((s) => {
         const done = s.status === "done";
         return (
-          <div key={s.id} className="flex items-center gap-2.5 py-[5px]">
+          <div
+            key={s.id}
+            // On a phone the whole 44px row toggles; the 16px box alone is too small to hit.
+            onClick={phone ? () => onToggle(s.id) : undefined}
+            className="flex items-center gap-2.5 py-[5px] max-md:min-h-[44px]"
+          >
             <Checkbox checked={done} size={16} onClick={() => onToggle(s.id)} />
             <span
               className={`text-[13.5px] ${
@@ -250,7 +258,7 @@ function Subtasks({
             if (e.key === "Enter") commit();
           }}
           placeholder="Add subtask"
-          className="flex-1 border-none bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-3"
+          className="flex-1 border-none bg-transparent text-[13.5px] max-md:h-11 max-md:text-[16px] text-ink outline-none placeholder:text-ink-3"
         />
       </div>
     </div>
@@ -277,7 +285,7 @@ function Details({
         defaultValue={details}
         onBlur={onSave}
         placeholder="Add notes, links, or anything worth remembering…"
-        className="min-h-[180px] w-full resize-none rounded-lg border border-line bg-surface-2 px-3.5 py-3 text-[14px] leading-[1.6] text-ink outline-none placeholder:text-ink-3"
+        className="min-h-[180px] w-full resize-none rounded-lg border border-line bg-surface-2 px-3.5 py-3 text-[14px] max-md:text-[16px] leading-[1.6] text-ink outline-none placeholder:text-ink-3"
       />
     </div>
   );
@@ -293,8 +301,10 @@ function Attachments({
   attachments: Attachment[];
   onOpen: (attachment: Attachment) => void;
   onRemove: (attachment: Attachment) => void;
-  onAttach: () => void;
-}): JSX.Element {
+  /** Omitted where files can't be attached (the phone app): no "Attach file" row. */
+  onAttach?: () => void;
+}): JSX.Element | null {
+  if (!onAttach && attachments.length === 0) return null;
   return (
     <div className="px-3">
       <div className="mb-2 text-[11.5px] font-semibold uppercase tracking-[.07em] text-ink-3">
@@ -302,14 +312,16 @@ function Attachments({
         {attachments.length > 0 && <span className="text-ink-3"> · {attachments.length}</span>}
       </div>
       <AttachmentList attachments={attachments} onOpen={onOpen} onRemove={onRemove} />
-      <button
-        type="button"
-        onClick={onAttach}
-        className="mt-0.5 flex w-full items-center gap-2.5 rounded-md py-[5px] text-left text-[13.5px] text-ink-3 transition-colors duration-100 hover:text-ink"
-      >
-        <Icon name="plus" size={16} />
-        Attach file
-      </button>
+      {onAttach && (
+        <button
+          type="button"
+          onClick={onAttach}
+          className="mt-0.5 flex w-full items-center gap-2.5 rounded-md py-[5px] max-md:min-h-[44px] text-left text-[13.5px] text-ink-3 transition-colors duration-100 hover:text-ink"
+        >
+          <Icon name="plus" size={16} />
+          Attach file
+        </button>
+      )}
     </div>
   );
 }
@@ -337,7 +349,7 @@ function CommitToggle({
       type="button"
       disabled={blocked}
       onClick={onToggle}
-      className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-100 ${
+      className={`flex w-full items-center gap-3 rounded-md px-3 py-2 max-md:min-h-[44px] text-left transition-colors duration-100 ${
         on ? "bg-accent-soft" : blocked ? "cursor-default" : "hover:bg-raise"
       }`}
     >
@@ -366,7 +378,7 @@ function PriorityToggle({ on, onToggle }: { on: boolean; onToggle: () => void })
     <button
       type="button"
       onClick={onToggle}
-      className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-100 ${
+      className={`flex w-full items-center gap-3 rounded-md px-3 py-2 max-md:min-h-[44px] text-left transition-colors duration-100 ${
         on ? "bg-accent-soft" : "hover:bg-raise"
       }`}
     >
@@ -391,7 +403,7 @@ function DeleteAction({ onDelete }: { onDelete: () => void }): JSX.Element {
     <button
       type="button"
       onClick={onDelete}
-      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-ink-3 transition-colors duration-100 hover:bg-raise hover:text-accent-ink"
+      className="flex w-full items-center gap-3 rounded-md px-3 py-2 max-md:min-h-[44px] text-left text-sm text-ink-3 transition-colors duration-100 hover:bg-raise hover:text-accent-ink"
     >
       <Icon name="trash" size={16} />
       <span className="flex-1">Delete task</span>
@@ -443,7 +455,7 @@ export function TaskDetail(): JSX.Element | null {
   // Ordinary text paste (into the title/details/subtask fields) is untouched —
   // a clipboard paste with no files just falls through without preventDefault.
   useEffect(() => {
-    if (!liveTask) return;
+    if (!liveTask || !isTauri) return; // no attachments in the phone app
     const currentTask = liveTask;
     const handlePaste = (e: ClipboardEvent): void => {
       const files = e.clipboardData?.files;
@@ -565,13 +577,13 @@ export function TaskDetail(): JSX.Element | null {
       />
       <aside
         style={{ colorScheme: theme }}
-        className={`fixed bottom-0 right-0 top-0 z-[41] flex w-[460px] max-w-[92vw] flex-col border-l border-line bg-surface shadow ${
+        className={`fixed bottom-0 right-0 top-0 z-[41] flex w-[460px] max-w-[92vw] flex-col border-l border-line max-md:w-full max-md:max-w-none max-md:border-l-0 bg-surface shadow ${
           closing ? "ng-panel-out" : "ng-panel-in"
         }`}
       >
         <DetailHeader task={task} onClose={closeTaskDetail} />
 
-        <div className="scroll flex-1 px-4 pb-8 pt-4">
+        <div className="scroll flex-1 px-4 pb-8 pt-4 max-md:pb-[calc(32px+env(safe-area-inset-bottom))]">
           <GrowTextarea
             taskId={task.id}
             defaultValue={task.title}
@@ -694,7 +706,7 @@ export function TaskDetail(): JSX.Element | null {
             attachments={task.attachments}
             onOpen={openAttachment}
             onRemove={removeAttachment}
-            onAttach={() => void pickAndAttachFiles()}
+            onAttach={isTauri ? () => void pickAndAttachFiles() : undefined}
           />
 
           <Divider />

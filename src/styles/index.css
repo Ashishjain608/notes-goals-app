@@ -176,3 +176,16 @@
     animation: none;
   }
 }
+
+/* Phone (below 768px, matches PHONE_MAX_WIDTH in lib/platform.ts): no stable
+   scrollbar gutter on touch, no double-tap zoom delay. */
+@media (max-width: 767px) {
+  .scroll {
+    scrollbar-gutter: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}

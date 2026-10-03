@@ -58,11 +58,11 @@ function ContextHeader({ context }: { context: Task["context"] }): JSX.Element {
 /** The page header: eyebrow, serif date, and the open / aging / done summary line. */
 function TodayHeader({ view, now }: { view: TodayView; now: Date }): JSX.Element {
   return (
-    <header className="mb-6 px-4">
+    <header className="mb-6 px-4 max-md:mb-4">
       <div className="mb-2 text-xs font-semibold uppercase tracking-[.1em] text-accent-ink">
         Today
       </div>
-      <h1 className="m-0 font-serif text-[34px] font-normal leading-[1.05] tracking-[-.01em]">
+      <h1 className="m-0 font-serif text-[34px] max-md:text-[30px] font-normal leading-[1.05] tracking-[-.01em]">
         {todayHeadline(now)}
       </h1>
       <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px] text-ink-2">
@@ -255,7 +255,7 @@ function ColumnsBody({
   slateFull: boolean;
 }): JSX.Element {
   return (
-    <div className="grid grid-cols-2 gap-7">
+    <div className="grid grid-cols-2 gap-7 max-md:grid-cols-1 max-md:gap-5">
       <div>
         <ContextHeader context="office" />
         {view.office.length > 0 ? (
@@ -369,8 +369,8 @@ export default function Today(): JSX.Element {
   const body = renderBody(contextFilter, view, gById, handlers, slate.full);
 
   return (
-    <div className="scroll h-full pb-[120px] pt-10">
-      <div className={`mx-auto px-6 ${isAll ? "max-w-[880px]" : "max-w-[640px]"}`}>
+    <div className="scroll h-full pb-[120px] pt-10 max-md:pb-8 max-md:pt-5">
+      <div className={`mx-auto px-6 max-md:px-0 ${isAll ? "max-w-[880px]" : "max-w-[640px]"}`}>
         <TodayHeader view={view} now={new Date()} />
         <QuickAddInline />
         <div className="mt-[18px]">

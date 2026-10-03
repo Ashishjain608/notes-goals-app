@@ -67,7 +67,7 @@ export function Checkbox({
       }}
       aria-label={checked ? "Mark open" : "Mark done"}
       title={checked ? "Mark open again" : "Mark done"}
-      className={`group/cb relative mt-px grid flex-shrink-0 place-items-center border-[1.6px] text-white transition-all duration-150 ${shape} ${border} ${fill} ${
+      className={`group/cb relative mt-px grid max-md:after:absolute max-md:after:-inset-3.5 max-md:after:content-[''] flex-shrink-0 place-items-center border-[1.6px] text-white transition-all duration-150 ${shape} ${border} ${fill} ${
         celebrating ? "ng-complete-pop" : ""
       }`}
       style={{ width: size, height: size }}

@@ -38,7 +38,7 @@ export function OptionRow({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-left text-[13.5px] transition-colors duration-100 hover:bg-raise ${
+      className={`flex w-full items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-left text-[13.5px] max-md:min-h-[44px] transition-colors duration-100 hover:bg-raise ${
         selected ? "bg-raise" : ""
       } ${danger ? "text-accent-ink" : "text-ink"}`}
     >

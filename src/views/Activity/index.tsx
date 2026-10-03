@@ -64,7 +64,7 @@ function DateStepper({ day, today, onChange }: DateStepperProps): JSX.Element {
         aria-label="Previous day"
         title="Previous day"
         onClick={() => onChange(shiftDay(day, -1))}
-        className="grid h-8 w-8 place-items-center rounded-md text-ink-2 transition-colors hover:bg-raise"
+        className="grid h-8 w-8 max-md:h-11 max-md:w-11 place-items-center rounded-md text-ink-2 transition-colors hover:bg-raise"
       >
         <Icon name="chevron" size={16} className="rotate-180" />
       </button>
@@ -75,7 +75,7 @@ function DateStepper({ day, today, onChange }: DateStepperProps): JSX.Element {
         title="Next day"
         disabled={atToday}
         onClick={() => onChange(shiftDay(day, 1))}
-        className="grid h-8 w-8 place-items-center rounded-md text-ink-2 transition-colors hover:bg-raise disabled:opacity-30 disabled:hover:bg-transparent"
+        className="grid h-8 w-8 max-md:h-11 max-md:w-11 place-items-center rounded-md text-ink-2 transition-colors hover:bg-raise disabled:opacity-30 disabled:hover:bg-transparent"
       >
         <Icon name="chevron" size={16} />
       </button>
@@ -83,7 +83,7 @@ function DateStepper({ day, today, onChange }: DateStepperProps): JSX.Element {
         <button
           type="button"
           onClick={() => onChange(today)}
-          className="ml-1 rounded-md px-2.5 py-1.5 text-[13px] font-medium text-accent-ink transition-colors hover:bg-raise"
+          className="ml-1 rounded-md px-2.5 py-1.5 max-md:h-11 max-md:px-3.5 text-[13px] font-medium text-accent-ink transition-colors hover:bg-raise"
         >
           Today
         </button>
@@ -159,16 +159,16 @@ export default function Activity(): JSX.Element {
   };
 
   return (
-    <div className="scroll h-full pb-[120px] pt-10">
-      <div className="mx-auto max-w-[760px] px-10">
+    <div className="scroll h-full pb-[120px] pt-10 max-md:pt-6 max-md:pb-[calc(6rem+env(safe-area-inset-bottom))]">
+      <div className="mx-auto max-w-[760px] px-10 max-md:px-4">
         <header className="mb-[26px]">
-          <div className="mb-2 flex items-center justify-between gap-4">
+          <div className="mb-2 flex items-center justify-between gap-4 max-md:flex-wrap">
             <div className="text-xs font-semibold uppercase tracking-[.1em] text-accent-ink">
               Activity
             </div>
             <DateStepper day={day} today={today} onChange={setDay} />
           </div>
-          <h1 className="m-0 font-serif text-[32px] font-normal tracking-[-.01em] text-ink">
+          <h1 className="m-0 font-serif text-[32px] max-md:text-[28px] font-normal tracking-[-.01em] text-ink">
             {dayHeadline(day)}
           </h1>
           <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px] text-ink-2">

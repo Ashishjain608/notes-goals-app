@@ -69,7 +69,7 @@ export function NewGoalDialog({ open, onClose }: NewGoalDialogProps): JSX.Elemen
   return (
     <div
       onClick={onClose}
-      className="animate-overlayIn fixed inset-0 z-[60] flex items-start justify-center bg-[rgba(20,18,15,.28)] pt-[16vh] backdrop-blur-[3px]"
+      className="animate-overlayIn fixed inset-0 z-[60] flex items-start justify-center bg-[rgba(20,18,15,.28)] pt-[16vh] max-md:pt-[8vh] backdrop-blur-[3px]"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -89,9 +89,9 @@ export function NewGoalDialog({ open, onClose }: NewGoalDialogProps): JSX.Elemen
               if (e.key === "Escape") onClose();
             }}
             placeholder="Name your goal…"
-            className="flex-1 border-none bg-transparent text-[16.5px] tracking-[-.01em] text-ink outline-none placeholder:text-ink-3"
+            className="min-w-0 flex-1 border-none bg-transparent text-[16.5px] tracking-[-.01em] text-ink outline-none placeholder:text-ink-3"
           />
-          <kbd className="rounded-sm border border-line-2 px-1.5 py-0.5 font-mono text-[11px] text-ink-3">
+          <kbd className="max-md:hidden rounded-sm border border-line-2 px-1.5 py-0.5 font-mono text-[11px] text-ink-3">
             esc
           </kbd>
         </div>
@@ -137,7 +137,7 @@ export function NewGoalDialog({ open, onClose }: NewGoalDialogProps): JSX.Elemen
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What does reaching this goal look like? (optional)"
             rows={3}
-            className="w-full resize-y rounded-md bg-surface-2 px-3 py-2.5 text-[13.5px] leading-[1.55] text-ink outline-none placeholder:text-ink-3"
+            className="w-full resize-y rounded-md bg-surface-2 px-3 py-2.5 text-[13.5px] max-md:text-base leading-[1.55] text-ink outline-none placeholder:text-ink-3"
           />
         </div>
 
@@ -145,7 +145,7 @@ export function NewGoalDialog({ open, onClose }: NewGoalDialogProps): JSX.Elemen
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-3 py-1.5 text-[13px] font-medium text-ink-2 transition-colors hover:bg-raise"
+            className="rounded-md px-3 py-1.5 max-md:py-2.5 text-[13px] font-medium text-ink-2 transition-colors hover:bg-raise"
           >
             Cancel
           </button>
@@ -153,7 +153,7 @@ export function NewGoalDialog({ open, onClose }: NewGoalDialogProps): JSX.Elemen
             type="button"
             onClick={() => void create()}
             disabled={!trimmed}
-            className="rounded-md bg-accent px-4 py-1.5 text-[13px] font-semibold text-white shadow-sm transition-transform hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+            className="rounded-md bg-accent px-4 py-1.5 max-md:py-2.5 text-[13px] font-semibold text-white shadow-sm transition-transform hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
           >
             Create goal
           </button>

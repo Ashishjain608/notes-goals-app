@@ -87,6 +87,17 @@ _Avoid_: child task, nested task.
 The user-chosen directory holding all Tasks, Notes, Goals, and Notebooks as individual files. Portable, git/Dropbox/iCloud-friendly. The app stores only its path, nothing else, outside it. Refer to it as "vault" or "Data folder" — not bare "folder", which now reads as a **Notebook**.
 _Avoid_: database, library, store (those refer to the in-memory representation); bare "folder" (collides with Notebook).
 
+**Sync**:
+Keeping the data folder and the user's Dropbox App Folder identical, file by file, through the Dropbox API (ADR-0011). Opt-in from Settings; the app works fully without it. Each device keeps its own record of the last state both sides agreed on.
+_Avoid_: backup (sync is two-way; Dropbox's version history is the backup), cloud, account (the app has no accounts of its own).
+
+**Phone app**:
+The same app built for the web and installed to the iPhone Home Screen. Its local copy lives in the browser's storage and syncs with Dropbox, which must be connected before it can show anything.
+_Avoid_: mobile app (implies the App Store), web version, companion.
+
+**Conflict copy**:
+The losing local version of a file both devices changed before syncing. Dropbox's copy wins in place, and the loser is saved under `.atlas/conflicts/`, so no edit is lost.
+
 ## Relationships
 
 - Every **Task**, **Note**, and **Goal** belongs to exactly one **Context** (`office` | `personal`).

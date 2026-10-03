@@ -5,6 +5,13 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "vite.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -20,6 +27,17 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build:web
+
+      - run: rm -rf site/app && cp -R dist-web site/app
 
       - uses: actions/configure-pages@v6
 

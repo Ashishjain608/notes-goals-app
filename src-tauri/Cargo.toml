@@ -25,6 +25,8 @@ chrono = { version = "0.4", features = ["clock"] }
 thiserror = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+sha2 = "0.10"
+keyring = { version = "3", features = ["apple-native"] }
 
 [profile.release]
 panic = "abort"

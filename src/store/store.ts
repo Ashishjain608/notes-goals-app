@@ -34,6 +34,9 @@ import type {
   TaskStatus,
 } from "@/types";
 import * as ipc from "@/lib/ipc";
+import { isTauri } from "@/lib/platform";
+import { syncController } from "@/sync";
+import type { SyncStatus } from "@/sync/types";
 import { localToday } from "@/lib/dates";
 import { errorMessageOf } from "@/lib/errors";
 import { fileBytes, pastedFileName } from "@/lib/attachments";
@@ -79,6 +82,10 @@ export interface AppState {
   selectedNoteId: string | null;
   scratchOpen: boolean;
   settingsOpen: boolean;
+  /** Dropbox sync (ADR-0011): the controller's latest status, mirrored here for the UI. */
+  sync: SyncStatus;
+  /** True while a Dropbox sign-in is waiting on the browser. */
+  syncConnecting: boolean;
   /** A newer release, once found: downloading in the background, then ready to restart into. */
   update: { version: string; phase: "downloading" | "ready" } | null;
 
@@ -106,6 +113,11 @@ export interface AppState {
   closeScratch: () => void;
   openSettings: () => void;
   closeSettings: () => void;
+  connectDropbox: () => Promise<void>;
+  connectDropboxWithCode: (code: string) => Promise<void>;
+  cancelConnectDropbox: () => void;
+  disconnectDropbox: () => Promise<void>;
+  syncNow: () => Promise<void>;
   checkForUpdate: () => Promise<void>;
   restartToUpdate: () => Promise<void>;
   toggleSettings: () => void;
@@ -194,11 +206,17 @@ function applyTheme(theme: Theme): void {
 
 let savePendingCount = 0;
 
+/** Begin Dropbox sync for the vault that just loaded (the phone has one fixed vault). */
+const startSync = (vaultPath: string | null): void =>
+  syncController.start(isTauri ? vaultPath ?? "" : "dropbox");
+
 /** Run a mutating IPC call with the save guard raised for its full duration. */
 async function withSaveGuard<T>(fn: () => Promise<T>): Promise<T> {
   savePendingCount += 1;
   try {
-    return await fn();
+    const result = await fn();
+    syncController.requestSync(); // a no-op unless Dropbox is connected
+    return result;
   } finally {
     savePendingCount -= 1;
   }
@@ -282,6 +300,8 @@ export const useStore = create<AppState>((set, get) => {
     scratchOpen: false,
     settingsOpen: false,
     update: null,
+    sync: syncController.getStatus(),
+    syncConnecting: false,
 
     /* ------------------------------------------------------------- lifecycle */
 
@@ -312,6 +332,7 @@ export const useStore = create<AppState>((set, get) => {
           status: "ready",
           errorMessage: null,
         });
+        startSync(vaultPath);
       } catch (err) {
         set({ status: "error", errorMessage: errorMessageOf(err), missingVaultPath: vaultPath });
       }
@@ -333,6 +354,7 @@ export const useStore = create<AppState>((set, get) => {
           status: "ready",
           errorMessage: null,
         });
+        startSync(vaultPath);
       } catch (err) {
         set({ status: "error", errorMessage: errorMessageOf(err), missingVaultPath: vaultPath });
       }
@@ -352,6 +374,7 @@ export const useStore = create<AppState>((set, get) => {
           status: "ready",
           errorMessage: null,
         });
+        startSync(path);
       } catch (err) {
         set({ status: "error", errorMessage: errorMessageOf(err), missingVaultPath: path });
       }
@@ -421,6 +444,35 @@ export const useStore = create<AppState>((set, get) => {
 
     // Like t3code: once an update is found it downloads by itself; the nav rail
     // then offers "Restart to update". A failed check or download is silent.
+    connectDropbox: async () => {
+      // No await before the controller call: the phone's pop-up must open inside the tap.
+      set({ syncConnecting: true });
+      try {
+        await syncController.connect();
+        set({ sync: syncController.getStatus() });
+      } catch (err) {
+        set({ sync: { ...syncController.getStatus(), message: errorMessageOf(err) } });
+      } finally {
+        set({ syncConnecting: false });
+      }
+    },
+    connectDropboxWithCode: async (code) => {
+      set({ syncConnecting: true });
+      try {
+        await syncController.connectWithCode(code);
+      } catch (err) {
+        set({ sync: { ...syncController.getStatus(), message: errorMessageOf(err) } });
+      } finally {
+        set({ syncConnecting: false });
+      }
+    },
+    cancelConnectDropbox: () => syncController.cancelConnect(),
+    disconnectDropbox: async () => {
+      await syncController.disconnect();
+      if (!isTauri) set({ status: "needs-vault", tasks: [], notes: [], goals: [], notebooks: [], vaultPath: null, settingsOpen: false });
+    },
+    syncNow: () => syncController.syncNow(),
+
     checkForUpdate: async () => {
       if (get().update) return;
       try {
@@ -618,4 +670,11 @@ export const useStore = create<AppState>((set, get) => {
 
     searchNoteBodies: async (query) => ipc.searchNoteBodies(query),
   };
+});
+
+// Wire the controller to the store: status flows in, reload/save-guard state flows out.
+syncController.subscribe((sync) => useStore.setState({ sync }));
+syncController.setHooks({
+  reload: () => useStore.getState().reload(),
+  savePending: () => savePendingCount > 0,
 });

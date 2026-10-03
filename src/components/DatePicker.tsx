@@ -257,7 +257,7 @@ export interface DateFieldProps {
 }
 
 const DEFAULT_FIELD_CLASS =
-  "rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] tabular-nums text-ink-2 outline-none transition-colors hover:bg-raise";
+  "rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] max-md:min-h-[44px] max-md:text-base tabular-nums text-ink-2 outline-none transition-colors hover:bg-raise";
 
 /** Where the popover should sit relative to the field's `getBoundingClientRect`. */
 interface Placement {

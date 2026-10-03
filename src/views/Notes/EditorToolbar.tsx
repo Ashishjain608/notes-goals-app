@@ -17,6 +17,7 @@ import { open as openFilePicker } from "@tauri-apps/plugin-dialog";
 import { Icon } from "@/components";
 import { useStore } from "@/store";
 import { errorMessageOf } from "@/lib/errors";
+import { isTauri } from "@/lib/platform";
 import type { Attachment } from "@/types";
 
 export interface EditorToolbarProps {
@@ -66,7 +67,7 @@ export function EditorToolbar({ editor, noteId, onAttach, onDelete }: EditorTool
   const disabled = !editor;
 
   return (
-    <div className="sticky top-0 z-10 flex items-center gap-0.5 bg-bg pb-3 pt-4">
+    <div className="sticky top-0 z-10 flex items-center gap-0.5 bg-bg pb-3 pt-4 max-md:flex-wrap max-md:pt-2">
       <ToolbarButton
         label="Bold"
         active={editor?.isActive("bold") ?? false}
@@ -148,19 +149,21 @@ export function EditorToolbar({ editor, noteId, onAttach, onDelete }: EditorTool
         </ToolbarButton>
         {linkOpen && editor && <LinkPopover editor={editor} onClose={() => setLinkOpen(false)} />}
       </div>
-      <ToolbarButton label="Attach file" active={false} disabled={disabled} onClick={() => void handleAttach()}>
-        <Icon name="notes" size={15} />
-      </ToolbarButton>
+      {isTauri && (
+        <ToolbarButton label="Attach file" active={false} disabled={disabled} onClick={() => void handleAttach()}>
+          <Icon name="notes" size={15} />
+        </ToolbarButton>
+      )}
 
       <span className="ml-auto flex items-center gap-3">
-        <span className="text-[11.5px] italic text-ink-3">No markdown — just write</span>
+        <span className="text-[11.5px] italic text-ink-3 max-md:hidden">No markdown — just write</span>
         {onDelete && (
           <button
             type="button"
             onClick={onDelete}
             aria-label="Delete note"
             title="Delete note"
-            className="grid h-[30px] w-8 place-items-center rounded-md text-ink-3 transition-colors duration-150 hover:bg-warn-soft hover:text-warn-ink"
+            className="grid h-[30px] w-8 place-items-center rounded-md text-ink-3 transition-colors duration-150 max-md:h-9 hover:bg-warn-soft hover:text-warn-ink"
           >
             <Icon name="trash" size={15} />
           </button>
@@ -239,7 +242,7 @@ function LinkPopover({ editor, onClose }: { editor: Editor; onClose: () => void 
 
   return (
     <div
-      className="absolute right-0 top-full z-20 mt-1 flex w-72 items-center gap-1.5 rounded-lg border border-line bg-surface p-1.5 shadow"
+      className="absolute right-0 top-full z-20 mt-1 flex w-72 max-md:fixed max-md:inset-x-3 max-md:top-auto max-md:w-auto items-center gap-1.5 rounded-lg border border-line bg-surface p-1.5 shadow"
       onClick={(e) => e.stopPropagation()}
     >
       <Icon name="link" size={14} className="ml-1 text-ink-3" />
@@ -253,7 +256,7 @@ function LinkPopover({ editor, onClose }: { editor: Editor; onClose: () => void 
         }}
         onBlur={apply}
         placeholder="https://…"
-        className="min-w-0 flex-1 border-none bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+        className="min-w-0 flex-1 border-none bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3 max-md:text-base"
       />
       {hasLink && (
         <button
@@ -294,7 +297,7 @@ function ToolbarButton({ label, active, disabled, onClick, children }: ToolbarBu
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className={`grid h-[30px] w-8 place-items-center rounded-md text-[14px] transition-colors duration-150 disabled:opacity-40 ${
+      className={`grid h-[30px] w-8 place-items-center rounded-md text-[14px] max-md:h-9 transition-colors duration-150 disabled:opacity-40 ${
         active ? "bg-accent-soft text-accent-ink" : "text-ink-2 hover:bg-raise"
       }`}
     >

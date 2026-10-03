@@ -37,7 +37,7 @@ function MenuItem({
     <button
       type="button"
       onClick={onClick}
-      className={`block w-full px-3 py-1.5 text-left text-[13px] transition-colors ${
+      className={`block w-full px-3 py-1.5 max-md:py-3 text-left text-[13px] transition-colors ${
         danger ? "text-warn-ink hover:bg-warn-soft" : "text-ink-2 hover:bg-raise"
       }`}
     >
@@ -137,7 +137,7 @@ export function NoteEditorDrawer({
       />
       <aside
         style={{ colorScheme: theme }}
-        className={`fixed bottom-0 right-0 top-0 z-[45] flex w-[520px] max-w-[94vw] flex-col border-l border-line bg-surface shadow ${
+        className={`fixed bottom-0 right-0 top-0 z-[45] flex w-[520px] max-w-[94vw] flex-col border-l border-line bg-surface shadow max-md:w-full max-md:max-w-none max-md:border-l-0 max-md:pb-[env(safe-area-inset-bottom)] ${
           closing ? "ng-panel-out" : "ng-panel-in"
         }`}
         onKeyDown={(e) => {
@@ -147,7 +147,7 @@ export function NoteEditorDrawer({
           }
         }}
       >
-        <header className="flex items-center justify-between border-b border-line px-4 py-3">
+        <header className="flex items-center justify-between border-b border-line px-4 py-3 max-md:pt-[calc(0.75rem+env(safe-area-inset-top))]">
           <div className="flex min-w-0 items-center gap-2 text-[12.5px] text-ink-2">
             <Icon name="notes" size={15} className="text-ink-3" />
             <span className="font-medium">Note</span>
@@ -162,7 +162,7 @@ export function NoteEditorDrawer({
                 type="button"
                 aria-label="Note actions"
                 onClick={() => setMenuOpen((v) => !v)}
-                className="grid h-7 w-7 place-items-center rounded-md text-[18px] leading-none text-ink-3 transition-colors hover:bg-raise hover:text-ink-2"
+                className="grid h-7 w-7 max-md:h-11 max-md:w-11 place-items-center rounded-md text-[18px] leading-none text-ink-3 transition-colors hover:bg-raise hover:text-ink-2"
               >
                 ⋯
               </button>
@@ -184,7 +184,7 @@ export function NoteEditorDrawer({
               aria-label="Close"
               title="Close (Esc)"
               onClick={close}
-              className="grid h-7 w-7 place-items-center rounded-md text-ink-3 transition-colors hover:bg-raise"
+              className="grid h-7 w-7 max-md:h-11 max-md:w-11 place-items-center rounded-md text-ink-3 transition-colors hover:bg-raise"
             >
               <Icon name="x" size={18} />
             </button>

@@ -16,6 +16,7 @@
  */
 import { useState, type JSX, type ReactNode } from "react";
 import { useStore } from "@/store";
+import { isTauri } from "@/lib/platform";
 import { Brand } from "./Brand";
 
 function Centered({ children, wide = false }: { children: ReactNode; wide?: boolean }): JSX.Element {
@@ -69,7 +70,7 @@ export function VaultGate(): JSX.Element {
   if (status === "loading") {
     return (
       <Centered>
-        <div className="text-sm text-ink-3">Loading your data folder…</div>
+        <div className="text-sm text-ink-3">{isTauri ? "Loading your data folder…" : "Loading…"}</div>
       </Centered>
     );
   }

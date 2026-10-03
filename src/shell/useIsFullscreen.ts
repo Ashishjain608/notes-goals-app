@@ -8,11 +8,13 @@
  * outside Tauri (e.g. a plain `vite` browser) — it just stays `false`.
  */
 import { useEffect, useState } from "react";
+import { isTauri } from "@/lib/platform";
 
 export function useIsFullscreen(): boolean {
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
+    if (!isTauri) return;
     let active = true;
     let unlisten: (() => void) | undefined;
 

@@ -68,6 +68,7 @@ fastlane/test_output
 # Node
 node_modules/
 dist/
+dist-web/
 dist-ssr/
 *.local
 npm-debug.log*

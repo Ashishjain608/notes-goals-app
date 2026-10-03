@@ -40,7 +40,7 @@ function BackButton({ onBack }: { onBack: () => void }): JSX.Element {
     <button
       type="button"
       onClick={onBack}
-      className="mb-5 inline-flex items-center gap-1.5 text-[13px] text-ink-2 transition-colors hover:text-ink"
+      className="mb-5 inline-flex items-center gap-1.5 text-[13px] text-ink-2 transition-colors hover:text-ink max-md:mb-2 max-md:-ml-2 max-md:h-11 max-md:px-2 max-md:text-[15px] max-md:font-medium max-md:text-accent-ink"
     >
       <Icon name="chevron" size={14} className="rotate-180" />
       Goals
@@ -79,7 +79,7 @@ function GoalQuickAdd({ onAdd }: { onAdd: (title: string) => void }): JSX.Elemen
           if (e.key === "Enter") submit();
         }}
         placeholder="Add a task to this goal"
-        className="flex-1 border-none bg-transparent text-[14px] tracking-[-.005em] text-ink outline-none placeholder:text-ink-3"
+        className="flex-1 border-none bg-transparent text-[14px] max-md:text-base tracking-[-.005em] text-ink outline-none placeholder:text-ink-3"
       />
       <kbd className="font-mono text-[11px] text-ink-3">↵</kbd>
     </div>
@@ -180,7 +180,7 @@ function GoalNotes({
         <button
           type="button"
           onClick={onAdd}
-          className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[12px] font-medium text-ink-2 transition-colors hover:bg-raise hover:text-ink"
+          className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 max-md:px-3 max-md:py-2.5 text-[12px] max-md:text-[13px] font-medium text-ink-2 transition-colors hover:bg-raise hover:text-ink"
         >
           <Icon name="plus" size={14} /> Add
         </button>
@@ -219,7 +219,7 @@ function GoalNotes({
 function GoalNotFound({ onBack }: { onBack: () => void }): JSX.Element {
   return (
     <div className="scroll h-full pt-10 pb-[120px]">
-      <div className="mx-auto max-w-[660px] px-10">
+      <div className="mx-auto max-w-[660px] px-10 max-md:px-4">
         <BackButton onBack={onBack} />
         <EmptyState title="Goal not found" hint="It may have been deleted." />
       </div>
@@ -279,11 +279,11 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
 
   return (
     <>
-      <div className="scroll h-full pt-10 pb-[120px]">
-      <div className="mx-auto max-w-[900px] px-10">
+      <div className="scroll h-full pt-10 pb-[120px] max-md:pt-3 max-md:pb-[calc(6rem+env(safe-area-inset-bottom))]">
+      <div className="mx-auto max-w-[900px] px-10 max-md:px-4">
         <BackButton onBack={goBack} />
 
-        <div className="grid grid-cols-[1fr_300px] items-start gap-11">
+        <div className="grid grid-cols-[1fr_300px] items-start gap-11 max-md:grid-cols-1 max-md:gap-8">
           {/* main / content column */}
           <div className="min-w-0">
             <GoalHeader goal={goal} onSave={savePatch} />
@@ -308,7 +308,7 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
           </div>
 
           {/* sticky sidebar */}
-          <aside className="sticky top-0 grid gap-[26px]">
+          <aside className="sticky top-0 grid gap-[26px] max-md:static">
             <ProgressCard done={progress.done} total={progress.total} pct={progress.pct} />
             <GoalNotes
               notes={linkedNotes}

@@ -46,6 +46,18 @@ pub enum AppError {
     /// not a plain `attachments/<id>/<name>` path inside the vault.
     #[error("invalid attachment path: {0}")]
     InvalidAttachmentPath(String),
+
+    /// A sync path was empty, absolute, or tried to escape the vault.
+    #[error("invalid path: {0}")]
+    InvalidPath(String),
+
+    /// The macOS Keychain refused or failed an operation (or the key was malformed).
+    #[error("keychain error: {0}")]
+    Secret(String),
+
+    /// Nobody opened the OAuth redirect in time (or a newer sign-in took over).
+    #[error("sign-in timed out")]
+    OAuthTimeout,
 }
 
 /// Convenience alias for command results.
