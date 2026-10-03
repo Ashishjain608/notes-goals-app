@@ -4,6 +4,7 @@
  * all by content hash, keyed by lowercase path.
  */
 import {
+  AuthLostError,
   RemoteConflictError,
   type BaseEntry,
   type LocalEntry,
@@ -123,7 +124,12 @@ export interface SyncDeps {
   onProgress?: (done: number, total: number) => void;
 }
 
+/** Dropbox throttles bursts (measured: 16 parallel downloads drew 429s; 4 never has). */
 const CONCURRENCY = 4;
+/** A folder with this many downloads comes down as one zip instead of a request per file... */
+const ZIP_MIN = 20;
+/** ...unless the whole folder is bigger than this (the zip is held in memory). */
+const ZIP_MAX_BYTES = 64 * 1024 * 1024;
 const SAVE_EVERY = 50;
 
 /**
@@ -201,17 +207,68 @@ export async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
   };
 
   let done = 0;
-  let next = 0;
-  const worker = async () => {
-    while (next < work.length) {
-      await run(work[next++]!);
-      done++;
-      deps.onProgress?.(done, work.length);
-      if (done % SAVE_EVERY === 0) await store.save(state);
-    }
+  const tick = async () => {
+    done++;
+    deps.onProgress?.(done, work.length);
+    if (done % SAVE_EVERY === 0) await store.save(state);
   };
+
+  /**
+   * Each request is a round trip, so a first sync of hundreds of small files is
+   * latency-bound. Fetch a folder with many downloads as one zip; anything the
+   * zip can't settle (missing, or changed since listing) falls back to its own download.
+   */
+  const viaZip = async (): Promise<Set<Action>> => {
+    const settled = new Set<Action>();
+    if (!remote.downloadFolder) return settled;
+    const listed = new Map(remoteList.map((e) => [e.path.toLowerCase(), e]));
+    const byFolder = new Map<string, Extract<Action, { kind: "download" }>[]>();
+    for (const a of work) {
+      const slash = a.kind === "download" ? a.path.indexOf("/") : -1;
+      if (a.kind !== "download" || slash < 1) continue;
+      const folder = a.path.slice(0, slash);
+      if (!byFolder.has(folder)) byFolder.set(folder, []);
+      byFolder.get(folder)!.push(a);
+    }
+    await Promise.all([...byFolder].map(async ([folder, actions]) => {
+      const prefix = folder.toLowerCase() + "/";
+      const bytes = remoteList.reduce((n, e) => (e.path.toLowerCase().startsWith(prefix) ? n + e.size : n), 0);
+      if (actions.length < ZIP_MIN || bytes > ZIP_MAX_BYTES) return;
+      let zipped: Awaited<ReturnType<NonNullable<Remote["downloadFolder"]>>>;
+      try {
+        zipped = await remote.downloadFolder!(folder);
+      } catch (e) {
+        if (e instanceof AuthLostError) throw e;
+        return; // unreadable zip or a failed request: every file falls back to its own download
+      }
+      for (const a of actions) {
+        const key = a.path.toLowerCase();
+        const got = zipped.get(key);
+        const entry = listed.get(key);
+        if (!got || !entry || got.contentHash !== entry.contentHash) continue;
+        settled.add(a);
+        if (await files.write(a.path, got.bytes, a.expectedHash)) {
+          setBase(entry);
+          result.downloaded++;
+        }
+        await tick();
+      }
+    }));
+    return settled;
+  };
+
+  if (work.length > 0) deps.onProgress?.(0, work.length);
   try {
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, work.length) }, worker));
+    const settled = await viaZip();
+    const rest = work.filter((a) => !settled.has(a));
+    let next = 0;
+    const worker = async () => {
+      while (next < rest.length) {
+        await run(rest[next++]!);
+        await tick();
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, rest.length) }, worker));
   } finally {
     await store.save(state);
   }

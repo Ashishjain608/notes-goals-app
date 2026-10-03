@@ -60,6 +60,11 @@ export interface Remote {
   listAll(): Promise<RemoteEntry[]>;
   download(path: string): Promise<{ bytes: Uint8Array; entry: RemoteEntry }>;
   /**
+   * Every file under top-level `folder` in one request, keyed by lowercase path,
+   * each with its content hash. Optional: without it every file is fetched alone.
+   */
+  downloadFolder?(folder: string): Promise<Map<string, { bytes: Uint8Array; contentHash: string }>>;
+  /**
    * `rev` = the rev we last saw (update mode, throws RemoteConflictError when
    * stale); null = add mode (the file must not exist yet); "overwrite" = no check.
    */
@@ -111,4 +116,8 @@ export interface SyncStatus {
   lastSyncedAt: string | null;
   /** Plain-language line for the UI when phase is offline/attention/error. */
   message: string | null;
+  /** While syncing: files done of total, and when the transfer began (epoch ms). */
+  progress?: { done: number; total: number; startedAt: number } | null;
+  /** The last sync that moved files: how many, and how long it took. */
+  lastRun?: { files: number; ms: number } | null;
 }

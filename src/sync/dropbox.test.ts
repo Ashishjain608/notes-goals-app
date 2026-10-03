@@ -1,7 +1,9 @@
 /** Tests for the Dropbox PKCE helpers and client, against a scripted fake fetch. */
 import { describe, expect, it } from "vitest";
 import { authorizeUrl, challengeFor, createPkce, DropboxClient, exchangeCode } from "./dropbox";
+import { contentHash } from "./contentHash";
 import { AuthLostError, RemoteConflictError } from "./types";
+import { A_JSON, fromBase64, PLAIN_ZIP } from "./zip.fixture";
 
 interface Call { url: string; init: RequestInit & { headers: Record<string, string> } }
 
@@ -172,6 +174,35 @@ describe("DropboxClient", () => {
     );
     await expect(client.listAll()).rejects.toThrow(/429.*too_many_requests/);
     expect(sleeps).toEqual([60000, 60000, 60000]);
+  });
+
+  it("fetches a folder as a zip, keyed by lowercase vault path with content hashes", async () => {
+    const { client, calls } = setup((c) => (isToken(c) ? tokenOk() : new Response(fromBase64(PLAIN_ZIP) as BodyInit)));
+    const files = await client.downloadFolder("Tasks");
+    expect(calls.at(-1)!.url).toBe("https://content.dropboxapi.com/2/files/download_zip");
+    expect(JSON.parse(calls.at(-1)!.init.headers["Dropbox-API-Arg"]!)).toEqual({ path: "/Tasks" });
+    expect([...files.keys()].map((k) => k.normalize("NFC")).sort()).toEqual(["tasks/a.json", "tasks/b.json", "tasks/café.json"]);
+    const a = files.get("tasks/a.json")!;
+    expect(new TextDecoder().decode(a.bytes)).toBe(A_JSON);
+    expect(a.contentHash).toBe(await contentHash(new TextEncoder().encode(A_JSON)));
+  });
+
+  it("retries a request the browser couldn't read (a CORS-less 429) with backoff, then gives up", async () => {
+    let fails = 2;
+    const ok = setup((c) => {
+      if (isToken(c)) return tokenOk();
+      if (fails-- > 0) throw new TypeError("Failed to fetch");
+      return json({ entries: [], cursor: "c", has_more: false });
+    });
+    expect(await ok.client.listAll()).toEqual([]);
+    expect(ok.sleeps).toEqual([1000, 2000]);
+
+    const down = setup((c) => {
+      if (isToken(c)) return tokenOk();
+      throw new TypeError("Failed to fetch");
+    });
+    await expect(down.client.listAll()).rejects.toThrow(TypeError);
+    expect(down.sleeps).toEqual([1000, 2000, 4000]);
   });
 
   it("recovers when a 503 clears", async () => {

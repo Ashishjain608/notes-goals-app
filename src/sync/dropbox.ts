@@ -1,5 +1,7 @@
 /** Dropbox OAuth (PKCE) and the App Folder client (docs/adr/0011). */
+import { contentHash } from "./contentHash";
 import { AuthLostError, RemoteConflictError, type Remote, type RemoteEntry } from "./types";
+import { unzip } from "./zip";
 
 type Fetch = typeof fetch;
 
@@ -166,11 +168,20 @@ export class DropboxClient implements Remote {
     let refreshed = false;
     for (let retries = 0; ; ) {
       const token = await this.accessToken();
-      const res = await this.f(url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, ...init.headers },
-        body: init.body as BodyInit | undefined,
-      });
+      let res: Response;
+      try {
+        res = await this.f(url, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, ...init.headers },
+          body: init.body as BodyInit | undefined,
+        });
+      } catch (e) {
+        // Dropbox's 429s carry no CORS headers, so a browser reports a throttled
+        // request as a network failure (TypeError): back off and retry it too.
+        if (!(e instanceof TypeError) || retries >= MAX_RETRIES) throw e;
+        await this.sleep(1000 * 2 ** retries++);
+        continue;
+      }
       if (res.status === 401) {
         if (refreshed) throw new AuthLostError();
         refreshed = true;
@@ -215,6 +226,21 @@ export class DropboxClient implements Remote {
     if (!res.ok) throw await failure(res);
     const entry = toEntry(JSON.parse(res.headers.get("Dropbox-API-Result") ?? "{}") as Metadata);
     return { bytes: new Uint8Array(await res.arrayBuffer()), entry };
+  }
+
+  async downloadFolder(folder: string): Promise<Map<string, { bytes: Uint8Array; contentHash: string }>> {
+    const res = await this.call(`${CONTENT}/2/files/download_zip`, {
+      headers: { "Dropbox-API-Arg": apiArg({ path: "/" + folder }) },
+    });
+    if (!res.ok) throw await failure(res);
+    const out = new Map<string, { bytes: Uint8Array; contentHash: string }>();
+    const prefix = folder.toLowerCase() + "/";
+    for (const [name, bytes] of await unzip(new Uint8Array(await res.arrayBuffer()))) {
+      // Entries should sit under the folder's own name; tolerate a zip rooted inside it.
+      const key = name.toLowerCase().startsWith(prefix) ? name.toLowerCase() : prefix + name.toLowerCase();
+      out.set(key, { bytes, contentHash: await contentHash(bytes) });
+    }
+    return out;
   }
 
   async upload(path: string, bytes: Uint8Array, rev: string | null | "overwrite"): Promise<RemoteEntry> {

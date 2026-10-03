@@ -105,6 +105,30 @@ describe("scheduler", () => {
     expect(run).toHaveBeenCalledTimes(1);
   });
 
+  it("publishes progress, then how many files moved and how long it took", async () => {
+    let clock = AT.getTime();
+    const statuses: StatusPatch[] = [];
+    const run = vi.fn(async (onProgress: (done: number, total: number) => void) => {
+      onProgress(0, 3);
+      clock += 1500;
+      onProgress(3, 3);
+      return result({ downloaded: 3 });
+    });
+    const s = createScheduler({
+      run, reload: async () => {}, savePending: () => false, isOnline: () => true,
+      setStatus: (p) => statuses.push(p),
+      now: () => new Date(clock),
+    });
+    await s.runNow();
+    expect(statuses[1]).toEqual({ progress: { done: 0, total: 3, startedAt: AT.getTime() } });
+    expect(statuses.at(-1)).toMatchObject({ phase: "idle", progress: null, lastRun: { files: 3, ms: 1500 } });
+
+    // A run with nothing to move leaves the last figures alone.
+    run.mockImplementation(async () => result());
+    await s.runNow();
+    expect(statuses.at(-1)).not.toHaveProperty("lastRun");
+  });
+
   it("goes offline without calling the network when navigator is offline", async () => {
     const { s, run, statuses } = setup(undefined, { online: false });
     await s.runNow();

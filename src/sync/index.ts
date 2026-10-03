@@ -158,7 +158,7 @@ function stopScheduling(): void {
 function startScheduling(): void {
   if (scheduler) return;
   scheduler = createScheduler({
-    run: () => runOnce(),
+    run: (onProgress) => runOnce(onProgress),
     setStatus: (p: StatusPatch) => publish(p),
     reload: () => hooks.reload(),
     savePending: () => hooks.savePending(),
@@ -268,8 +268,16 @@ export const syncController = {
    * screen can show them and retry; the connection stays.
    */
   async firstSync(onProgress: (done: number, total: number) => void): Promise<void> {
-    await runOnce(onProgress);
-    publish({ phase: "idle", lastSyncedAt: new Date().toISOString(), message: null, account: readRecord()?.account ?? null });
+    const began = Date.now();
+    let files = 0;
+    await runOnce((done, total) => {
+      files = total;
+      onProgress(done, total);
+    });
+    publish({
+      phase: "idle", lastSyncedAt: new Date().toISOString(), message: null, account: readRecord()?.account ?? null,
+      lastRun: files ? { files, ms: Date.now() - began } : null,
+    });
   },
 
   /** Pre-compute the PKCE pair so the phone tap handler can open the pop-up synchronously. */

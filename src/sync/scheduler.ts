@@ -5,7 +5,7 @@
  */
 import { AuthLostError, type SyncResult, type SyncStatus } from "./types";
 
-export type StatusPatch = Partial<Pick<SyncStatus, "phase" | "lastSyncedAt" | "message">>;
+export type StatusPatch = Partial<Pick<SyncStatus, "phase" | "lastSyncedAt" | "message" | "progress" | "lastRun">>;
 
 /** Status after a failed run. */
 export function statusForError(error: unknown, online: boolean): StatusPatch {
@@ -32,7 +32,7 @@ export function statusForResult(result: SyncResult, at: Date): StatusPatch {
 
 export interface SchedulerDeps {
   /** One sync cycle (syncOnce wired to this platform). */
-  run: () => Promise<SyncResult>;
+  run: (onProgress: (done: number, total: number) => void) => Promise<SyncResult>;
   setStatus: (patch: StatusPatch) => void;
   /** The store's reload(); it refuses while a save is in flight. */
   reload: () => Promise<void>;
@@ -70,13 +70,24 @@ export function createScheduler(deps: SchedulerDeps): Scheduler {
 
   const once = async (): Promise<void> => {
     if (!deps.isOnline()) return deps.setStatus(statusForError(new Error("offline"), false));
-    deps.setStatus({ phase: "syncing", message: null });
+    deps.setStatus({ phase: "syncing", message: null, progress: null });
+    const began = now().getTime();
+    const run = { files: 0, startedAt: 0 };
     try {
-      const result = await deps.run();
-      deps.setStatus(statusForResult(result, now()));
+      const result = await deps.run((done, total) => {
+        if (!run.files) run.startedAt = now().getTime();
+        run.files = total;
+        deps.setStatus({ progress: { done, total, startedAt: run.startedAt } });
+      });
+      deps.setStatus({
+        ...statusForResult(result, now()),
+        progress: null,
+        // A run that moved nothing keeps the previous figures on screen.
+        ...(run.files > 0 && { lastRun: { files: run.files, ms: now().getTime() - began } }),
+      });
       await reloadAfter(result);
     } catch (e) {
-      deps.setStatus(statusForError(e, deps.isOnline()));
+      deps.setStatus({ ...statusForError(e, deps.isOnline()), progress: null });
       if (e instanceof AuthLostError) api.stop(); // nothing to retry until the user reconnects
     }
   };

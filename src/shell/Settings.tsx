@@ -218,7 +218,8 @@ export function Settings(): JSX.Element | null {
                   {sync.account?.email ?? "Dropbox"}
                 </p>
                 <p
-                  aria-live="polite"
+                  // Per-file progress would flood a screen reader; announce only where sync lands.
+                  aria-live={sync.phase === "syncing" ? "off" : "polite"}
                   className={`mt-0.5 text-[13px] ${
                     sync.phase === "attention" || sync.phase === "error" ? "text-warn-ink" : "text-ink-2"
                   }`}

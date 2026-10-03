@@ -116,7 +116,14 @@ class FakeRemote implements Remote {
   put(path: string, text: string) { this.files.set(path, { text, rev: `r${++this.n}` }); }
   private entry(path: string): RemoteEntry { const f = this.files.get(path)!; return { path, rev: f.rev, size: 1, contentHash: f.text }; }
   async listAll() { return [...this.files.keys()].map((p) => this.entry(p)); }
-  async download(path: string) { return { bytes: new TextEncoder().encode(this.files.get(path)!.text), entry: this.entry(path) }; }
+  downloads = 0;
+  zips: string[] = [];
+  async download(path: string) { this.downloads++; return { bytes: new TextEncoder().encode(this.files.get(path)!.text), entry: this.entry(path) }; }
+  async downloadFolder(folder: string) {
+    this.zips.push(folder);
+    const inside = [...this.files].filter(([p]) => p.startsWith(`${folder}/`));
+    return new Map(inside.map(([p, f]) => [p.toLowerCase(), { bytes: new TextEncoder().encode(f.text), contentHash: f.text }]));
+  }
   async upload(path: string, bytes: Uint8Array, rev: string | null | "overwrite") {
     this.log.push(`upload ${path} ${rev}`);
     if (this.stale.has(path)) throw new RemoteConflictError(path);
@@ -242,6 +249,39 @@ describe("syncOnce", () => {
       state: { load: async () => ({ files: {} }), save: async () => {} },
       onProgress: (d, t) => seen.push([d, t]),
     });
-    expect(seen).toEqual([[1, 2], [2, 2]]);
+    expect(seen).toEqual([[0, 2], [1, 2], [2, 2]]);
+  });
+
+  it("fetches a folder with many downloads as one zip, a small folder file by file", async () => {
+    const h = harness();
+    for (let i = 0; i < 25; i++) h.remote.put(`tasks/${i}.json`, `t${i}`);
+    h.remote.put("notes/a.md", "na");
+    h.remote.put("notes/b.md", "nb");
+    expect(await h.sync()).toMatchObject({ downloaded: 27 });
+    expect(h.remote.zips).toEqual(["tasks"]);
+    expect(h.remote.downloads).toBe(2);
+    expect(h.files.text("tasks/7.json")).toBe("t7");
+    expect(h.state().files["tasks/7.json"]).toEqual({ path: "tasks/7.json", contentHash: "t7", rev: h.remote.files.get("tasks/7.json")!.rev });
+    expect(await h.sync()).toMatchObject({ downloaded: 0 });
+  });
+
+  it("a file the zip can't vouch for comes down on its own; an unreadable zip falls back entirely", async () => {
+    const h = harness();
+    for (let i = 0; i < 25; i++) h.remote.put(`tasks/${i}.json`, `t${i}`);
+    const zip = h.remote.downloadFolder.bind(h.remote);
+    h.remote.downloadFolder = async (folder) => {
+      const m = await zip(folder);
+      m.set("tasks/3.json", { bytes: new TextEncoder().encode("older"), contentHash: "older" }); // changed since listing
+      return m;
+    };
+    expect(await h.sync()).toMatchObject({ downloaded: 25 });
+    expect(h.remote.downloads).toBe(1);
+    expect(h.files.text("tasks/3.json")).toBe("t3");
+
+    const g = harness();
+    for (let i = 0; i < 25; i++) g.remote.put(`tasks/${i}.json`, `t${i}`);
+    g.remote.downloadFolder = async () => { throw new Error("Zip directory is corrupt"); };
+    expect(await g.sync()).toMatchObject({ downloaded: 25 });
+    expect(g.remote.downloads).toBe(25);
   });
 });
