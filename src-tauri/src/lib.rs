@@ -13,19 +13,27 @@
 //! - `store_io` — parse/serialize, atomic writes, trash, `load_all` helpers.
 //! - `ops` — vault-touching domain logic, `fn(vault: &Path, ...)` (no
 //!   `AppHandle`), called by `commands`.
+//! - `sync_fs` — raw-bytes vault access for Dropbox sync (scan, CAS write/delete).
+//! - `secrets` — Keychain-backed secret storage.
+//! - `oauth` — one-shot loopback listener for the OAuth redirect.
 //! - `commands` — the `#[tauri::command]` surface registered below; each is a
 //!   thin adapter that resolves the vault and calls `ops`.
 
 mod commands;
 mod error;
 mod model;
+mod oauth;
 mod ops;
+mod secrets;
 mod store_io;
+mod sync_fs;
 mod vault;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(sync_fs::HashCache::default())
+        .manage(oauth::OAuthGeneration::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
@@ -55,6 +63,14 @@ pub fn run() {
             commands::attach_bytes,
             commands::remove_attachment,
             commands::open_attachment,
+            sync_fs::sync_scan,
+            sync_fs::sync_read_file,
+            sync_fs::sync_write_file,
+            sync_fs::sync_delete_file,
+            secrets::secret_get,
+            secrets::secret_set,
+            secrets::secret_delete,
+            oauth::oauth_wait_for_code,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

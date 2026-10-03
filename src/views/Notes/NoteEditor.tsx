@@ -63,7 +63,7 @@ function ContextSwitcher({
             key={c.value}
             type="button"
             onClick={() => onChange(c.value)}
-            className={`flex items-center gap-1.5 rounded-[5px] px-2 py-[3px] text-[12px] font-medium transition-colors duration-150 ${
+            className={`flex items-center gap-1.5 rounded-[5px] px-2 py-[3px] text-[12px] font-medium max-md:py-1.5 transition-colors duration-150 ${
               active ? "bg-surface text-ink shadow-sm" : "bg-transparent text-ink-3 hover:text-ink-2"
             }`}
           >
@@ -116,10 +116,10 @@ export function NoteEditor({
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
-      <div className="mx-auto flex h-full w-full max-w-[1000px] flex-col px-8">
+      <div className="mx-auto flex h-full w-full max-w-[1000px] flex-col px-8 max-md:px-4">
         <EditorToolbar editor={editor} noteId={note.id} onAttach={addAttachments} onDelete={onDelete} />
 
-        <div className="mb-3 mt-1 flex items-center gap-2.5 text-[12.5px] text-ink-2">
+        <div className="mb-3 mt-1 flex items-center gap-2.5 text-[12.5px] text-ink-2 max-md:flex-wrap">
           {contextEditable ? (
             <ContextSwitcher value={context} onChange={setContext} />
           ) : (
@@ -134,7 +134,7 @@ export function NoteEditor({
 
         {/* Title and body share one bordered frame, split by a hairline. Enter in
             the title drops into the body. */}
-        <div className="mb-6 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-line">
+        <div className="mb-6 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl max-md:mb-3 border border-line">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -146,17 +146,17 @@ export function NoteEditor({
             }}
             placeholder="Untitled"
             aria-label="Note title"
-            className="w-full border-none bg-transparent px-7 pb-4 pt-5 font-serif text-[30px] font-medium leading-[1.15] tracking-[-0.015em] text-ink outline-none placeholder:text-ink-3"
+            className="w-full border-none bg-transparent px-7 pb-4 pt-5 max-md:px-4 max-md:text-[24px] font-serif text-[30px] font-medium leading-[1.15] tracking-[-0.015em] text-ink outline-none placeholder:text-ink-3"
           />
           <div className="h-px bg-line" />
           {loadingBody ? (
-            <div className="px-7 py-5 font-serif text-[18px] italic text-ink-3">Loading…</div>
+            <div className="px-7 py-5 max-md:px-4 font-serif text-[18px] italic text-ink-3">Loading…</div>
           ) : (
             <div
               className="scroll min-h-0 flex-1 cursor-text"
               onClick={() => editor?.commands.focus()}
             >
-              <EditorContent editor={editor} className="note-prose px-7 py-6" />
+              <EditorContent editor={editor} className="note-prose px-7 py-6 max-md:px-4 max-md:py-4" />
             </div>
           )}
         </div>

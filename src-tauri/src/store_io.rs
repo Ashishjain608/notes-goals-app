@@ -10,6 +10,7 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
@@ -68,9 +69,20 @@ pub fn atomic_write(target: &Path, contents: &str) -> AppResult<()> {
     atomic_write_bytes(target, contents.as_bytes())
 }
 
+/// Serialises vault writes, so sync's check-then-write (`sync_fs::write_cas`)
+/// can never interleave with a save and overwrite it.
+// ponytail: one lock for the whole vault; a big attachment download briefly delays saves. Per-path locks if that shows.
+pub(crate) static VAULT_WRITE: Mutex<()> = Mutex::new(());
+
 /// Byte-oriented counterpart to `atomic_write`, used for binary content
 /// (attachments) rather than text.
-fn atomic_write_bytes(target: &Path, bytes: &[u8]) -> AppResult<()> {
+pub(crate) fn atomic_write_bytes(target: &Path, bytes: &[u8]) -> AppResult<()> {
+    let _guard = VAULT_WRITE.lock().unwrap_or_else(|e| e.into_inner());
+    write_replacing(target, bytes)
+}
+
+/// `atomic_write_bytes` for a caller already holding `VAULT_WRITE`.
+pub(crate) fn write_replacing(target: &Path, bytes: &[u8]) -> AppResult<()> {
     if let Some(parent) = target.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -1102,5 +1114,170 @@ mod tests {
 
         assert!(vault.join(".atlas/trash/attachments/task-1/a.txt").exists());
         assert!(vault.join(".atlas/trash/attachments/task-1/b.txt").exists());
+    }
+
+    /* ------------------------------------------------ cross-format fixtures */
+
+    const T0: &str = "2026-06-07T06:30:00Z";
+    const T1: &str = "2026-06-09T10:00:00Z";
+    const G: &str = "33333333-3333-4333-8333-333333333333";
+    const NB: &str = "44444444-4444-4444-8444-444444444444";
+
+    fn att(path: &str, name: &str, size: u64) -> crate::model::Attachment {
+        crate::model::Attachment {
+            path: path.into(),
+            name: name.into(),
+            size,
+            added: "2026-06-07T06:31:00Z".into(),
+        }
+    }
+
+    /// The six entities from `src/lib/backend/fixtures/SPEC.md`:
+    /// (fixture file, vault-relative path, entity).
+    fn spec_entities() -> (Task, Task, Goal, Notebook, (Note, &'static str), (Note, &'static str)) {
+        let t1 = "11111111-1111-4111-8111-111111111111";
+        let n5 = "55555555-5555-4555-8555-555555555555";
+        let task_full = Task {
+            id: t1.into(),
+            title: "Call the bank: \"yes\" or no?".into(),
+            context: Context::Office,
+            status: TaskStatus::Done,
+            created: T0.into(),
+            due: Some("2026-06-10".into()),
+            snooze_until: None,
+            completed: Some("2026-06-08T09:15:00Z".into()),
+            goal_id: Some(G.into()),
+            subtasks: vec![
+                Subtask { id: "s1".into(), title: "Find the account number".into(), status: SubtaskStatus::Done },
+                Subtask { id: "s2".into(), title: "Ask about fees".into(), status: SubtaskStatus::Open },
+            ],
+            details: "Line one\nLine two — ünïcödé ✓".into(),
+            priority: true,
+            attachments: vec![att(&format!("attachments/{t1}/statement.pdf"), "statement.pdf", 2048)],
+            committed_on: Some("2026-06-08".into()),
+            carried: 2,
+        };
+        let task_min = Task {
+            id: "22222222-2222-4222-8222-222222222222".into(),
+            title: "yes".into(),
+            context: Context::Personal,
+            status: TaskStatus::Open,
+            created: T0.into(),
+            due: None,
+            snooze_until: None,
+            completed: None,
+            goal_id: None,
+            subtasks: vec![],
+            details: String::new(),
+            priority: false,
+            attachments: vec![],
+            committed_on: None,
+            carried: 0,
+        };
+        let goal = Goal {
+            id: G.into(),
+            title: "123".into(),
+            description: "# Plan\n\n- step: one".into(),
+            context: Context::Personal,
+            status: GoalStatus::Onhold,
+            target: Some("2026-12-31".into()),
+            created: T0.into(),
+            updated: T1.into(),
+        };
+        let notebook = Notebook {
+            id: NB.into(),
+            name: "Reading: 2026".into(),
+            context: Context::Office,
+            created: T0.into(),
+            updated: T1.into(),
+        };
+        let note_full = Note {
+            id: n5.into(),
+            title: "null".into(),
+            context: Context::Office,
+            goal_id: Some(G.into()),
+            notebook_id: Some(NB.into()),
+            created: T0.into(),
+            updated: T1.into(),
+            attachments: vec![att(&format!("attachments/{n5}/sketch.png"), "sketch.png", 512)],
+        };
+        let note_min = Note {
+            id: "66666666-6666-4666-8666-666666666666".into(),
+            title: "Plain title".into(),
+            context: Context::Personal,
+            goal_id: None,
+            notebook_id: None,
+            created: T0.into(),
+            updated: T0.into(),
+            attachments: vec![],
+        };
+        (
+            task_full,
+            task_min,
+            goal,
+            notebook,
+            (note_full, "# Heading\n\nSome *markdown* with --- inside\n\n---\n\nAfter a rule.\n"),
+            (note_min, ""),
+        )
+    }
+
+    fn fixtures_dir(side: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/lib/backend/fixtures").join(side)
+    }
+
+    /// Regenerates `fixtures/rust/` with the real writers when `UPDATE_FIXTURES=1`.
+    #[test]
+    fn write_rust_fixtures() {
+        if std::env::var("UPDATE_FIXTURES").as_deref() != Ok("1") {
+            return;
+        }
+        let (tf, tm, goal, nb, (nf, nf_body), (nm, nm_body)) = spec_entities();
+        let vault = temp_vault();
+        write_task(&vault, &tf).unwrap();
+        write_task(&vault, &tm).unwrap();
+        write_goal(&vault, &goal).unwrap();
+        write_notebook(&vault, &nb).unwrap();
+        write_note(&vault, &nf, nf_body).unwrap();
+        write_note(&vault, &nm, nm_body).unwrap();
+        let out = fixtures_dir("rust");
+        fs::create_dir_all(&out).unwrap();
+        for (name, rel) in [
+            ("task-full.json", format!("tasks/{}.json", tf.id)),
+            ("task-minimal.json", format!("tasks/{}.json", tm.id)),
+            ("goal.json", format!("goals/{}.json", goal.id)),
+            ("notebook.json", format!("notebooks/{}.json", nb.id)),
+            ("note-full.md", format!("notes/{}.md", nf.id)),
+            ("note-minimal.md", format!("notes/{}.md", nm.id)),
+        ] {
+            fs::copy(vault.join(rel), out.join(name)).unwrap();
+        }
+        let _ = fs::remove_dir_all(vault);
+    }
+
+    /// Parses whichever of the TS-written fixtures exist and checks the values.
+    #[test]
+    fn parses_ts_fixtures() {
+        let dir = fixtures_dir("ts");
+        let (tf, tm, goal, nb, (nf, nf_body), (nm, nm_body)) = spec_entities();
+        let json = |name: &str| dir.join(name).exists().then(|| dir.join(name));
+        if let Some(p) = json("task-full.json") {
+            assert_eq!(read_json::<Task>(&p).unwrap(), tf);
+        }
+        if let Some(p) = json("task-minimal.json") {
+            assert_eq!(read_json::<Task>(&p).unwrap(), tm);
+        }
+        if let Some(p) = json("goal.json") {
+            assert_eq!(read_json::<Goal>(&p).unwrap(), goal);
+        }
+        if let Some(p) = json("notebook.json") {
+            assert_eq!(read_json::<Notebook>(&p).unwrap(), nb);
+        }
+        for (name, note, body) in [("note-full.md", nf, nf_body), ("note-minimal.md", nm, nm_body)] {
+            if let Some(p) = json(name) {
+                let raw = fs::read_to_string(p).unwrap();
+                assert_eq!(parse_note_meta(&raw).unwrap(), note, "{name}");
+                assert_eq!(split_frontmatter(&raw).unwrap().1, body, "{name}");
+            }
+        }
     }
 }

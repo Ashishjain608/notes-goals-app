@@ -87,6 +87,14 @@ Plain files mean it's portable and git/Dropbox/iCloud-friendly — point the fol
 - **Scratchpad** — a floating, draggable brain-dump pad (⌘J) with tabs that lives only on your device, never in the data folder.
 - An **Office / Personal** context filter across every view, light + dark themes, and a ⌘K command palette.
 
+## Sync and the phone app
+
+Sync is optional — the app works fully offline without an account. To sync, go to **Settings → Sync** and **Connect Dropbox**. Your files land in a single folder (`Apps/Notes & Goals`) in your Dropbox; the app can't see anything else there. Nothing passes through our servers — it's static code.
+
+Use the **phone app** at [qriousguy.com/notes-goals-app/app/](https://qriousguy.com/notes-goals-app/app/): open it in Safari, tap **Share → Add to Home Screen**, then connect the same Dropbox. Attachments open on the phone but can't be added there yet.
+
+If both devices edit the same item before syncing, Dropbox's copy takes precedence, and your version is kept under `.atlas/conflicts/` in the data folder — nothing is lost.
+
 ## Build from source
 
 You need **Rust** (stable, via [rustup](https://rustup.rs)), **Node.js 18+**, and the **Xcode Command Line Tools** (`xcode-select --install`).

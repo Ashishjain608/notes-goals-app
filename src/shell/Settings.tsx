@@ -6,11 +6,16 @@
  * no exit-animation state machine, same as CommandPalette.
  */
 import { useEffect, useState, type JSX } from "react";
-import { homeDir } from "@tauri-apps/api/path";
-import { getVersion } from "@tauri-apps/api/app";
-import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { useStore, MAX_SLATE_CAP, MIN_SLATE_CAP, type Theme } from "@/store";
 import { Icon } from "@/components";
+import { confirmDestructive } from "@/lib/confirm";
+import { isTauri } from "@/lib/platform";
+import { statusLine } from "@/sync/format";
+import { syncController } from "@/sync";
+import { DROPBOX_FOLDER } from "@/sync/config";
+
+/** Where the phone app lives (the Pages site). */
+const PHONE_APP_URL = "https://qriousguy.com/notes-goals-app/app/";
 
 const REPO_URL = "https://github.com/Ashishjain608/notes-goals-app";
 const THEMES: Theme[] = ["light", "dark"];
@@ -48,20 +53,60 @@ export function Settings(): JSX.Element | null {
   const slateCap = useStore((s) => s.slateCap);
   const setSlateCap = useStore((s) => s.setSlateCap);
 
+  const sync = useStore((s) => s.sync);
+  const connecting = useStore((s) => s.syncConnecting);
+  const connectDropbox = useStore((s) => s.connectDropbox);
+  const cancelConnect = useStore((s) => s.cancelConnectDropbox);
+  const disconnectDropbox = useStore((s) => s.disconnectDropbox);
+  const syncNow = useStore((s) => s.syncNow);
+
   const [home, setHome] = useState<string | null>(null);
   const [version, setVersion] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Fetch home dir + app version fresh each time the modal opens (cheap,
-  // avoids stale state across a vault change).
+  // avoids stale state across a vault change). Mac only: the phone app has neither.
   useEffect(() => {
     if (!open) return;
-    homeDir()
-      .then(setHome)
-      .catch(() => setHome(null)); // fall back to showing the full path
-    getVersion()
-      .then(setVersion)
-      .catch(() => setVersion(null));
+    if (!isTauri) {
+      void syncController.prepare(); // lets "Connect again" open its pop-up inside the tap
+      return;
+    }
+    void (async () => {
+      try {
+        const [{ homeDir }, { getVersion }] = await Promise.all([
+          import("@tauri-apps/api/path"),
+          import("@tauri-apps/api/app"),
+        ]);
+        setHome(await homeDir().catch(() => null)); // fall back to showing the full path
+        setVersion(await getVersion().catch(() => null));
+      } catch {
+        /* no Tauri runtime: leave both blank */
+      }
+    })();
   }, [open]);
+
+  const openLink = async (url: string): Promise<void> => {
+    if (!isTauri) return void window.open(url, "_blank", "noopener");
+    (await import("@tauri-apps/plugin-opener")).openUrl(url).catch(() => {});
+  };
+  const copyLink = (): void => {
+    void navigator.clipboard?.writeText(PHONE_APP_URL).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  const disconnect = async (): Promise<void> => {
+    const message = isTauri
+      ? "Disconnect Dropbox? Your data folder stays as it is; it just stops syncing."
+      : "Disconnect Dropbox? This removes the notes from this phone. They stay in your Dropbox.";
+    if (await confirmDestructive(message, "Disconnect")) await disconnectDropbox();
+  };
+
+  const connected = sync.phase !== "off";
+  const revoked = sync.phase === "attention" && sync.message?.startsWith("Dropbox access was revoked") === true;
+  const BUTTON =
+    "rounded-lg border border-line px-3 py-1.5 text-[13px] font-medium text-ink-2 transition-colors hover:bg-raise max-md:min-h-[44px] disabled:cursor-default disabled:opacity-40";
 
   // Escape closes from anywhere, not just when focus is inside it (same
   // pattern as TaskDetail).
@@ -88,7 +133,7 @@ export function Settings(): JSX.Element | null {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{ colorScheme: theme }}
-        className="animate-riseIn w-[440px] max-w-[90vw] overflow-hidden rounded-xl border border-line bg-surface shadow"
+        className="animate-riseIn w-[440px] max-w-[90vw] max-md:w-[calc(100vw-24px)] max-md:max-w-none overflow-hidden rounded-xl border border-line bg-surface shadow"
       >
         <div className="flex items-center gap-3 border-b border-line px-5 py-4">
           <h1 className="flex-1 font-serif text-[19px] text-ink">Settings</h1>
@@ -102,7 +147,8 @@ export function Settings(): JSX.Element | null {
           </button>
         </div>
 
-        <div className="scroll max-h-[70vh] overflow-y-auto px-5 py-5">
+        <div className="scroll max-h-[70vh] max-md:max-h-[80dvh] overflow-y-auto px-5 py-5 max-md:px-4">
+          {isTauri && (
           <section className="mb-6">
             <SectionHeading>Data folder</SectionHeading>
             <p
@@ -123,7 +169,7 @@ export function Settings(): JSX.Element | null {
                 type="button"
                 title={vaultPath ? undefined : "No data folder yet"}
                 disabled={!vaultPath}
-                onClick={() => vaultPath && void revealItemInDir(vaultPath)}
+                onClick={() => vaultPath && void import("@tauri-apps/plugin-opener").then((m) => m.revealItemInDir(vaultPath))}
                 className="rounded-lg border border-line px-3 py-1.5 text-[13px] font-medium text-ink-2 transition-colors hover:bg-raise disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent"
               >
                 Reveal in Finder
@@ -133,6 +179,88 @@ export function Settings(): JSX.Element | null {
               Tasks, notes, and goals live there as plain files. Pick a folder inside iCloud
               Drive or Dropbox to sync across your Macs.
             </p>
+          </section>
+          )}
+
+          <section className="mb-6">
+            <SectionHeading>Sync</SectionHeading>
+            {!connected && !connecting && (
+              <>
+                <p className="text-[13px] leading-relaxed text-ink-2">
+                  Keep your notes in your own Dropbox and use them on your phone. They go into one
+                  folder, {DROPBOX_FOLDER}; the app can&rsquo;t see anything else.
+                </p>
+                {sync.message && (
+                  <p role="alert" className="mt-2.5 rounded-md bg-warn-soft px-3 py-2 text-[13px] text-warn-ink">
+                    {sync.message}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void connectDropbox()}
+                  className="mt-3 rounded-lg bg-accent px-3.5 py-1.5 text-[13px] font-semibold text-white shadow-sm max-md:min-h-[44px]"
+                >
+                  Connect Dropbox
+                </button>
+              </>
+            )}
+            {connecting && (
+              <div className="flex items-center gap-3">
+                <p className="flex-1 text-[13px] text-ink-2">Finish in your browser…</p>
+                <button type="button" onClick={cancelConnect} className={BUTTON}>
+                  Cancel
+                </button>
+              </div>
+            )}
+            {connected && !connecting && (
+              <>
+                <p className="truncate text-[13px] font-medium text-ink" title={sync.account?.email}>
+                  {sync.account?.email ?? "Dropbox"}
+                </p>
+                <p
+                  // Per-file progress would flood a screen reader; announce only where sync lands.
+                  aria-live={sync.phase === "syncing" ? "off" : "polite"}
+                  className={`mt-0.5 text-[13px] ${
+                    sync.phase === "attention" || sync.phase === "error" ? "text-warn-ink" : "text-ink-2"
+                  }`}
+                >
+                  {statusLine(sync)}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {revoked && (
+                    <button
+                      type="button"
+                      onClick={() => void connectDropbox()}
+                      className="rounded-lg bg-accent px-3.5 py-1.5 text-[13px] font-semibold text-white shadow-sm max-md:min-h-[44px]"
+                    >
+                      Connect again
+                    </button>
+                  )}
+                  <button type="button" disabled={sync.phase === "syncing"} onClick={() => void syncNow()} className={BUTTON}>
+                    Sync now
+                  </button>
+                  <button type="button" onClick={() => void disconnect()} className={BUTTON}>
+                    Disconnect
+                  </button>
+                </div>
+              </>
+            )}
+            {isTauri && (
+              <div className="mt-4 border-t border-line pt-3.5">
+                <p className="text-[13px] font-medium text-ink">Use it on your phone</p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <p className="min-w-0 flex-1 truncate rounded-md bg-raise px-3 py-2 font-mono text-[12px] text-ink-2" title={PHONE_APP_URL}>
+                    {PHONE_APP_URL}
+                  </p>
+                  <button type="button" onClick={copyLink} className={BUTTON}>
+                    {copied ? "Copied" : "Copy link"}
+                  </button>
+                </div>
+                <p className="mt-2 text-[12px] leading-relaxed text-ink-3">
+                  Open it in Safari, tap Share, then Add to Home Screen. Connect the same Dropbox there.
+                </p>
+              </div>
+            )}
           </section>
 
           <section className="mb-6">
@@ -198,7 +326,7 @@ export function Settings(): JSX.Element | null {
             </div>
             <p className="mt-2.5 text-[12px] leading-relaxed text-ink-3">
               A small slate is a day you can finish. Lowering it keeps what you&rsquo;ve already
-              committed today; it only stops new commitments. Saved on this Mac.
+              committed today; it only stops new commitments. Saved on {isTauri ? "this Mac" : "this phone"}.
             </p>
           </section>
 
@@ -209,7 +337,7 @@ export function Settings(): JSX.Element | null {
             </p>
             <button
               type="button"
-              onClick={() => void openUrl(REPO_URL)}
+              onClick={() => void openLink(REPO_URL)}
               className="mt-1.5 text-[13px] font-medium text-accent hover:underline"
             >
               Source on GitHub

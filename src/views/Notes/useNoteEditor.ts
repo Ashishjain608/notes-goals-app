@@ -26,6 +26,7 @@ import { useEditor, type Editor } from "@tiptap/react";
 import type { EditorProps } from "@tiptap/pm/view";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { Attachment, Context, Note } from "@/types";
+import { isTauri } from "@/lib/platform";
 import { buildNoteExtensions } from "@/lib/markdown";
 import { errorMessageOf } from "@/lib/errors";
 
@@ -100,13 +101,14 @@ function createNoteEditorProps(
             window.alert(`Couldn't open the attachment: ${errorMessageOf(err)}`);
           });
         } else {
-          void openUrl(href);
+          if (isTauri) void openUrl(href);
+          else window.open(href, "_blank", "noopener");
         }
         return true;
       },
     },
     handlePaste: (view, event) => {
-      const files = Array.from(event.clipboardData?.files ?? []);
+      const files = isTauri ? Array.from(event.clipboardData?.files ?? []) : []; // no attachments in the phone app
       if (files.length > 0) {
         const noteId = getNoteId();
         if (!noteId) return false; // nothing loaded to attach against yet

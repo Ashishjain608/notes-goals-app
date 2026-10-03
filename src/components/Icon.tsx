@@ -21,6 +21,7 @@ export type IconName =
   | "sun"
   | "chevron"
   | "chevronDown"
+  | "more"
   | "clock"
   | "snooze"
   | "calendar"
@@ -44,7 +45,13 @@ export type IconName =
   | "filePdf"
   | "fileImage"
   | "fileSheet"
-  | "fileArchive";
+  | "fileArchive"
+  | "pencil"
+  | "cloud"
+  | "cloudCheck"
+  | "cloudOff"
+  | "refresh"
+  | "alert";
 
 /** Shared stroke attributes for every line glyph. */
 const stroke = {
@@ -104,6 +111,13 @@ const paths: Record<IconName, JSX.Element> = {
     </>
   ),
   chevron: <path d="m9 6 6 6-6 6" {...stroke} />,
+  more: (
+    <>
+      <circle cx="5.5" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="18.5" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    </>
+  ),
   chevronDown: <path d="m6 9 6 6 6-6" {...stroke} />,
   clock: (
     <>
@@ -240,6 +254,27 @@ const paths: Record<IconName, JSX.Element> = {
       <path d="M6 4h8l4 4v12H6z" {...stroke} />
       <path d="M14 4v4h4" {...stroke} />
       <path d="M7.5 12.5h9M7.5 16h9M12 9.8v9.2" {...stroke} />
+    </>
+  ),
+  pencil: <path d="M15 5.5 18.5 9M5 19l.8-3.6L16.4 4.8a1.6 1.6 0 0 1 2.3 0l.5.5a1.6 1.6 0 0 1 0 2.3L8.6 18.2z" {...stroke} />,
+  cloud: <path d="M7.5 18.5a4 4 0 0 1-.6-7.95 5.5 5.5 0 0 1 10.6 1.2 3.4 3.4 0 0 1-.5 6.75z" {...stroke} />,
+  cloudCheck: (
+    <>
+      <path d="M7.5 18.5a4 4 0 0 1-.6-7.95 5.5 5.5 0 0 1 10.6 1.2 3.4 3.4 0 0 1-.5 6.75z" {...stroke} />
+      <path d="m9.6 13.4 1.9 1.9 3.4-3.6" {...stroke} />
+    </>
+  ),
+  cloudOff: (
+    <>
+      <path d="M7.5 18.5a4 4 0 0 1-.6-7.95 5.5 5.5 0 0 1 .9-1.7M10.4 6.6a5.5 5.5 0 0 1 7.1 5.15 3.4 3.4 0 0 1 1.3 6.4M9 18.5h8" {...stroke} />
+      <path d="m4 4 16 16" {...stroke} />
+    </>
+  ),
+  refresh: <path d="M19 12a7 7 0 0 1-12.2 4.7M5 12a7 7 0 0 1 12.2-4.7M17.5 4v3.8h-3.8M6.5 20v-3.8h3.8" {...stroke} />,
+  alert: (
+    <>
+      <path d="M12 4.5 21 19.5H3z" {...stroke} />
+      <path d="M12 10v4.2M12 16.8v.2" {...stroke} />
     </>
   ),
   fileArchive: (

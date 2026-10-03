@@ -1,0 +1,17 @@
+{
+  "id": "22222222-2222-4222-8222-222222222222",
+  "title": "yes",
+  "context": "personal",
+  "status": "open",
+  "created": "2026-06-07T06:30:00Z",
+  "due": null,
+  "snoozeUntil": null,
+  "completed": null,
+  "goalId": null,
+  "subtasks": [],
+  "details": "",
+  "priority": false,
+  "attachments": [],
+  "committedOn": null,
+  "carried": 0
+}

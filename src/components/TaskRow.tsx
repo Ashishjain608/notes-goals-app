@@ -103,7 +103,7 @@ export function TaskRow({
         </div>
 
         <div
-          className={`flex flex-wrap items-center gap-3 ${muted ? "mt-0 opacity-70" : "mt-[5px]"}`}
+          className={`flex flex-wrap items-center gap-3 max-md:gap-y-1 ${muted ? "mt-0 opacity-70" : "mt-[5px]"}`}
         >
           {showContext && <ContextDot context={task.context} />}
           {!muted && <DueChip due={task.due} />}
@@ -134,7 +134,7 @@ export function TaskRow({
       </div>
 
       {!muted && (
-        <div className="flex items-center gap-2 pt-px">
+        <div className="flex items-center gap-2 pt-px max-md:gap-0">
           {onToggleCommit && (
             <button
               type="button"
@@ -151,7 +151,7 @@ export function TaskRow({
                 e.stopPropagation();
                 onToggleCommit(task.id);
               }}
-              className={`rounded p-0.5 transition-all duration-150 ${
+              className={`rounded p-0.5 transition-all duration-150 max-md:-my-[15px] max-md:p-[15px] ${
                 onSlate
                   ? "text-accent"
                   : slateFull
@@ -175,10 +175,10 @@ export function TaskRow({
                 e.stopPropagation();
                 onTogglePriority(task.id);
               }}
-              className={`rounded p-0.5 transition-all duration-150 ${
+              className={`rounded p-0.5 transition-all duration-150 max-md:-my-[15px] max-md:p-[15px] ${
                 task.priority
                   ? "text-accent"
-                  : "text-ink-3 opacity-0 hover:text-accent group-hover:opacity-100"
+                  : "text-ink-3 opacity-0 hover:text-accent group-hover:opacity-100 max-md:opacity-60"
               }`}
             >
               <Icon name="flag" size={14} />

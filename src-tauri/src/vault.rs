@@ -121,18 +121,30 @@ pub fn ensure_subfolders(vault: &Path) -> AppResult<()> {
 /// The subfolders `load_all` reads in full. Attachments are opened lazily.
 const LOADED_SUBFOLDERS: [&str; 4] = ["tasks", "notes", "goals", "notebooks"];
 
+/// True when iCloud Drive has evicted this file's content to the cloud
+/// (`SF_DATALESS`); reading it would block on a download.
+#[cfg(target_os = "macos")]
+pub fn is_dataless(meta: &fs::Metadata) -> bool {
+    use std::os::macos::fs::MetadataExt;
+    const SF_DATALESS: u32 = 0x4000_0000;
+    meta.st_flags() & SF_DATALESS != 0
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn is_dataless(_meta: &fs::Metadata) -> bool {
+    false
+}
+
 /// Files in the loaded subfolders that iCloud Drive has evicted to the cloud
 /// (`SF_DATALESS`). Reading one blocks until iCloud downloads it, about a
 /// second each, so a synced vault on a fresh Mac would freeze the app for
 /// minutes. `stat` doesn't trigger the download, so counting is instant.
 #[cfg(target_os = "macos")]
 fn dataless_files(vault: &Path) -> Vec<PathBuf> {
-    use std::os::macos::fs::MetadataExt;
-    const SF_DATALESS: u32 = 0x4000_0000;
     LOADED_SUBFOLDERS
         .iter()
         .flat_map(|sub| fs::read_dir(vault.join(sub)).into_iter().flatten().flatten())
-        .filter(|entry| entry.metadata().is_ok_and(|m| m.st_flags() & SF_DATALESS != 0))
+        .filter(|entry| entry.metadata().is_ok_and(|m| is_dataless(&m)))
         .map(|entry| entry.path())
         .collect()
 }

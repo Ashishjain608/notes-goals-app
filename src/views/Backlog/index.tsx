@@ -87,9 +87,9 @@ export default function Backlog(): JSX.Element {
   };
 
   return (
-    <div className="scroll h-full pt-10 pb-[120px]">
-      <div className="mx-auto max-w-[720px] px-10">
-        <header className="mb-[22px]">
+    <div className="scroll h-full pt-10 pb-[120px] max-md:pb-8 max-md:pt-5">
+      <div className="mx-auto max-w-[720px] px-10 max-md:px-0">
+        <header className="mb-[22px] max-md:mb-3 max-md:px-4">
           <div className="mb-2 text-xs font-semibold uppercase tracking-[.1em] text-accent-ink">
             Backlog
           </div>
@@ -98,8 +98,8 @@ export default function Backlog(): JSX.Element {
           </h1>
         </header>
 
-        <div className="sticky top-[-40px] z-[2] mb-[6px] flex flex-wrap items-center gap-2 bg-bg pb-[10px]">
-          <div className="flex gap-1 rounded-[10px] bg-surface-2 p-[3px]">
+        <div className="sticky top-[-40px] z-[2] max-md:top-[-20px] max-md:px-4 max-md:pt-1 mb-[6px] flex flex-wrap items-center gap-2 bg-bg pb-[10px]">
+          <div className="flex gap-1 rounded-[10px] bg-surface-2 p-[3px] max-md:w-full max-md:[&>button]:flex-1 max-md:[&>button]:justify-center">
             {STATUS_TABS.map((tab) => {
               const active = status === tab;
               const count = countFor(tab);
@@ -108,7 +108,7 @@ export default function Backlog(): JSX.Element {
                   key={tab}
                   type="button"
                   onClick={() => setStatus(tab)}
-                  className={`flex items-center gap-[6px] rounded-[7px] px-[13px] py-[5px] text-[13px] font-medium transition-colors ${
+                  className={`flex items-center gap-[6px] rounded-[7px] px-[13px] py-[5px] text-[13px] font-medium transition-colors max-md:min-h-[44px] max-md:px-3 ${
                     active ? "bg-surface text-ink shadow-sm" : "text-ink-3"
                   }`}
                 >
@@ -121,7 +121,7 @@ export default function Backlog(): JSX.Element {
             })}
           </div>
 
-          <div className="mx-[2px] h-5 w-px bg-line-2" />
+          <div className="mx-[2px] h-5 w-px bg-line-2 max-md:hidden" />
 
           {CHIPS.map(({ key, icon, label }) => {
             const active = chip === key;
@@ -130,7 +130,7 @@ export default function Backlog(): JSX.Element {
                 key={key}
                 type="button"
                 onClick={() => setChip(active ? null : key)}
-                className={`flex flex-shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full border px-[11px] py-[5px] text-[12.5px] font-medium transition-colors ${
+                className={`flex flex-shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full border px-[11px] py-[5px] text-[12.5px] font-medium transition-colors max-md:min-h-[44px] ${
                   active
                     ? "border-accent-line bg-accent-soft text-accent-ink"
                     : "border-line bg-transparent text-ink-2"
@@ -142,7 +142,7 @@ export default function Backlog(): JSX.Element {
             );
           })}
 
-          <div className="relative flex flex-shrink-0 items-center">
+          <div className="relative flex flex-shrink-0 items-center max-md:w-full">
             <span className="pointer-events-none absolute left-[10px] flex items-center text-ink-3">
               <Icon name="search" size={13} />
             </span>
@@ -152,7 +152,7 @@ export default function Backlog(): JSX.Element {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filter tasks"
               aria-label="Filter tasks by title"
-              className="w-[150px] rounded-full border border-line bg-transparent py-[5px] pl-[28px] pr-[11px] text-[12.5px] font-medium text-ink placeholder:text-ink-3 focus:border-accent-line focus:outline-none"
+              className="w-[150px] rounded-full border border-line bg-transparent py-[5px] pl-[28px] pr-[11px] text-[12.5px] max-md:h-11 max-md:w-full max-md:text-[16px] font-medium text-ink placeholder:text-ink-3 focus:border-accent-line focus:outline-none"
             />
           </div>
         </div>

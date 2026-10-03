@@ -45,7 +45,7 @@ export function QuickAddInline(): JSX.Element {
   };
 
   return (
-    <div className="mx-4 flex items-center gap-2.5 rounded-lg border border-line bg-surface px-4 py-[11px] shadow-sm">
+    <div className="mx-4 flex items-center gap-2.5 rounded-lg border border-line bg-surface px-4 py-[11px] shadow-sm max-md:flex-wrap max-md:px-3">
       <span className="text-ink-3">
         <Icon name="plus" size={18} />
       </span>
@@ -57,9 +57,9 @@ export function QuickAddInline(): JSX.Element {
           if (e.key === "Enter") submit();
         }}
         placeholder="Add a task — it stays here until you finish it"
-        className="flex-1 border-none bg-transparent text-[14.5px] tracking-[-.005em] text-ink outline-none placeholder:text-ink-3"
+        className="min-w-0 flex-1 max-md:min-w-[calc(100%-32px)] border-none bg-transparent text-[14.5px] max-md:h-11 max-md:text-[16px] tracking-[-.005em] text-ink outline-none placeholder:text-ink-3"
       />
-      <div className="flex gap-0.5 rounded-md bg-surface-2 p-0.5">
+      <div className="flex gap-0.5 rounded-md bg-surface-2 p-0.5 max-md:flex-1">
         {CONTEXTS.map((c) => {
           const active = context === c.value;
           return (
@@ -67,7 +67,7 @@ export function QuickAddInline(): JSX.Element {
               key={c.value}
               type="button"
               onClick={() => setContext(c.value)}
-              className={`flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-xs font-medium transition-colors duration-150 ${
+              className={`flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-xs max-md:min-h-[40px] max-md:flex-1 max-md:justify-center max-md:text-[13px] font-medium transition-colors duration-150 ${
                 active ? "bg-surface text-ink shadow-sm" : "bg-transparent text-ink-3"
               }`}
             >
@@ -76,7 +76,15 @@ export function QuickAddInline(): JSX.Element {
           );
         })}
       </div>
-      <kbd className="font-mono text-[11px] text-ink-3">↵</kbd>
+      <kbd className="font-mono text-[11px] text-ink-3 max-md:hidden">↵</kbd>
+      <button
+        type="button"
+        onClick={submit}
+        disabled={!title.trim()}
+        className="hidden min-h-[44px] rounded-md bg-accent px-4 text-[14px] font-semibold text-white disabled:opacity-40 max-md:block"
+      >
+        Add
+      </button>
     </div>
   );
 }
