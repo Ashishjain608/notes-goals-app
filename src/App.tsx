@@ -26,6 +26,7 @@ import { Settings } from "@/shell/Settings";
 import { VaultGate } from "@/shell/VaultGate";
 import { PhoneOnboarding } from "@/shell/PhoneOnboarding";
 import { WhatsNew } from "@/shell/WhatsNew";
+import { PhoneShell } from "@/shell/phone/PhoneShell";
 import { isTauri } from "@/lib/platform";
 import { CommandPalette, TaskDetail } from "@/views/Capture";
 import Today from "@/views/Today";
@@ -122,6 +123,17 @@ export default function App(): JSX.Element {
 
   if (status === "needs-vault" && !isTauri) return <PhoneOnboarding />;
   if (status !== "ready") return <VaultGate />;
+
+  // The phone gets its own frame (ADR-0012); the desktop tree below is untouched.
+  if (phone) {
+    return (
+      <PhoneShell>
+        <CurrentView />
+        <TaskDetail />
+        <Settings />
+      </PhoneShell>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col max-md:h-[100dvh] bg-bg text-ink">

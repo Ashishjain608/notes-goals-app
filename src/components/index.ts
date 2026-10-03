@@ -48,3 +48,6 @@ export type { DatePickerProps, DateFieldProps, MonthDay } from "./DatePicker";
 
 export { AttachmentList, formatFileSize } from "./AttachmentList";
 export type { AttachmentListProps } from "./AttachmentList";
+
+export { ContextAvatar } from "./ContextAvatar";
+export type { ContextAvatarProps } from "./ContextAvatar";

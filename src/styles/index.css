@@ -201,3 +201,13 @@
   .ng-sheet-in { animation: ng-sheet-fade-in 0.15s ease; }
   .ng-sheet-out { animation: ng-sheet-fade-out 0.15s ease forwards; }
 }
+
+/* Phone shell (ADR-0012): views scroll under the floating tab bar and add
+   button, so every view's scroller leaves room for them. Desktop never has
+   .ng-phone. */
+.ng-phone {
+  --phone-chrome: calc(176px + env(safe-area-inset-bottom));
+}
+.ng-phone main .scroll {
+  padding-bottom: var(--phone-chrome);
+}

@@ -49,6 +49,19 @@ export type AppStatus = "loading" | "needs-vault" | "ready" | "error";
 export type Screen = "today" | "tasks" | "notes" | "goals" | "goal" | "activity";
 export type Theme = "light" | "dark";
 
+/** What the phone composer creates (ADR-0012). Checklist is a note whose body starts with a task item (plan D4). */
+export type ComposerMode = "task" | "note" | "checklist" | "goal";
+
+/**
+ * The one phone overlay open at a time (ADR-0012): the FAB menu, the More
+ * sheet, or the composer (with its prefill). Search is `paletteOpen`, the task
+ * sheet `detailTaskId`, as on desktop. Desktop never sets this.
+ */
+export type PhoneOverlay =
+  | { kind: "menu" }
+  | { kind: "more" }
+  | { kind: "composer"; mode: ComposerMode; goalId?: string | null };
+
 /** The Task fields a view may patch directly. */
 export type TaskPatch = Partial<
   Pick<
@@ -91,6 +104,7 @@ export interface AppState extends UndoSlice {
   selectedNoteId: string | null;
   scratchOpen: boolean;
   settingsOpen: boolean;
+  phoneOverlay: PhoneOverlay | null;
   /** Dropbox sync (ADR-0011): the controller's latest status, mirrored here for the UI. */
   sync: SyncStatus;
   /** True while a Dropbox sign-in is waiting on the browser. */
@@ -130,6 +144,8 @@ export interface AppState extends UndoSlice {
   checkForUpdate: () => Promise<void>;
   restartToUpdate: () => Promise<void>;
   toggleSettings: () => void;
+  /** Open a phone overlay, replacing any other; null closes it. */
+  setPhoneOverlay: (overlay: PhoneOverlay | null) => void;
 
   // task actions
   addTask: (input: CreateTaskInput, options?: AddTaskOptions) => Promise<Task>;
@@ -314,6 +330,7 @@ export const useStore = create<AppState>((set, get) => {
     selectedNoteId: null,
     scratchOpen: false,
     settingsOpen: false,
+    phoneOverlay: null,
     update: null,
     sync: syncController.getStatus(),
     syncConnecting: false,
@@ -510,6 +527,7 @@ export const useStore = create<AppState>((set, get) => {
     restartToUpdate: () => ipc.relaunchApp(),
     closeSettings: () => set({ settingsOpen: false }),
     toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
+    setPhoneOverlay: (overlay) => set({ phoneOverlay: overlay }),
 
     /* ---------------------------------------------------------- task actions */
 
