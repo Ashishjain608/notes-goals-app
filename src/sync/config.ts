@@ -1,9 +1,9 @@
 /** Fixed sync settings (docs/adr/0011). The app key is public by design: PKCE has no secret. */
 
-export const DROPBOX_APP_KEY = "REPLACE_WITH_APP_KEY";
+export const DROPBOX_APP_KEY = "amt0p729vp42kqs";
 
 /** The App Folder users see in their Dropbox: Apps/<the app's name in the Dropbox console>. */
-export const DROPBOX_FOLDER = "Apps/Notes and Goals";
+export const DROPBOX_FOLDER = "Apps/Notes & Goals";
 
 /** The Mac's one-shot loopback listener (Rust `oauth_wait_for_code`). */
 export const LOOPBACK_PORT = 53682;

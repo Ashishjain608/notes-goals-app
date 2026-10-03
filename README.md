@@ -89,7 +89,7 @@ Plain files mean it's portable and git/Dropbox/iCloud-friendly — point the fol
 
 ## Sync and the phone app
 
-Sync is optional — the app works fully offline without an account. To sync, go to **Settings → Sync** and **Connect Dropbox**. Your files land in a single folder (`Apps/Notes and Goals`) in your Dropbox; the app can't see anything else there. Nothing passes through our servers — it's static code.
+Sync is optional — the app works fully offline without an account. To sync, go to **Settings → Sync** and **Connect Dropbox**. Your files land in a single folder (`Apps/Notes & Goals`) in your Dropbox; the app can't see anything else there. Nothing passes through our servers — it's static code.
 
 Use the **phone app** at [qriousguy.com/notes-goals-app/app/](https://qriousguy.com/notes-goals-app/app/): open it in Safari, tap **Share → Add to Home Screen**, then connect the same Dropbox. Attachments open on the phone but can't be added there yet.
 
