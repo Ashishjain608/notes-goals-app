@@ -96,7 +96,7 @@ export function searchBodies(notes: Array<{ id: string; body: string }>, query: 
 export function createWebBackend(files: VaultTextFiles) {
   const notFound = (path: string) => new Error(`Not found: ${path}`);
 
-  /** Delete one entity file, plus any attachments folder it owned (the Mac trashes them on receipt). */
+  /** Delete one entity file, plus any attachments folder it owned (the phone holds none, so this is the entity file). */
   async function remove(path: string, entityId: string): Promise<void> {
     if (!(await files.removeFile(path))) throw notFound(path);
     for (const a of await files.listDir(`attachments/${entityId}/`)) await files.removeFile(a);

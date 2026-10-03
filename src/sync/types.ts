@@ -10,6 +10,8 @@ export interface LocalEntry {
   path: string;
   size: number;
   contentHash: string;
+  /** Mac: in iCloud but evicted from this Mac. Neither readable nor deleted, so sync skips it. */
+  unavailable?: boolean;
 }
 
 /**
@@ -99,6 +101,8 @@ export interface SyncResult {
   conflicts: number;
   /** Deletes held back by the mass-delete guard (ADR-0011). 0 normally. */
   heldDeletes: number;
+  /** "<path>: <why>" for each file that failed on its own; the rest of the run still went through. */
+  errors: string[];
 }
 
 export type SyncPhase =

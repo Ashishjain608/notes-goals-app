@@ -468,7 +468,13 @@ export const useStore = create<AppState>((set, get) => {
     },
     cancelConnectDropbox: () => syncController.cancelConnect(),
     disconnectDropbox: async () => {
-      await syncController.disconnect();
+      try {
+        await syncController.disconnect();
+      } catch (err) {
+        // The phone refuses while offline: its unsynced edits would be wiped.
+        set({ sync: { ...syncController.getStatus(), message: errorMessageOf(err) } });
+        return;
+      }
       if (!isTauri) set({ status: "needs-vault", tasks: [], notes: [], goals: [], notebooks: [], vaultPath: null, settingsOpen: false });
     },
     syncNow: () => syncController.syncNow(),

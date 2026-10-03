@@ -27,12 +27,18 @@ export type Action =
   /** A delete the mass-delete guard held back; never executed. */
   | { kind: "held" };
 
+/** An action that touches a file (everything but bookkeeping). */
+type Transfer = Exclude<Action, { kind: "record" | "dropBase" | "held" }>;
+
 export interface PlanOptions {
   deviceName?: string;
   now?: Date;
 }
 
 const GUARD_MIN = 10;
+
+/** Errors that end the whole run: lost access, or no network (fetch rejects with a TypeError). */
+const isFatal = (e: unknown): boolean => e instanceof AuthLostError || e instanceof TypeError;
 
 /** `.atlas/conflicts/<dir>/<name>.<device>-<UTC stamp>.<ext>` for a conflicted path. */
 export function conflictPath(path: string, deviceName: string, now: Date): string {
@@ -106,6 +112,7 @@ export function plan(
 
   let actions: Action[] = [];
   for (const key of keys) {
+    if (locals.get(key)?.unavailable) continue; // evicted to iCloud: not ours to read or delete
     const a = decide(key, locals.get(key), remotes.get(key), base[key], copy);
     if (a) actions.push(a);
   }
@@ -148,9 +155,9 @@ export async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
   });
 
   const result: SyncResult = {
-    uploaded: 0, downloaded: 0, deletedLocal: 0, deletedRemote: 0, conflicts: 0, heldDeletes: 0,
+    uploaded: 0, downloaded: 0, deletedLocal: 0, deletedRemote: 0, conflicts: 0, heldDeletes: 0, errors: [],
   };
-  const work: Action[] = [];
+  const work: Transfer[] = [];
   for (const a of all) {
     if (a.kind === "record") state.files[a.key] = a.entry;
     else if (a.kind === "dropBase") delete state.files[a.key];
@@ -168,7 +175,7 @@ export async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
     return true;
   };
 
-  const run = async (a: Action): Promise<void> => {
+  const run = async (a: Transfer): Promise<void> => {
     try {
       switch (a.kind) {
         case "upload": {
@@ -201,8 +208,10 @@ export async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
         }
       }
     } catch (e) {
-      if (e instanceof RemoteConflictError) return;
-      throw e;
+      if (e instanceof RemoteConflictError) return; // the next cycle resolves it
+      if (isFatal(e)) throw e;
+      // One bad file (too big, gone mid-sync, unwritable) must not hold up the rest.
+      result.errors.push(`${a.path}: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
@@ -218,8 +227,8 @@ export async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
    * latency-bound. Fetch a folder with many downloads as one zip; anything the
    * zip can't settle (missing, or changed since listing) falls back to its own download.
    */
-  const viaZip = async (): Promise<Set<Action>> => {
-    const settled = new Set<Action>();
+  const viaZip = async (): Promise<Set<Transfer>> => {
+    const settled = new Set<Transfer>();
     if (!remote.downloadFolder) return settled;
     const listed = new Map(remoteList.map((e) => [e.path.toLowerCase(), e]));
     const byFolder = new Map<string, Extract<Action, { kind: "download" }>[]>();
@@ -246,8 +255,14 @@ export async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
         const got = zipped.get(key);
         const entry = listed.get(key);
         if (!got || !entry || got.contentHash !== entry.contentHash) continue;
+        let wrote: boolean;
+        try {
+          wrote = await files.write(a.path, got.bytes, a.expectedHash);
+        } catch {
+          continue; // its own download retries the write and reports any error
+        }
         settled.add(a);
-        if (await files.write(a.path, got.bytes, a.expectedHash)) {
+        if (wrote) {
           setBase(entry);
           result.downloaded++;
         }
@@ -262,13 +277,22 @@ export async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
     const settled = await viaZip();
     const rest = work.filter((a) => !settled.has(a));
     let next = 0;
+    let stop: { error: unknown } | null = null;
     const worker = async () => {
-      while (next < rest.length) {
-        await run(rest[next++]!);
+      while (!stop && next < rest.length) {
+        try {
+          await run(rest[next++]!);
+        } catch (error) {
+          stop ??= { error };
+          return;
+        }
         await tick();
       }
     };
+    // Every worker finishes before state is saved and the error surfaces, so no
+    // straggler outlives the run and races the next one.
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, rest.length) }, worker));
+    if (stop) throw (stop as { error: unknown }).error;
   } finally {
     await store.save(state);
   }

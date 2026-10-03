@@ -4,7 +4,7 @@ import { createScheduler, statusForError, statusForResult, type StatusPatch } fr
 import { AuthLostError, type SyncResult } from "./types";
 
 const result = (p: Partial<SyncResult> = {}): SyncResult => ({
-  uploaded: 0, downloaded: 0, deletedLocal: 0, deletedRemote: 0, conflicts: 0, heldDeletes: 0, ...p,
+  uploaded: 0, downloaded: 0, deletedLocal: 0, deletedRemote: 0, conflicts: 0, heldDeletes: 0, errors: [], ...p,
 });
 const AT = new Date("2026-10-03T10:00:00.000Z");
 
@@ -16,6 +16,11 @@ describe("status mapping", () => {
     const s = statusForResult(result({ heldDeletes: 12 }), AT);
     expect(s.phase).toBe("attention");
     expect(s.message).toBe("12 files are missing here, so they weren't deleted from Dropbox. Check your data folder.");
+  });
+  it("files that failed on their own make the run an error naming the first", () => {
+    expect(statusForResult(result({ uploaded: 3, errors: ["tasks/b.json: too big"] }), AT)).toEqual({
+      phase: "error", message: "1 file couldn't sync. tasks/b.json: too big",
+    });
   });
   it("auth lost needs attention", () => {
     expect(statusForError(new AuthLostError(), true)).toEqual({

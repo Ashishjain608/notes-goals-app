@@ -55,6 +55,11 @@ describe("plan rules", () => {
     expect(run([L("a", "new")], [], [B("a", "old")])).toEqual([{ kind: "upload", path: "a", rev: null }]);
     expect(run([], [R("a", "new")], [B("a", "old")])).toEqual([{ kind: "download", path: "a", expectedHash: null }]);
   });
+  it("leaves a file evicted to iCloud alone: no delete, no download over it", () => {
+    const gone = { ...L("tasks/a.json", ""), unavailable: true };
+    expect(run([gone], [R("tasks/a.json", "h")], [B("tasks/a.json", "h")])).toEqual([]);
+    expect(run([gone], [R("tasks/a.json", "new")], [B("tasks/a.json", "old")])).toEqual([]);
+  });
   it("keys are case-insensitive", () => {
     expect(run([L("Tasks/A.json", "h")], [R("tasks/a.json", "h")], [B("tasks/a.json", "h", "rev-h")])).toEqual([]);
   });
@@ -250,6 +255,41 @@ describe("syncOnce", () => {
       onProgress: (d, t) => seen.push([d, t]),
     });
     expect(seen).toEqual([[0, 2], [1, 2], [2, 2]]);
+  });
+
+  it("one failing file is reported and the rest still sync", async () => {
+    const h = harness();
+    for (const n of ["a", "b", "c", "d", "e"]) h.files.put(`tasks/${n}.json`, n);
+    const upload = h.remote.upload.bind(h.remote);
+    h.remote.upload = async (path, bytes, rev) => {
+      if (path === "tasks/b.json") throw new Error("tasks/b.json is over 150 MB; upload sessions are not implemented");
+      return upload(path, bytes, rev);
+    };
+    const res = await h.sync();
+    expect(res.uploaded).toBe(4);
+    expect(res.errors).toEqual(["tasks/b.json: tasks/b.json is over 150 MB; upload sessions are not implemented"]);
+  });
+
+  it("a fatal error stops every worker before the run rejects", async () => {
+    const h = harness();
+    for (let i = 0; i < 12; i++) h.files.put(`tasks/${i}.json`, `${i}`);
+    const upload = h.remote.upload.bind(h.remote);
+    let after = 0;
+    let failed = false;
+    h.remote.upload = async (path, bytes, rev) => {
+      await new Promise((r) => setTimeout(r, 1));
+      if (path === "tasks/1.json") {
+        failed = true;
+        throw new TypeError("Failed to fetch");
+      }
+      if (failed) after++;
+      return upload(path, bytes, rev);
+    };
+    await expect(h.sync()).rejects.toThrow(TypeError);
+    const saved = h.saved.length;
+    await new Promise((r) => setTimeout(r, 20));
+    expect(h.saved.length).toBe(saved); // nothing still running to save later
+    expect(after).toBeLessThanOrEqual(3); // only uploads already in flight finished
   });
 
   it("fetches a folder with many downloads as one zip, a small folder file by file", async () => {

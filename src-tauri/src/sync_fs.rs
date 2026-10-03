@@ -16,7 +16,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::error::{AppError, AppResult};
 use crate::oauth::percent_decode;
-use crate::store_io::atomic_write_bytes;
+use crate::store_io::{write_replacing, VAULT_WRITE};
 use crate::vault::{is_dataless, require_vault};
 
 const BLOCK: usize = 4 * 1024 * 1024;
@@ -57,6 +57,10 @@ pub struct ScanEntry {
     pub path: String,
     pub size: u64,
     pub content_hash: String,
+    /// In iCloud but not on this Mac (evicted). Sync must leave it alone: it is
+    /// neither readable nor deleted.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub unavailable: bool,
 }
 
 /// Per-file hash cache keyed by absolute path; valid while size and mtime match.
@@ -84,15 +88,15 @@ fn walk(vault: &Path, dir: &Path, cache: &HashCache, out: &mut Vec<ScanEntry>) -
             walk(vault, &path, cache, out)?;
         } else if kind.is_file() {
             let meta = entry.metadata()?;
-            if is_dataless(&meta) {
-                continue;
-            }
             let rel = path.strip_prefix(vault).unwrap_or(&path);
             let rel = rel.components().map(|c| c.as_os_str().to_string_lossy()).collect::<Vec<_>>().join("/");
+            let unavailable = is_dataless(&meta);
             out.push(ScanEntry {
                 path: rel,
                 size: meta.len(),
-                content_hash: cached_hash(cache, &path, &meta)?,
+                // Reading an evicted file would download it from iCloud; don't.
+                content_hash: if unavailable { String::new() } else { cached_hash(cache, &path, &meta)? },
+                unavailable,
             });
         }
     }
@@ -138,10 +142,11 @@ fn matches_expected(path: &Path, expected: &str) -> AppResult<bool> {
 
 fn write_cas(vault: &Path, rel: &str, expected: &str, bytes: &[u8]) -> AppResult<bool> {
     let path = resolve_vault_relative(vault, rel)?;
+    let _guard = VAULT_WRITE.lock().unwrap_or_else(|e| e.into_inner());
     if !matches_expected(&path, expected)? {
         return Ok(false);
     }
-    atomic_write_bytes(&path, bytes)?;
+    write_replacing(&path, bytes)?;
     Ok(true)
 }
 
@@ -149,6 +154,7 @@ fn write_cas(vault: &Path, rel: &str, expected: &str, bytes: &[u8]) -> AppResult
 /// still matches. A missing file or a hash mismatch returns `false`.
 fn delete_cas(vault: &Path, rel: &str, expected: &str) -> AppResult<bool> {
     let path = resolve_vault_relative(vault, rel)?;
+    let _guard = VAULT_WRITE.lock().unwrap_or_else(|e| e.into_inner());
     if expected.is_empty() || !path.is_file() || !matches_expected(&path, expected)? {
         return Ok(false);
     }

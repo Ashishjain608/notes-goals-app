@@ -10,6 +10,7 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
@@ -68,9 +69,20 @@ pub fn atomic_write(target: &Path, contents: &str) -> AppResult<()> {
     atomic_write_bytes(target, contents.as_bytes())
 }
 
+/// Serialises vault writes, so sync's check-then-write (`sync_fs::write_cas`)
+/// can never interleave with a save and overwrite it.
+// ponytail: one lock for the whole vault; a big attachment download briefly delays saves. Per-path locks if that shows.
+pub(crate) static VAULT_WRITE: Mutex<()> = Mutex::new(());
+
 /// Byte-oriented counterpart to `atomic_write`, used for binary content
 /// (attachments) rather than text.
 pub(crate) fn atomic_write_bytes(target: &Path, bytes: &[u8]) -> AppResult<()> {
+    let _guard = VAULT_WRITE.lock().unwrap_or_else(|e| e.into_inner());
+    write_replacing(target, bytes)
+}
+
+/// `atomic_write_bytes` for a caller already holding `VAULT_WRITE`.
+pub(crate) fn write_replacing(target: &Path, bytes: &[u8]) -> AppResult<()> {
     if let Some(parent) = target.parent() {
         fs::create_dir_all(parent)?;
     }

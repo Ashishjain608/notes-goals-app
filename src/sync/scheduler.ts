@@ -27,6 +27,10 @@ export function statusForResult(result: SyncResult, at: Date): StatusPatch {
       message: `${result.heldDeletes} files are missing here, so they weren't deleted from Dropbox. Check your data folder.`,
     };
   }
+  if (result.errors.length > 0) {
+    const n = result.errors.length;
+    return { phase: "error", message: `${n} ${n === 1 ? "file" : "files"} couldn't sync. ${result.errors[0]}` };
+  }
   return { phase: "idle", lastSyncedAt: at.toISOString(), message: null };
 }
 

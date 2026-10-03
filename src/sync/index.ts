@@ -156,7 +156,12 @@ function stopScheduling(): void {
 }
 
 function startScheduling(): void {
-  if (scheduler) return;
+  if (scheduler) {
+    // Still here after a revoke stopped its heartbeat: re-arm it and sync now.
+    scheduler.start();
+    void scheduler.runNow();
+    return;
+  }
   scheduler = createScheduler({
     run: (onProgress) => runOnce(onProgress),
     setStatus: (p: StatusPatch) => publish(p),
@@ -196,7 +201,8 @@ async function trade(code: string, p: { verifier: string; redirectUri?: string }
 
 const PRIVATE_CHANNEL = "ng-dropbox-auth";
 const POPUP_NAME = "dropbox-auth";
-type CodeMessage = { type: "dropbox-code"; code: string; state: string };
+/** What the pop-up posts back: a code, or Dropbox's `error` (e.g. access_denied when the user cancels). */
+type CodeMessage = { type: "dropbox-code"; code: string; state: string; error?: string };
 
 function readStash(): (Pkce & { mode: "popup" | "code" }) | null {
   try {
@@ -212,7 +218,9 @@ function waitForPopupCode(state: string): Promise<string> {
     const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(PRIVATE_CHANNEL) : null;
     const timeout = setTimeout(() => done(() => reject(new Error("Sign-in timed out."))), 300_000);
     const accept = (m: CodeMessage | null | undefined) => {
-      if (m?.type === "dropbox-code" && m.state === state) done(() => resolve(m.code));
+      if (m?.type !== "dropbox-code" || m.state !== state) return;
+      if (m.error) done(() => reject(new Error(m.error === "access_denied" ? "cancelled" : `Dropbox said: ${m.error}`)));
+      else done(() => resolve(m.code));
     };
     const onMessage = (e: MessageEvent) => e.origin === location.origin && accept(e.data as CodeMessage);
     const onChannel = (e: MessageEvent) => accept(e.data as CodeMessage);
@@ -231,7 +239,7 @@ function waitForPopupCode(state: string): Promise<string> {
 
 /* --------------------------------------------------------------- public */
 
-let pendingRedirect: { code: string; state: string } | null = null;
+let pendingRedirect: { code: string; state: string; error?: string } | null = null;
 
 export const syncController = {
   getStatus: (): SyncStatus => status,
@@ -365,6 +373,13 @@ export const syncController = {
    * phone also wipe the local copy: it is only a cache of Dropbox.
    */
   async disconnect(): Promise<void> {
+    if (!isTauri && scheduler) {
+      // The phone's copy is wiped below, so its last edits must reach Dropbox first.
+      await scheduler.runNow();
+      if (status.phase === "offline") {
+        throw new Error("Your latest changes haven't reached Dropbox yet. Disconnect again once you're online.");
+      }
+    }
     stopScheduling();
     await (client ?? newClient()).revoke();
     await tokenStore.del();
@@ -393,8 +408,9 @@ export const syncController = {
     const q = new URLSearchParams(location.search);
     const code = q.get("code");
     const state = q.get("state");
-    if (!code || !state) return false;
-    const msg: CodeMessage = { type: "dropbox-code", code, state };
+    const error = q.get("error") ?? undefined;
+    if (!state || (!code && !error)) return false;
+    const msg: CodeMessage = { type: "dropbox-code", code: code ?? "", state, error };
     if (window.opener) {
       (window.opener as Window).postMessage(msg, location.origin);
       window.close();
@@ -407,7 +423,7 @@ export const syncController = {
       window.close();
       return true;
     }
-    pendingRedirect = { code, state };
+    pendingRedirect = { code: code ?? "", state, error };
     history.replaceState(null, "", location.pathname);
     return false;
   },
@@ -418,6 +434,11 @@ export const syncController = {
     if (!r) return false;
     const stash = readStash();
     if (!stash || stash.state !== r.state) throw new Error("The sign-in didn't match this request. Try again.");
+    if (r.error) {
+      ls.del(K_PKCE);
+      if (r.error === "access_denied") return false; // cancelled at Dropbox: back to the Connect screen
+      throw new Error(`Dropbox said: ${r.error}`);
+    }
     await trade(r.code, { verifier: stash.verifier, redirectUri: stash.mode === "popup" ? webRedirectUri() : undefined });
     ls.del(K_PKCE);
     return true;
