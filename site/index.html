@@ -123,6 +123,14 @@
     },
     {
      "@type": "Question",
+     "name": "Do I have to pay for Dropbox?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. Sync works with the free Dropbox Basic plan: pick it when you sign up and you get 2 GB without paying anything. Tasks and notes are small text files, so it goes a long way. Sync is optional too; the Mac app works fully without it."
+     }
+    },
+    {
+     "@type": "Question",
      "name": "Is there an iPhone, Android or Windows version?",
      "acceptedAnswer": {
       "@type": "Answer",
@@ -382,6 +390,8 @@
   .qr svg{width:100%;max-width:170px;height:auto;padding:10px;border-radius:10px;background:#fff}
   .phone-cta{display:none;margin-top:32px;justify-content:center}
   @media (max-width:900px){.phone-cta+.phone{margin-top:36px}}
+  .free-note{max-width:760px;margin:28px auto 0;text-align:center;font-size:15px;line-height:1.6;color:var(--ink-2)}
+  .free-note b{color:var(--ink);font-weight:600}
   .privacy{max-width:760px;margin:28px auto 0;display:flex;gap:12px;padding:18px 20px;border:1px solid var(--accent-line);
     border-radius:14px;background:var(--accent-soft);font-size:15px;line-height:1.6;color:var(--ink-2)}
   .privacy b{color:var(--ink);font-weight:600}
@@ -827,6 +837,7 @@
           <p class="step-text">Scan with your phone's camera to open it there.</p>
         </div>
       </div>
+      <p class="free-note reveal">No Dropbox account yet? Choose the free <b>Dropbox Basic</b> plan when you sign up: 2 GB of space and no payment needed. Tasks and notes are small text files, so that goes a long way.</p>
       <p class="privacy reveal"><svg aria-hidden="true"><use href="#i-lock"/></svg>
         <span><b>It's your Dropbox, not ours.</b> Your notes travel straight between your devices and the <span class="inline-code">Apps/Notes &amp; Goals</span> folder in your own Dropbox. There's no Notes &amp; Goals server in between, so we never see, store or hold any of your data.</span>
       </p>
@@ -856,6 +867,10 @@
         <details>
           <summary>What happens to my data if I stop using it?</summary>
           <p class="faq-answer">Nothing. Tasks and goals are JSON files and notes are Markdown, all in your folder. Open them in any editor, or point another tool at them.</p>
+        </details>
+        <details>
+          <summary>Do I have to pay for Dropbox?</summary>
+          <p class="faq-answer">No. Sync works with the free Dropbox Basic plan: pick it when you sign up and you get 2 GB without paying anything. Tasks and notes are small text files, so it goes a long way. Sync is optional too; the Mac app works fully without it.</p>
         </details>
         <details>
           <summary>Is there an iPhone, Android or Windows version?</summary>
