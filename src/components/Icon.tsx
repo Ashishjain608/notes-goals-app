@@ -51,7 +51,9 @@ export type IconName =
   | "cloudCheck"
   | "cloudOff"
   | "refresh"
-  | "alert";
+  | "alert"
+  | "phone"
+  | "lock";
 
 /** Shared stroke attributes for every line glyph. */
 const stroke = {
@@ -262,6 +264,18 @@ const paths: Record<IconName, JSX.Element> = {
     <>
       <path d="M7.5 18.5a4 4 0 0 1-.6-7.95 5.5 5.5 0 0 1 10.6 1.2 3.4 3.4 0 0 1-.5 6.75z" {...stroke} />
       <path d="m9.6 13.4 1.9 1.9 3.4-3.6" {...stroke} />
+    </>
+  ),
+  phone: (
+    <>
+      <rect x="7" y="3" width="10" height="18" rx="2.2" {...stroke} />
+      <path d="M11 17.6h2" {...stroke} />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5.5" y="10.5" width="13" height="9.5" rx="2" {...stroke} />
+      <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" {...stroke} />
     </>
   ),
   cloudOff: (

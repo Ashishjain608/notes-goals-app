@@ -25,6 +25,7 @@ import { Scratchpad } from "@/shell/Scratchpad";
 import { Settings } from "@/shell/Settings";
 import { VaultGate } from "@/shell/VaultGate";
 import { PhoneOnboarding } from "@/shell/PhoneOnboarding";
+import { WhatsNew } from "@/shell/WhatsNew";
 import { isTauri } from "@/lib/platform";
 import { CommandPalette, TaskDetail } from "@/views/Capture";
 import Today from "@/views/Today";
@@ -139,6 +140,7 @@ export default function App(): JSX.Element {
       <TaskDetail />
       {!phone && <Scratchpad />}
       <Settings />
+      <WhatsNew />
     </div>
   );
 }
