@@ -5,6 +5,21 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-03
+
+### Added
+
+- **Sync with your own Dropbox.** Settings → Sync connects the app to an `Apps/Notes & Goals`
+  folder in your Dropbox and keeps your data folder and that folder identical, both ways. It's
+  your Dropbox: notes travel straight between your devices and it, with no Notes & Goals server
+  in between, so we never see or hold any of your data. While a sync runs, the title bar shows
+  how far along it is and roughly how long is left.
+- **A phone app.** Open qriousguy.com/notes-goals-app/app on an iPhone or Android phone and add
+  it to your Home Screen: tasks, notes and goals in a phone layout, synced through the same
+  Dropbox folder. Attachments open from Dropbox there. If both devices change the same item
+  before syncing, Dropbox's copy wins and the other is kept under `.atlas/conflicts/`.
+- A one-time *What's new* card after an update that brings something worth knowing.
+
 ## [0.3.1] - 2026-09-26
 
 ### Changed

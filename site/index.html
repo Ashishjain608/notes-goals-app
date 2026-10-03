@@ -123,10 +123,10 @@
     },
     {
      "@type": "Question",
-     "name": "Is there an iPhone, Windows or web version?",
+     "name": "Is there an iPhone, Android or Windows version?",
      "acceptedAnswer": {
       "@type": "Answer",
-      "text": "Not today — Notes & Goals is a Mac app. The source is on GitHub if you'd like to follow along."
+      "text": "Yes for phones: the phone app installs from the browser on iPhone and Android and syncs with your own Dropbox. There's no Windows version yet; the source is on GitHub if you'd like to follow along."
      }
     }
    ]
@@ -372,6 +372,21 @@
   .inline-code{padding:1px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);
     font-family:var(--mono);font-size:12px;color:var(--ink);overflow-wrap:anywhere}
   @media (max-width:1000px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  /* ------------------------------------------------------------------------- phone */
+  .phone{margin-top:60px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 230px;gap:16px}
+  .phone .step-text ol{margin-top:4px;padding-left:18px;list-style:decimal}
+  .phone .step-text li+li{margin-top:4px}
+  .phone-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent-ink)}
+  .phone-icon svg{width:18px;height:18px}
+  .qr{display:flex;flex-direction:column;align-items:center;text-align:center}
+  .qr svg{width:100%;max-width:170px;height:auto;padding:10px;border-radius:10px;background:#fff}
+  .phone-cta{display:none;margin-top:32px;justify-content:center}
+  @media (max-width:900px){.phone-cta+.phone{margin-top:36px}}
+  .privacy{max-width:760px;margin:28px auto 0;display:flex;gap:12px;padding:18px 20px;border:1px solid var(--accent-line);
+    border-radius:14px;background:var(--accent-soft);font-size:15px;line-height:1.6;color:var(--ink-2)}
+  .privacy b{color:var(--ink);font-weight:600}
+  .privacy svg{flex:none;width:18px;height:18px;margin-top:3px;color:var(--accent-ink)}
+  @media (max-width:900px){.phone{grid-template-columns:minmax(0,1fr)}.qr{display:none}.phone-cta{display:flex}}
   @media (max-width:560px){.steps{grid-template-columns:minmax(0,1fr)}}
 
   /* --------------------------------------------------------------------------- FAQ */
@@ -442,6 +457,12 @@
     <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 3v13m0 0-4.5-4.5M12 16l4.5-4.5"/><path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
     </symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="7" y="3" width="10" height="18" rx="2.2"/><path d="M11 17.6h2"/>
+    </symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>
+    </symbol>
     <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>
     </symbol>
@@ -464,6 +485,7 @@
       <a href="#features">Features</a>
       <a href="#data">Your data</a>
       <a href="#install">Install</a>
+      <a href="#phone">Phone</a>
       <a href="#faq">FAQ</a>
     </nav>
     <div class="header-actions">
@@ -493,6 +515,9 @@
         </a>
         <a class="btn btn-ghost" href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">
           <svg aria-hidden="true"><use href="#i-github"/></svg>View source
+        </a>
+        <a class="btn btn-ghost" href="#phone">
+          <svg aria-hidden="true"><use href="#i-phone"/></svg>Get the phone app
         </a>
       </div>
       <p class="release-meta mono reveal" id="release-meta" style="transition-delay:.15s">Universal · Apple Silicon &amp; Intel · macOS 12+</p>
@@ -725,7 +750,7 @@
 └─ <span class="hi">.atlas/trash/</span>        <span class="d">deleted, never destroyed</span></pre>
         <ul class="facts reveal" style="transition-delay:.06s">
           <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Sync it your way.</b> Put the folder in iCloud Drive, Dropbox or a git repo.</span></li>
-          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Sync with Dropbox and your phone.</b> Your files stay in your own Dropbox, and the <a href="./app/">phone app</a> reads them from there.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Sync with Dropbox and your phone.</b> Your files stay in your own Dropbox, and the <a href="#phone">phone app</a> reads them from there.</span></li>
           <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Deletes are recoverable.</b> Removed items move to a trash folder inside it.</span></li>
           <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Leave any time.</b> Deleting the app never touches your data folder.</span></li>
         </ul>
@@ -765,8 +790,51 @@
     </div>
   </section>
 
+  <!-- ============================================================================ PHONE -->
+  <section class="section band" id="phone">
+    <div class="container">
+      <div class="head-center reveal">
+        <p class="kicker">On your phone</p>
+        <h2 class="h2">Install it from the browser. <em>No App Store.</em></h2>
+        <p class="lede">The phone app is the same Notes &amp; Goals, made for a small screen. Add it to your Home Screen and it opens full screen like any other app, then syncs with your Dropbox.</p>
+      </div>
+      <div class="phone-cta">
+        <a class="btn btn-primary" href="./app/">
+          <svg aria-hidden="true"><use href="#i-download"/></svg>Install on this phone
+        </a>
+      </div>
+      <div class="phone reveal" style="transition-delay:.06s">
+        <div class="step">
+          <span class="phone-icon" aria-hidden="true"><svg><use href="#i-phone"/></svg></span>
+          <h3 class="step-title">iPhone</h3>
+          <div class="step-text"><ol>
+            <li>Open <span class="inline-code">qriousguy.com/notes-goals-app/app</span> in <b>Safari</b>.</li>
+            <li>Tap <b>Share</b>, then <b>Add to Home Screen</b>.</li>
+            <li>Open it from your Home Screen and connect Dropbox.</li>
+          </ol></div>
+        </div>
+        <div class="step">
+          <span class="phone-icon" aria-hidden="true"><svg><use href="#i-phone"/></svg></span>
+          <h3 class="step-title">Android</h3>
+          <div class="step-text"><ol>
+            <li>Open the same address in <b>Chrome</b>.</li>
+            <li>Tap the <b>⋮</b> menu, then <b>Install app</b> (or <b>Add to Home screen</b>).</li>
+            <li>Open it from your apps and connect Dropbox.</li>
+          </ol></div>
+        </div>
+        <div class="step qr">
+          <svg viewBox="0 0 37 37" shape-rendering="crispEdges" role="img" aria-label="QR code for qriousguy.com/notes-goals-app/app"><path stroke="#000" d="M4 4.5h7m3 0h1m4 0h1m1 0h3m2 0h7M4 5.5h1m5 0h1m1 0h1m2 0h3m1 0h1m2 0h3m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h2m3 0h1m1 0h1m1 0h2m2 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m5 0h1m2 0h2m1 0h1m3 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h3m1 0h4m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m2 0h4m1 0h3m1 0h3m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M14 11.5h2m1 0h3m1 0h4M4 12.5h1m1 0h1m1 0h1m1 0h1m5 0h2m2 0h2m1 0h2m3 0h1m2 0h1M4 13.5h1m9 0h1m2 0h1m2 0h3m1 0h1m1 0h1m2 0h1m2 0h1M4 14.5h1m2 0h2m1 0h1m1 0h2m4 0h1m6 0h3m2 0h3M4 15.5h6m2 0h2m2 0h6m2 0h1m3 0h1m2 0h1M4 16.5h10m2 0h2m1 0h3m1 0h4m2 0h1m1 0h2M6 17.5h1m4 0h1m1 0h6m2 0h1m2 0h1m1 0h1m2 0h1m2 0h1M4 18.5h2m1 0h1m2 0h1m1 0h3m1 0h1m1 0h1m7 0h4m1 0h2M6 19.5h2m6 0h4m3 0h2m3 0h4m1 0h1M4 20.5h1m2 0h1m1 0h2m3 0h2m1 0h1m3 0h1m2 0h3m2 0h1m1 0h2M6 21.5h1m2 0h1m1 0h1m1 0h1m2 0h3m1 0h3m1 0h3m2 0h2m1 0h1M4 22.5h1m3 0h3m5 0h1m1 0h1m1 0h3m1 0h3m4 0h2M5 23.5h1m1 0h1m3 0h2m4 0h1m1 0h4m1 0h1m1 0h2m1 0h1m1 0h1M4 24.5h1m2 0h2m1 0h3m4 0h12M12 25.5h1m7 0h1m2 0h2m3 0h1m1 0h3M4 26.5h7m4 0h1m1 0h1m5 0h2m1 0h1m1 0h2m1 0h2M4 27.5h1m5 0h1m3 0h6m1 0h4m3 0h2m1 0h2M4 28.5h1m1 0h3m1 0h1m1 0h1m1 0h2m2 0h1m1 0h2m2 0h5M4 29.5h1m1 0h3m1 0h1m2 0h2m1 0h1m3 0h2m6 0h1m1 0h3M4 30.5h1m1 0h3m1 0h1m1 0h2m1 0h3m3 0h1m3 0h1m1 0h3m2 0h1M4 31.5h1m5 0h1m2 0h2m2 0h1m2 0h3m1 0h1m6 0h1M4 32.5h7m1 0h1m1 0h2m3 0h3m1 0h4m1 0h2m1 0h2"/></svg>
+          <p class="step-text">Scan with your phone's camera to open it there.</p>
+        </div>
+      </div>
+      <p class="privacy reveal"><svg aria-hidden="true"><use href="#i-lock"/></svg>
+        <span><b>It's your Dropbox, not ours.</b> Your notes travel straight between your devices and the <span class="inline-code">Apps/Notes &amp; Goals</span> folder in your own Dropbox. There's no Notes &amp; Goals server in between, so we never see, store or hold any of your data.</span>
+      </p>
+    </div>
+  </section>
+
   <!-- ============================================================================ FAQ -->
-  <section class="section band" id="faq">
+  <section class="section" id="faq">
     <div class="container">
       <div class="head-center reveal">
         <p class="kicker">FAQ</p>
@@ -790,8 +858,8 @@
           <p class="faq-answer">Nothing. Tasks and goals are JSON files and notes are Markdown, all in your folder. Open them in any editor, or point another tool at them.</p>
         </details>
         <details>
-          <summary>Is there an iPhone, Windows or web version?</summary>
-          <p class="faq-answer">Not today — Notes &amp; Goals is a Mac app. The <a href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">source is on GitHub</a> if you'd like to follow along.</p>
+          <summary>Is there an iPhone, Android or Windows version?</summary>
+          <p class="faq-answer">Yes for phones: the <a href="#phone">phone app</a> installs from the browser on iPhone and Android and syncs with your own Dropbox. There's no Windows version yet; the <a href="https://github.com/Ashishjain608/notes-goals-app" target="_blank" rel="noopener">source is on GitHub</a> if you'd like to follow along.</p>
         </details>
       </div>
     </div>
