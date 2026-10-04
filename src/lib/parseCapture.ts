@@ -3,6 +3,7 @@
  * LOCAL (ADR-0004) and `now` is injectable.
  *
  * Decisions: "next friday" == "friday" (next occurrence strictly after today);
+ * "due"/"by" before a date is part of it ("Stop by Mon" reads as due Monday);
  * only the first date, first context and first goal are consumed — later ones
  * stay in the title; only active/onhold goals match.
  */
@@ -36,7 +37,7 @@ const ORD = "(?:st|nd|rd|th)?";
 
 // One alternation; leftmost match wins. Groups: wd, nextweek, weekend, rel, n, unit, m1/d1, d2/m2.
 const DATE_RE = new RegExp(
-  "(?<![\\w#])(?:due\\s+)?(?:" +
+  "(?<![\\w#-])(?:(?:due|by)\\s+)?(?:" +
     [
       "(?<rel>today|tonight|tomorrow|tmrw|tmr)",
       `(?:(?:on|next)\\s+)?(?<wd>${DAY_RE})`,

@@ -46,6 +46,7 @@ describe("dates", () => {
     ["Taxes due friday", "2026-10-09"],
     ["Taxes due on Oct 9", "2026-10-09"],
     ["Taxes due tomorrow", "2026-10-05"],
+    ["Ship v1 by Dec 1", "2026-12-01"],
   ])("%s -> %s", (text, due) => {
     expect(run(text).due).toBe(due);
   });
@@ -143,6 +144,12 @@ describe("tokens", () => {
     for (const t of r.tokens) expect(text.slice(t.start, t.end)).toBe(t.text);
     expect(r.tokens[1]!.text).toBe("due on Fri");
     expect(r.title).toBe("Renew passport");
+  });
+
+  it("'by' before a date belongs to the date", () => {
+    expect(run("Ship v1 by Dec 1").title).toBe("Ship v1");
+    expect(run("Stand by me").title).toBe("Stand by me");
+    expect(run("Drive-by Friday review").title).toBe("Drive-by review");
   });
 
   it("title may be empty", () => {
