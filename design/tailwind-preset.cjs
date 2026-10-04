@@ -44,6 +44,15 @@ module.exports = {
         "age-aging-ink": "var(--age-aging-ink)",
         "age-stale-ink": "var(--age-stale-ink)",
         "age-stale-bar": "var(--age-stale-bar)",
+        // Phone shell (ADR-0012)
+        glass: "var(--glass)",
+        "glass-strong": "var(--glass-strong)",
+        "glass-line": "var(--glass-line)",
+        scrim: "var(--scrim)",
+        "ctx-personal-soft": "var(--ctx-personal-soft)",
+        "ink-6": "var(--ink-6)",
+        "meter-empty": "var(--meter-empty)",
+        "menu-primary": "var(--menu-primary)",
       },
       fontFamily: {
         sans: ["Hanken Grotesk", "system-ui", "sans-serif"],
@@ -53,6 +62,9 @@ module.exports = {
       boxShadow: {
         DEFAULT: "var(--shadow)",
         sm: "var(--shadow-sm)",
+        glass: "var(--glass-shadow)",
+        fab: "var(--fab-shadow)",
+        card: "var(--card-shadow)",
       },
       borderRadius: {
         // The prototype leans on 7–14px radii.

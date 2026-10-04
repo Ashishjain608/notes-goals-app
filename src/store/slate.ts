@@ -35,6 +35,17 @@ export function isOnSlate(task: Task, day: IsoDate): boolean {
   return task.committedOn != null && toLocalDateKeyFromIso(task.committedOn) === day;
 }
 
+/**
+ * Snoozing a task that's on `day`'s slate takes it off the slate (plan D2): a
+ * hidden task shouldn't hold a slot the user can't see. Any other task is
+ * returned unchanged. Applied to every task patch, so no path can leave a
+ * snoozed task committed.
+ */
+export function releaseSnoozedSlot(task: Task, day: IsoDate): Task {
+  const snoozedPastDay = task.snoozeUntil != null && toLocalDateKeyFromIso(task.snoozeUntil) > day;
+  return snoozedPastDay && isOnSlate(task, day) ? { ...task, committedOn: null } : task;
+}
+
 export interface SlateSummary {
   /** Tasks committed to today, done ones included — what the cap counts. */
   count: number;

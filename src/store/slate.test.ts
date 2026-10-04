@@ -8,7 +8,14 @@
 import { describe, expect, it } from "vitest";
 import type { Task } from "@/types";
 import { toLocalDateKey } from "@/lib/dates";
-import { clampSlateCap, commitTransition, DEFAULT_SLATE_CAP, isOnSlate, selectSlate } from "./slate";
+import {
+  clampSlateCap,
+  commitTransition,
+  DEFAULT_SLATE_CAP,
+  isOnSlate,
+  releaseSnoozedSlot,
+  selectSlate,
+} from "./slate";
 
 /** Fixed local-day reference: 2026-06-07 (local noon), and its neighbours. */
 const NOW = new Date(2026, 5, 7, 12, 0, 0);
@@ -182,5 +189,20 @@ describe("commitTransition", () => {
     const fromTomorrow = makeTask({ committedOn: TOMORROW, carried: 1 });
     const result = commitTransition(fromTomorrow, [fromTomorrow], DEFAULT_SLATE_CAP, TODAY);
     expect(result).toEqual({ task: { ...fromTomorrow, committedOn: TODAY, carried: 1 } });
+  });
+});
+
+/* ------------------------------------------------------------ releaseSnoozedSlot */
+
+describe("releaseSnoozedSlot (plan D2)", () => {
+  it.each([
+    ["committed today, snoozed past today → off the slate", TODAY, TOMORROW, null],
+    ["committed today, snoozed until today (still visible) → stays", TODAY, TODAY, TODAY],
+    ["committed today, not snoozed → stays", TODAY, null, TODAY],
+    ["committed yesterday, snoozed → untouched (not today's slate)", YESTERDAY, TOMORROW, YESTERDAY],
+    ["not committed, snoozed → untouched", null, TOMORROW, null],
+  ] as const)("%s", (_label, committedOn, snoozeUntil, expected) => {
+    const t = makeTask({ committedOn, snoozeUntil });
+    expect(releaseSnoozedSlot(t, TODAY).committedOn).toBe(expected);
   });
 });
