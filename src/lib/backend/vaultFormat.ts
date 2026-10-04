@@ -167,6 +167,8 @@ function frontmatterYaml(note: Note): string {
       created: note.created,
       updated: note.updated,
       attachments: attachmentsOut(note.attachments),
+      // Omitted when false, as Rust's skip_serializing_if: keeps old files byte-identical.
+      ...(note.pinned ? { pinned: true } : {}),
     },
     { schema: "core" },
   );
@@ -215,6 +217,7 @@ export function parseNoteMeta(raw: string): Note {
     created: str(o, "created"),
     updated: str(o, "updated"),
     attachments: parseAttachments(o),
+    pinned: o.pinned === true,
   };
 }
 

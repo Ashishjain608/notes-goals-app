@@ -8,16 +8,18 @@
  * blur, an Open/Done/Dropped segmented control, collapsible due / snooze / goal
  * rows, single-level subtasks, and a confirmed Delete (distinct from "dropped").
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 import { open as openFilePicker } from "@tauri-apps/plugin-dialog";
 import type { Attachment, Goal, IsoDate, Subtask, Task, TaskStatus } from "@/types";
 import { useStore, selectSlate, isOnSlate } from "@/store";
 import { ageInDays, dueLabel, formatShortDate } from "@/lib/dates";
 import { errorMessageOf } from "@/lib/errors";
-import { isTauri, useIsPhone } from "@/lib/platform";
+import { isTauri } from "@/lib/platform";
 import { confirmDestructive } from "@/lib/confirm";
-import { AttachmentList, Checkbox, ContextDot, DatePicker, Icon, type IconName } from "@/components";
+import { AttachmentList, ContextDot, DatePicker, Icon, type IconName } from "@/components";
 import { OptionRow } from "./OptionRow";
+import { GrowTextarea } from "./GrowTextarea";
+import { Subtasks } from "./Subtasks";
 import { dateKeyDaysAhead } from "./dueDates";
 import { useSlidePanel } from "@/views/useSlidePanel";
 
@@ -39,58 +41,6 @@ function createdLabel(createdIso: string): string {
 /** A thin horizontal divider matching the prototype's section separators. */
 function Divider(): JSX.Element {
   return <div className="mx-3 my-2.5 h-px bg-line" />;
-}
-
-/**
- * A textarea that grows to fit its content (no inner scrollbar), so the title
- * and details use the panel's vertical space instead of a cramped fixed box.
- * Uncontrolled: seeded from `defaultValue`, saved on blur, re-measured when the
- * task changes (keyed on `taskId`).
- */
-function GrowTextarea({
-  taskId,
-  defaultValue,
-  onBlur,
-  placeholder,
-  className,
-}: {
-  taskId: string;
-  defaultValue: string;
-  onBlur: (value: string) => void;
-  placeholder?: string;
-  className?: string;
-}): JSX.Element {
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  const fit = (): void => {
-    const el = ref.current;
-    if (!el) return;
-    // Collapsing to "auto" before reading scrollHeight briefly shrinks the
-    // panel body, which clamps the `.scroll` ancestor's scrollTop — restoring
-    // the final height afterwards otherwise leaves the view jumped. Capture
-    // and restore it synchronously around the collapse so the user never sees
-    // the jump.
-    const scroller = el.closest<HTMLElement>(".scroll");
-    const scrollTop = scroller?.scrollTop;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-    if (scroller && scrollTop !== undefined) scroller.scrollTop = scrollTop;
-  };
-
-  useLayoutEffect(fit, [taskId]);
-
-  return (
-    <textarea
-      key={taskId}
-      ref={ref}
-      defaultValue={defaultValue}
-      onInput={fit}
-      onBlur={(e) => onBlur(e.target.value)}
-      placeholder={placeholder}
-      rows={1}
-      className={className}
-    />
-  );
 }
 
 /** A collapsible option row: a summary button plus an expandable body. */
@@ -191,76 +141,6 @@ function StatusControl({
           </button>
         );
       })}
-    </div>
-  );
-}
-
-/** The subtasks section: progress count, toggleable items, and an add input. */
-function Subtasks({
-  subtasks,
-  onToggle,
-  onAdd,
-}: {
-  subtasks: Subtask[];
-  onToggle: (id: string) => void;
-  onAdd: (title: string) => void;
-}): JSX.Element {
-  const [draft, setDraft] = useState("");
-  const phone = useIsPhone();
-  const doneCount = subtasks.filter((s) => s.status === "done").length;
-
-  const commit = (): void => {
-    const trimmed = draft.trim();
-    if (!trimmed) return;
-    onAdd(trimmed);
-    setDraft("");
-  };
-
-  return (
-    <div className="px-3">
-      <div className="mb-2 text-[11.5px] font-semibold uppercase tracking-[.07em] text-ink-3">
-        Subtasks
-        {subtasks.length > 0 && (
-          <span className="text-ink-3">
-            {" "}
-            · {doneCount}/{subtasks.length}
-          </span>
-        )}
-      </div>
-      {subtasks.map((s) => {
-        const done = s.status === "done";
-        return (
-          <div
-            key={s.id}
-            // On a phone the whole 44px row toggles; the 16px box alone is too small to hit.
-            onClick={phone ? () => onToggle(s.id) : undefined}
-            className="flex items-center gap-2.5 py-[5px] max-md:min-h-[44px]"
-          >
-            <Checkbox checked={done} size={16} onClick={() => onToggle(s.id)} />
-            <span
-              className={`text-[13.5px] ${
-                done ? "text-ink-3 line-through decoration-ink-3" : "text-ink"
-              }`}
-            >
-              {s.title}
-            </span>
-          </div>
-        );
-      })}
-      <div className="mt-0.5 flex items-center gap-2.5 py-[5px]">
-        <span className="text-ink-3">
-          <Icon name="plus" size={16} />
-        </span>
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit();
-          }}
-          placeholder="Add subtask"
-          className="flex-1 border-none bg-transparent text-[13.5px] max-md:h-11 max-md:text-[16px] text-ink outline-none placeholder:text-ink-3"
-        />
-      </div>
     </div>
   );
 }

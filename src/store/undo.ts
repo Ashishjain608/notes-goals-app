@@ -11,12 +11,13 @@ export interface UndoToast {
   /** Changes on every show, so a stale timer can't clear a newer toast. */
   id: number;
   label: string;
-  run: () => Promise<unknown> | void;
+  /** Absent for an info-only toast (no Undo button). */
+  run?: () => Promise<unknown> | void;
 }
 
 export interface UndoSlice {
   undoToast: UndoToast | null;
-  showUndo: (toast: { label: string; undo: () => Promise<unknown> | void }) => void;
+  showUndo: (toast: { label: string; undo?: () => Promise<unknown> | void }) => void;
   /** Run the pending undo (if any) and hide the toast. */
   runUndo: () => Promise<void>;
   dismissUndo: () => void;
@@ -48,7 +49,7 @@ export function createUndoSlice(set: SetFn, get: GetFn): UndoSlice {
       const toast = get().undoToast;
       if (!toast) return;
       hide();
-      await toast.run();
+      await toast.run?.();
     },
     dismissUndo: hide,
   };

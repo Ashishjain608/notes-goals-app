@@ -19,7 +19,6 @@ const UPDATE_POLL_INTERVAL_MS = 4 * 60_000;
 const DAY_POLL_INTERVAL_MS = 60_000;
 import { NavRail } from "@/shell/NavRail";
 import { TitleBar } from "@/shell/TitleBar";
-import { BottomBar } from "@/shell/BottomBar";
 import { SidebarToggle } from "@/shell/SidebarToggle";
 import { Scratchpad } from "@/shell/Scratchpad";
 import { Settings } from "@/shell/Settings";
@@ -27,6 +26,7 @@ import { VaultGate } from "@/shell/VaultGate";
 import { PhoneOnboarding } from "@/shell/PhoneOnboarding";
 import { WhatsNew } from "@/shell/WhatsNew";
 import { PhoneShell } from "@/shell/phone/PhoneShell";
+import { TaskSheet } from "@/shell/phone/TaskSheet";
 import { isTauri } from "@/lib/platform";
 import { CommandPalette, TaskDetail } from "@/views/Capture";
 import Today from "@/views/Today";
@@ -129,7 +129,7 @@ export default function App(): JSX.Element {
     return (
       <PhoneShell>
         <CurrentView />
-        <TaskDetail />
+        <TaskSheet />
         <Settings />
       </PhoneShell>
     );
@@ -139,18 +139,17 @@ export default function App(): JSX.Element {
     <div className="flex h-screen flex-col max-md:h-[100dvh] bg-bg text-ink">
       <TitleBar />
       <div className="flex min-h-0 flex-1">
-        {!phone && <NavRail expanded={!navCollapsed} />}
-        {!phone && <SidebarToggle collapsed={navCollapsed} onToggle={toggleNav} />}
+        <NavRail expanded={!navCollapsed} />
+        <SidebarToggle collapsed={navCollapsed} onToggle={toggleNav} />
         <main className="flex min-w-0 flex-1 flex-col">
           <div className="min-h-0 flex-1">
             <CurrentView />
           </div>
         </main>
       </div>
-      {phone && <BottomBar />}
       <CommandPalette />
       <TaskDetail />
-      {!phone && <Scratchpad />}
+      <Scratchpad />
       <Settings />
       <WhatsNew />
     </div>

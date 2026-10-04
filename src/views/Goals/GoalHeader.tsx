@@ -14,6 +14,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type JSX } from "react";
 import type { Goal, GoalStatus, IsoDate } from "@/types";
 import { ContextDot, DateField, Icon } from "@/components";
+import { PickerSheet } from "@/components/PickerSheet";
+import { useIsPhone } from "@/lib/platform";
 
 export interface GoalHeaderProps {
   goal: Goal;
@@ -96,9 +98,10 @@ function StatusMenu({
 }): JSX.Element {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const phone = useIsPhone();
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || phone) return;
     const onOutside = (e: MouseEvent): void => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -111,7 +114,7 @@ function StatusMenu({
       document.removeEventListener("mousedown", onOutside);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [open, phone]);
 
   return (
     <div ref={rootRef} className="relative inline-block">
@@ -123,7 +126,20 @@ function StatusMenu({
         {statusLabel(status)}
         <Icon name="chevronDown" size={11} />
       </button>
-      {open && (
+      {phone && (
+        <PickerSheet
+          open={open}
+          onClose={() => setOpen(false)}
+          title="Status"
+          options={STATUS_VALUES.map((s) => ({ value: s, label: statusLabel(s) }))}
+          selected={status}
+          onPick={(v) => {
+            if (v) onPick(v as GoalStatus);
+            setOpen(false);
+          }}
+        />
+      )}
+      {open && !phone && (
         <div className="absolute left-0 top-[calc(100%+4px)] z-10 w-[140px] rounded-lg border border-line bg-surface p-1 shadow">
           {STATUS_VALUES.map((s) => (
             <button

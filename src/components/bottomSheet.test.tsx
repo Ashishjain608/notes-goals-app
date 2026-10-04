@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { BottomSheet } from "./BottomSheet";
+import { BottomSheet, isTopSheet, pushSheet } from "./BottomSheet";
 
 const sheet = (props: Partial<Parameters<typeof BottomSheet>[0]> = {}): string =>
   renderToStaticMarkup(
@@ -39,5 +39,20 @@ describe("BottomSheet", () => {
     const html = sheet({ bottomInset: 300 });
     expect(html).toContain("bottom:300px");
     expect(html).not.toContain("safe-area-inset-bottom");
+  });
+});
+
+describe("sheet stack", () => {
+  it("only the most recently opened sheet is on top, and popping restores the one below", () => {
+    const a = Symbol("a");
+    const b = Symbol("b");
+    const popA = pushSheet(a);
+    const popB = pushSheet(b);
+    expect(isTopSheet(a)).toBe(false);
+    expect(isTopSheet(b)).toBe(true);
+    popB();
+    expect(isTopSheet(a)).toBe(true);
+    popA();
+    expect(isTopSheet(a)).toBe(false);
   });
 });

@@ -214,8 +214,28 @@ export function EditorToolbar({ editor, noteId, onAttach, onDelete }: EditorTool
 
 /* ----------------------------------------------------------------- link popover */
 
-/** Inline add/edit/remove-link panel anchored under the toolbar Link button. */
-function LinkPopover({ editor, onClose }: { editor: Editor; onClose: () => void }): JSX.Element {
+/** Body → H1 → H2 → body: the phone format pill's single "Aa" control. */
+export function cycleHeading(editor: Editor): void {
+  const chain = editor.chain().focus();
+  if (editor.isActive("heading", { level: 1 })) chain.toggleHeading({ level: 2 }).run();
+  else if (editor.isActive("heading", { level: 2 })) chain.setParagraph().run();
+  else chain.toggleHeading({ level: 1 }).run();
+}
+
+const LINK_POPOVER_DEFAULT_CLASS =
+  "absolute right-0 top-full z-20 mt-1 flex w-72 max-md:fixed max-md:inset-x-3 max-md:top-auto max-md:w-auto items-center gap-1.5 rounded-lg border border-line bg-surface p-1.5 shadow";
+
+/** Inline add/edit/remove-link panel anchored under the toolbar Link button.
+ *  `className` lets the phone format pill re-anchor it above itself. */
+export function LinkPopover({
+  editor,
+  onClose,
+  className = LINK_POPOVER_DEFAULT_CLASS,
+}: {
+  editor: Editor;
+  onClose: () => void;
+  className?: string;
+}): JSX.Element {
   const [value, setValue] = useState<string>(
     () => (editor.getAttributes("link").href as string | undefined) ?? "",
   );
@@ -242,7 +262,7 @@ function LinkPopover({ editor, onClose }: { editor: Editor; onClose: () => void 
 
   return (
     <div
-      className="absolute right-0 top-full z-20 mt-1 flex w-72 max-md:fixed max-md:inset-x-3 max-md:top-auto max-md:w-auto items-center gap-1.5 rounded-lg border border-line bg-surface p-1.5 shadow"
+      className={className}
       onClick={(e) => e.stopPropagation()}
     >
       <Icon name="link" size={14} className="ml-1 text-ink-3" />

@@ -53,6 +53,7 @@ pub fn run() {
             commands::update_note,
             commands::delete_note,
             commands::move_note,
+            commands::set_note_pinned,
             commands::create_notebook,
             commands::update_notebook,
             commands::delete_notebook,

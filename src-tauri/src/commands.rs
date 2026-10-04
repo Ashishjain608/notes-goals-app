@@ -177,6 +177,12 @@ pub fn move_note(app: AppHandle, id: String, notebook_id: Option<String>) -> App
     ops::move_note(&vault::require_vault(&app)?, &id, notebook_id)
 }
 
+/// Pin or unpin a note — see `ops::set_note_pinned`.
+#[tauri::command]
+pub fn set_note_pinned(app: AppHandle, id: String, pinned: bool) -> AppResult<Note> {
+    ops::set_note_pinned(&vault::require_vault(&app)?, &id, pinned)
+}
+
 /* ---------------------------------------------------------------- Notebooks */
 
 /// Create a notebook: Rust owns id and `created == updated == now`. Its context

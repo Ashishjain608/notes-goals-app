@@ -388,6 +388,10 @@ struct Frontmatter {
     /// before attachments existed still parse.
     #[serde(default)]
     attachments: Vec<Attachment>,
+    /// Omitted when false so unpinned notes stay byte-identical to files
+    /// written before pinning existed.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pinned: bool,
 }
 
 impl Frontmatter {
@@ -401,6 +405,7 @@ impl Frontmatter {
             created: note.created.clone(),
             updated: note.updated.clone(),
             attachments: note.attachments.clone(),
+            pinned: note.pinned,
         }
     }
 
@@ -414,6 +419,7 @@ impl Frontmatter {
             created: self.created,
             updated: self.updated,
             attachments: self.attachments,
+            pinned: self.pinned,
         }
     }
 }
@@ -715,6 +721,7 @@ mod tests {
             created: "2026-06-03T09:12:00Z".to_string(),
             updated: "2026-06-04T11:00:00Z".to_string(),
             attachments: vec![],
+            pinned: false,
         }
     }
 
@@ -886,6 +893,22 @@ mod tests {
 
         let meta = read_note_meta(&vault, "note-nb").unwrap();
         assert_eq!(meta.notebook_id.as_deref(), Some("nb-7"));
+    }
+
+    #[test]
+    fn note_pinned_round_trips_and_is_omitted_when_false() {
+        let vault = temp_vault();
+        let mut note = sample_note("pin-1", None);
+        write_note(&vault, &note, "b").unwrap();
+        let raw = std::fs::read_to_string(&vault.join("notes/pin-1.md")).unwrap();
+        assert!(!raw.contains("pinned"));
+        // Old file (no key) loads unpinned.
+        assert!(!read_note_meta(&vault, "pin-1").unwrap().pinned);
+        note.pinned = true;
+        write_note(&vault, &note, "b").unwrap();
+        let raw = std::fs::read_to_string(&vault.join("notes/pin-1.md")).unwrap();
+        assert!(raw.contains("pinned: true"));
+        assert!(read_note_meta(&vault, "pin-1").unwrap().pinned);
     }
 
     #[test]
@@ -1200,6 +1223,7 @@ mod tests {
             created: T0.into(),
             updated: T1.into(),
             attachments: vec![att(&format!("attachments/{n5}/sketch.png"), "sketch.png", 512)],
+            pinned: true,
         };
         let note_min = Note {
             id: "66666666-6666-4666-8666-666666666666".into(),
@@ -1210,6 +1234,7 @@ mod tests {
             created: T0.into(),
             updated: T0.into(),
             attachments: vec![],
+            pinned: false,
         };
         (
             task_full,

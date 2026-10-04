@@ -29,6 +29,7 @@ import type { Attachment, Context, Note } from "@/types";
 import { isTauri } from "@/lib/platform";
 import { buildNoteExtensions } from "@/lib/markdown";
 import { errorMessageOf } from "@/lib/errors";
+import { composeNoteSave, freshestNote, settlePatch } from "./noteSave";
 
 /** ~800ms debounce window for autosave (ADR-0005). */
 const AUTOSAVE_DEBOUNCE_MS = 800;
@@ -170,7 +171,9 @@ export interface UseNoteEditorResult {
    * Discard any pending autosave and persist `{...note, ...patch}` with the
    * live body in ONE save, so a separate metadata write can't race the flush.
    */
-  saveWith: (patch: Partial<Note>) => void;
+  saveWith: (patch: Partial<Note>) => boolean;
+  /** True when saveWith will be accepted (this note's body is loaded). */
+  canSave: boolean;
   /** The editor's current markdown body (for a host that writes its own patch). */
   getBody: () => string;
   /** True when the working title and body are both blank (an empty draft). */
@@ -204,6 +207,8 @@ export function useNoteEditor(
   // the *live* note through this ref rather than the note passed in at the
   // moment the editor was constructed.
   const loadedIdRef = useRef<string | null>(null);
+  // State twin of loadedIdRef so `canSave` re-renders when a body finishes loading.
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   // Forwards to the current `addAttachments` below; the editor (and its props)
   // is created exactly once, so paste must read this indirectly rather than
   // closing over a callback that changes identity across renders.
@@ -254,6 +259,15 @@ export function useNoteEditor(
   // Mirror the working attachments the same way.
   const attachmentsRef = useRef(attachments);
   attachmentsRef.current = attachments;
+  // The live store copy of the note, and filing patches (saveWith) issued since
+  // that copy was read. Every save composes against both, so a pending autosave
+  // can't write a stale notebook/goal back over a filing change.
+  const noteRef = useRef<Note | null>(note);
+  noteRef.current = note;
+  const patchRef = useRef<Partial<Note>>({});
+  useEffect(() => {
+    patchRef.current = settlePatch(patchRef.current, note); // keep patches the store hasn't absorbed yet
+  }, [note]);
 
   /** Persist the pending edit immediately and cancel the debounce. */
   const flush = useCallback(() => {
@@ -269,12 +283,11 @@ export function useNoteEditor(
     bodyCache.current.set(target.id, body);
     onBodyRef.current?.(target.id, body);
     void store.saveNote(
-      {
-        ...target,
+      composeNoteSave(freshestNote(target, noteRef.current), patchRef.current, {
         title: titleRef.current,
         context: contextRef.current,
         attachments: attachmentsRef.current,
-      },
+      }),
       body,
     );
   }, [editor, store]);
@@ -295,13 +308,26 @@ export function useNoteEditor(
    * with no separate write that could race the debounce.
    */
   const saveWith = useCallback(
-    (patch: Partial<Note>): void => {
+    (patch: Partial<Note>): boolean => {
       discard();
-      if (!note) return;
-      const body = editor ? getMarkdown(editor) : "";
+      if (!note || !editor || note.id !== loadedIdRef.current) return false; // body not loaded: saving would blank it
+      patchRef.current = { ...patchRef.current, ...patch };
+      if (patch.context) {
+        setContextState(patch.context);
+        contextRef.current = patch.context;
+      }
+      const body = getMarkdown(editor);
       bodyCache.current.set(note.id, body);
       onBodyRef.current?.(note.id, body);
-      void store.saveNote({ ...note, ...patch }, body);
+      void store.saveNote(
+        composeNoteSave(freshestNote(note, noteRef.current), patchRef.current, {
+          title: titleRef.current,
+          context: contextRef.current,
+          attachments: attachmentsRef.current,
+        }),
+        body,
+      );
+      return true;
     },
     [note, editor, store, discard],
   );
@@ -404,6 +430,7 @@ export function useNoteEditor(
 
     if (note === null) {
       loadedIdRef.current = null;
+      setLoadedId(null);
       editor.commands.clearContent();
       editor.setEditable(false);
       setTitleState("");
@@ -424,6 +451,7 @@ export function useNoteEditor(
     if (cached !== undefined) {
       applyBody(editor, cached);
       loadedIdRef.current = targetId;
+      setLoadedId(targetId);
       onBodyRef.current?.(targetId, cached);
       return;
     }
@@ -437,12 +465,14 @@ export function useNoteEditor(
         bodyCache.current.set(targetId, body);
         applyBody(editor, body);
         loadedIdRef.current = targetId;
+      setLoadedId(targetId);
         onBodyRef.current?.(targetId, body);
       })
       .catch(() => {
         if (cancelled) return;
         applyBody(editor, "");
         loadedIdRef.current = targetId;
+      setLoadedId(targetId);
       })
       .finally(() => {
         if (!cancelled) setLoadingBody(false);
@@ -466,6 +496,7 @@ export function useNoteEditor(
     flush,
     discard,
     saveWith,
+    canSave: !!note && !!editor && loadedId === note.id,
     getBody,
     isEmpty,
     attachments,

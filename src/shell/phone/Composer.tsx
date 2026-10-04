@@ -224,7 +224,7 @@ function ComposerCard({
       <div
         role="dialog"
         aria-label={`New ${mode}`}
-        className="fixed left-3 right-3 z-50 flex flex-col items-end gap-2"
+        className="fixed left-3 right-3 z-50 flex animate-riseIn flex-col items-end gap-2 motion-reduce:animate-none"
         style={{ bottom }}
       >
         {mode === "task" && (

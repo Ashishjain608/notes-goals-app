@@ -24,6 +24,7 @@ import {
 } from "@/store";
 import { TaskRow, ProgressBar, ContextDot, Icon, EmptyState } from "@/components";
 import { formatShortDate } from "@/lib/dates";
+import { useIsPhone } from "@/lib/platform";
 import { NoteEditorDrawer } from "./NoteEditorDrawer";
 import { GoalHeader } from "./GoalHeader";
 
@@ -241,6 +242,8 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
   const addTask = useStore((s) => s.addTask);
   const addNote = useStore((s) => s.addNote);
   const saveGoal = useStore((s) => s.saveGoal);
+  const setPhoneOverlay = useStore((s) => s.setPhoneOverlay);
+  const phone = useIsPhone();
 
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [createdNew, setCreatedNew] = useState(false);
@@ -294,7 +297,18 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
               <div className="mb-2 px-4 text-xs font-semibold uppercase tracking-[.07em] text-ink-3">
                 Linked tasks · {progress.total}
               </div>
-              <GoalQuickAdd onAdd={addLinkedTask} />
+              {phone ? (
+                <button
+                  type="button"
+                  onClick={() => setPhoneOverlay({ kind: "composer", mode: "task", goalId: goal.id })}
+                  className="mx-4 mb-2.5 flex min-h-12 w-[calc(100%-2rem)] items-center gap-2.5 rounded-xl bg-surface-2 px-3.5 text-left text-[15px] text-accent-ink"
+                >
+                  <Icon name="plus" size={17} />
+                  Add task to this goal
+                </button>
+              ) : (
+                <GoalQuickAdd onAdd={addLinkedTask} />
+              )}
               <LinkedTasks
                 open={linkedTasks.open}
                 done={linkedTasks.done}
@@ -312,7 +326,11 @@ export function GoalPage({ goalId }: GoalPageProps): JSX.Element {
             <ProgressCard done={progress.done} total={progress.total} pct={progress.pct} />
             <GoalNotes
               notes={linkedNotes}
-              onAdd={() => void addLinkedNote()}
+              onAdd={() =>
+                phone
+                  ? setPhoneOverlay({ kind: "composer", mode: "note", goalId: goal.id })
+                  : void addLinkedNote()
+              }
               onOpen={openNote}
             />
           </aside>

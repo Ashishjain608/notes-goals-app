@@ -77,6 +77,10 @@ export const deleteNote = (id: string): Promise<void> => invoke("delete_note", {
 export const moveNote = (id: string, notebookId: string | null): Promise<Note> =>
   invoke("move_note", { id, notebookId });
 
+/** Pin or unpin a note. Metadata-only (body re-read from disk); does not bump `updated`. */
+export const setNotePinned = (id: string, pinned: boolean): Promise<Note> =>
+  invoke("set_note_pinned", { id, pinned });
+
 /* ---------------------------------------------------------------- Notebooks */
 
 export const createNotebook = (input: CreateNotebookInput): Promise<Notebook> =>

@@ -92,6 +92,8 @@ export interface Note {
    * separate, older mechanism this field doesn't replace).
    */
   attachments: Attachment[];
+  /** Pinned to the top of the notes list. Missing in older files = false. */
+  pinned: boolean;
 }
 
 /**

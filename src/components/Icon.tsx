@@ -37,6 +37,7 @@ export type IconName =
   | "command"
   | "trash"
   | "flag"
+  | "pin"
   | "listBullet"
   | "quote"
   | "rule"
@@ -204,6 +205,13 @@ const paths: Record<IconName, JSX.Element> = {
       <circle cx="4.6" cy="7" r="1.3" fill="currentColor" stroke="none" />
       <circle cx="4.6" cy="12" r="1.3" fill="currentColor" stroke="none" />
       <circle cx="4.6" cy="17" r="1.3" fill="currentColor" stroke="none" />
+    </>
+  ),
+  // Pinned note: a push pin.
+  pin: (
+    <>
+      <path d="M9 4h6l-1 5 3 3v2H7v-2l3-3-1-5Z" {...stroke} />
+      <path d="M12 14v6" {...stroke} />
     </>
   ),
   // Blockquote: a leading bar with text lines.

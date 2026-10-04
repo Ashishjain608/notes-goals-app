@@ -211,3 +211,18 @@
 .ng-phone main .scroll {
   padding-bottom: var(--phone-chrome);
 }
+
+/* Phone: editor checklist boxes are 20px with a 44px hit area (default is 13px). */
+.ng-phone .ProseMirror ul[data-type="taskList"] > li > label {
+  position: relative;
+}
+.ng-phone .ProseMirror ul[data-type="taskList"] > li > label::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+.ng-phone .ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}

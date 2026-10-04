@@ -25,6 +25,8 @@ import {
 } from "@/store";
 import { TaskRow, SectionLabel, EmptyState, ContextDot, Icon } from "@/components";
 import { QuickAddInline } from "@/views/Capture";
+import { useIsPhone } from "@/lib/platform";
+import PhoneToday from "./PhoneToday";
 
 /** Aging visualization mode for Today's rows (v1 uses "noticeable" per the contract). */
 const AGING_MODE = "noticeable" as const;
@@ -336,6 +338,11 @@ function FullEmptyBody({
 
 /** The Today screen. */
 export default function Today(): JSX.Element {
+  if (useIsPhone()) return <PhoneToday />;
+  return <DesktopToday />;
+}
+
+function DesktopToday(): JSX.Element {
   const tasks = useStore((s) => s.tasks);
   const goals = useStore((s) => s.goals);
   const contextFilter = useStore((s) => s.contextFilter);

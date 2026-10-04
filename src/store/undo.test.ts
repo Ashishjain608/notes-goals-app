@@ -59,4 +59,12 @@ describe("undo slice", () => {
     expect(undo).not.toHaveBeenCalled();
     expect(toast()).toBeNull();
   });
+
+  it("an info toast has no undo and runUndo just hides it", async () => {
+    const { slice, toast } = setup();
+    slice.showUndo({ label: "Slate is full (5 of 5)" });
+    expect(toast()?.run).toBeUndefined();
+    await slice.runUndo();
+    expect(toast()).toBeNull();
+  });
 });
