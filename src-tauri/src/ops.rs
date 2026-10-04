@@ -117,6 +117,7 @@ pub fn create_note(vault: &Path, input: CreateNoteInput) -> AppResult<Note> {
         created: now.clone(),
         updated: now,
         attachments: Vec::new(),
+        pinned: false,
     };
     let body = input.body.unwrap_or_default();
     store_io::write_note(vault, &note, &body)?;
@@ -164,6 +165,14 @@ pub fn move_note(vault: &Path, id: &str, notebook_id: Option<String>) -> AppResu
         n.notebook_id = notebook_id;
         n.updated = now_utc();
     })
+}
+
+/// Pin or unpin a note. Metadata-only like `move_note`: the body is reloaded
+/// from disk, so an open editor's unsaved text is never touched. Does not bump
+/// `updated` — pinning isn't an edit and must not reorder "Recent".
+pub fn set_note_pinned(vault: &Path, id: &str, pinned: bool) -> AppResult<Note> {
+    let note = store_io::read_note_meta(vault, id)?;
+    rewrite_note_meta(vault, note, |n| n.pinned = pinned)
 }
 
 /* ---------------------------------------------------------------- Notebooks */
@@ -418,6 +427,7 @@ mod tests {
             created: "2026-06-02T00:00:00Z".into(),
             updated: "2026-06-02T00:00:00Z".into(),
             attachments: vec![],
+            pinned: false,
         };
         store_io::write_note(&vault, &linked_note, "keep this body").unwrap();
 
@@ -465,6 +475,7 @@ mod tests {
             created: "2026-06-02T00:00:00Z".into(),
             updated: "2026-06-02T00:00:00Z".into(),
             attachments: vec![],
+            pinned: false,
         };
         store_io::write_note(&vault, &member, "keep me").unwrap();
 
@@ -535,6 +546,7 @@ mod tests {
             created: "2026-06-01T00:00:00Z".into(),
             updated: "2026-06-01T00:00:00Z".into(),
             attachments: vec![],
+            pinned: false,
         };
         store_io::write_note(&vault, &note, "see [report](attachments/n1/report.pdf)").unwrap();
         store_io::copy_attachment(
@@ -566,6 +578,7 @@ mod tests {
             created: "2026-06-01T00:00:00Z".into(),
             updated: "2026-06-01T00:00:00Z".into(),
             attachments: vec![],
+            pinned: false,
         };
         store_io::write_note(&vault, &note, "body text").unwrap();
 

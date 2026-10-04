@@ -28,6 +28,7 @@ export const deleteTask = impl.deleteTask;
 export const createNote = impl.createNote;
 export const updateNote = impl.updateNote;
 export const deleteNote = impl.deleteNote;
+export const setNotePinned = impl.setNotePinned;
 export const moveNote = impl.moveNote;
 export const createNotebook = impl.createNotebook;
 export const updateNotebook = impl.updateNotebook;

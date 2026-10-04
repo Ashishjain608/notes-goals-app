@@ -16,8 +16,8 @@ Timestamps: `T0 = 2026-06-07T06:30:00Z`, `T1 = 2026-06-09T10:00:00Z`.
 | `task-minimal.json` | Task `22222222-2222-4222-8222-222222222222`, title `yes`, personal, open, created T0, due/snoozeUntil/completed/goalId/committedOn null, subtasks `[]`, details `""`, priority false, attachments `[]`, carried 0 |
 | `goal.json` | Goal `33333333-3333-4333-8333-333333333333`, title `123`, description `"# Plan\n\n- step: one"`, personal, onhold, target `2026-12-31`, created T0, updated T1 |
 | `notebook.json` | Notebook `44444444-4444-4444-8444-444444444444`, name `Reading: 2026`, office, created T0, updated T1 |
-| `note-full.md` | Note `55555555-5555-4555-8555-555555555555`, title `null`, office, goalId `33333333-…`, notebookId `44444444-…`, created T0, updated T1, attachments `[{path:"attachments/55555555-5555-4555-8555-555555555555/sketch.png", name:"sketch.png", size:512, added:"2026-06-07T06:31:00Z"}]`; body `"# Heading\n\nSome *markdown* with --- inside\n\n---\n\nAfter a rule.\n"` |
-| `note-minimal.md` | Note `66666666-6666-4666-8666-666666666666`, title `Plain title`, personal, goalId null, notebookId null, created T0, updated T0, attachments `[]`; body `""` |
+| `note-full.md` | Note `55555555-5555-4555-8555-555555555555`, title `null`, office, goalId `33333333-…`, notebookId `44444444-…`, created T0, updated T1, attachments `[{path:"attachments/55555555-5555-4555-8555-555555555555/sketch.png", name:"sketch.png", size:512, added:"2026-06-07T06:31:00Z"}]`, pinned true; body `"# Heading\n\nSome *markdown* with --- inside\n\n---\n\nAfter a rule.\n"` |
+| `note-minimal.md` | Note `66666666-6666-4666-8666-666666666666`, title `Plain title`, personal, goalId null, notebookId null, created T0, updated T0, attachments `[]`, pinned false (key omitted); body `""` |
 
 The tricky titles (`yes`, `123`, `null`, colons, quotes, non-ASCII) are deliberate. They catch YAML
 writers that drop the quotes a scalar needs.

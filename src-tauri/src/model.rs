@@ -147,6 +147,10 @@ pub struct Note {
     /// resilience).
     #[serde(default)]
     pub attachments: Vec<Attachment>,
+    /// Pinned to the top of the notes list. Defaults to false so notes written
+    /// before this field existed still load (ADR-0006).
+    #[serde(default)]
+    pub pinned: bool,
 }
 
 /// A context-scoped, single-level container that groups Notes (CONTEXT.md,

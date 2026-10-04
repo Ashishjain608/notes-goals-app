@@ -182,6 +182,7 @@ export interface AppState extends UndoSlice {
   deleteNote: (id: string) => Promise<void>;
   /** File a note into a notebook, or null to unfile (persists via move_note). */
   moveNoteToNotebook: (id: string, notebookId: string | null) => Promise<void>;
+  setNotePinned: (id: string, pinned: boolean) => Promise<void>;
 
   // notebook actions
   addNotebook: (input: CreateNotebookInput) => Promise<Notebook>;
@@ -613,17 +614,21 @@ export const useStore = create<AppState>((set, get) => {
       return created;
     },
 
-    saveNote: async (note, body) => {
-      // A notebook/goal only holds notes of its own context; if an edit (e.g. a
-      // context switch) left the note pointing at a notebook or goal it can no
-      // longer belong to, unfile/unlink it before persisting (ADR-0008 / ADR-0003).
-      const reconciled = reconcileNoteGoal(
-        reconcileNoteNotebook(note, get().notebooks),
-        get().goals,
-      );
-      const updated = await withSaveGuard(() => ipc.updateNote(reconciled, body));
-      set((s) => ({ notes: s.notes.map((n) => (n.id === updated.id ? updated : n)) }));
-    },
+    saveNote: (note, body) =>
+      // Serialized with setNotePinned (Rust's pin command rewrites the file from disk).
+      chained(`note:${note.id}`, async () => {
+        // A notebook/goal only holds notes of its own context; if an edit (e.g. a
+        // context switch) left the note pointing at a notebook or goal it can no
+        // longer belong to, unfile/unlink it before persisting (ADR-0008 / ADR-0003).
+        // `pinned` is owned by setNotePinned: an editor holding an older copy must not undo a pin.
+        const pinned = get().notes.find((n) => n.id === note.id)?.pinned ?? note.pinned;
+        const reconciled = reconcileNoteGoal(
+          reconcileNoteNotebook({ ...note, pinned }, get().notebooks),
+          get().goals,
+        );
+        const updated = await withSaveGuard(() => ipc.updateNote(reconciled, body));
+        set((s) => ({ notes: s.notes.map((n) => (n.id === updated.id ? updated : n)) }));
+      }),
 
     getNoteBody: async (id) => ipc.loadNoteBody(id),
 
@@ -639,6 +644,13 @@ export const useStore = create<AppState>((set, get) => {
       const updated = await withSaveGuard(() => ipc.moveNote(id, notebookId));
       set((s) => ({ notes: s.notes.map((n) => (n.id === id ? updated : n)) }));
     },
+
+    setNotePinned: (id, pinned) =>
+      chained(`note:${id}`, async () => {
+        const updated = await withSaveGuard(() => ipc.setNotePinned(id, pinned));
+        // Patch only `pinned` so a fresher in-memory note (open editor) isn't replaced.
+        set((s) => ({ notes: s.notes.map((n) => (n.id === id ? { ...n, pinned: updated.pinned } : n)) }));
+      }),
 
     /* ------------------------------------------------------ notebook actions */
 

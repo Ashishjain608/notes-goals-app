@@ -88,6 +88,7 @@ export const noteFull: Note = {
       added: "2026-06-07T06:31:00Z",
     },
   ],
+  pinned: true,
 };
 export const noteFullBody = "# Heading\n\nSome *markdown* with --- inside\n\n---\n\nAfter a rule.\n";
 
@@ -100,5 +101,6 @@ export const noteMinimal: Note = {
   created: T0,
   updated: T0,
   attachments: [],
+  pinned: false,
 };
 export const noteMinimalBody = "";

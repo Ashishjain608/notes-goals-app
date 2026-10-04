@@ -22,8 +22,15 @@ describe("note frontmatter", () => {
   it("maps blank ids to null and defaults missing notebookId/attachments", () => {
     const raw = "---\nid: n\ntitle: T\ncontext: office\ngoalId: ''\ncreated: a\nupdated: b\n---\nhi";
     expect(parseNoteMeta(raw)).toEqual({
-      id: "n", title: "T", context: "office", goalId: null, notebookId: null, created: "a", updated: "b", attachments: [],
+      id: "n", title: "T", context: "office", goalId: null, notebookId: null, created: "a", updated: "b", attachments: [], pinned: false,
     });
+  });
+
+  it("omits pinned when false and round-trips it when true", () => {
+    expect(renderNote(noteMinimal, "")).not.toContain("pinned");
+    const raw = renderNote({ ...noteMinimal, pinned: true }, "");
+    expect(raw).toContain("pinned: true\n");
+    expect(parseNoteMeta(raw).pinned).toBe(true);
   });
 
   it("tolerates CRLF and requires the closing --- alone on its line", () => {

@@ -11,6 +11,7 @@ attachments:
   name: sketch.png
   size: 512
   added: 2026-06-07T06:31:00Z
+pinned: true
 ---
 # Heading
 

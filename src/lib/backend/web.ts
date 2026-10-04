@@ -221,6 +221,7 @@ export function createWebBackend(files: VaultTextFiles) {
         created: now,
         updated: now,
         attachments: [],
+        pinned: false,
       };
       await writeNote(note, input.body ?? "");
       return note;
@@ -231,6 +232,10 @@ export function createWebBackend(files: VaultTextFiles) {
       return next;
     },
     deleteNote: (id: string): Promise<void> => remove(notePath(id), id),
+    async setNotePinned(id: string, pinned: boolean): Promise<Note> {
+      const note = parseNoteMeta(await readNoteRaw(id));
+      return rewriteNoteMeta(note, (n) => ({ ...n, pinned }));
+    },
     async moveNote(id: string, notebookId: string | null): Promise<Note> {
       const note = parseNoteMeta(await readNoteRaw(id));
       return rewriteNoteMeta(note, (n) => ({ ...n, notebookId, updated: nowUtc() }));
@@ -352,6 +357,7 @@ export const updateNote: WebBackend["updateNote"] = (n, b) => be().updateNote(n,
 export const deleteNote: WebBackend["deleteNote"] = (id) => be().deleteNote(id);
 export const moveNote: WebBackend["moveNote"] = (id, nb) => be().moveNote(id, nb);
 export const createNotebook: WebBackend["createNotebook"] = (i) => be().createNotebook(i);
+export const setNotePinned: WebBackend["setNotePinned"] = (id, p) => be().setNotePinned(id, p);
 export const updateNotebook: WebBackend["updateNotebook"] = (n) => be().updateNotebook(n);
 export const deleteNotebook: WebBackend["deleteNotebook"] = (id) => be().deleteNotebook(id);
 export const createGoal: WebBackend["createGoal"] = (i) => be().createGoal(i);
