@@ -10,6 +10,8 @@ import type { Note } from "@/types";
 import { useStore } from "@/store";
 import { Icon } from "@/components";
 import { confirmDestructive } from "@/lib/confirm";
+import { useIsPhone } from "@/lib/platform";
+import { FilingChip } from "@/views/Notes/FilingSheet";
 import { NoteEditor, type NoteEditorApi } from "@/views/Notes/NoteEditor";
 import type { NoteEditorStore } from "@/views/Notes/useNoteEditor";
 import { useSlidePanel } from "@/views/useSlidePanel";
@@ -64,6 +66,7 @@ export function NoteEditorDrawer({
   const trashAttachment = useStore((s) => s.trashAttachment);
   const openAttachment = useStore((s) => s.openAttachment);
 
+  const isPhone = useIsPhone();
   const liveNote = noteId ? notes.find((n) => n.id === noteId) : undefined;
   const open = liveNote != null;
 
@@ -192,7 +195,16 @@ export function NoteEditorDrawer({
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col">
-          <NoteEditor note={note} store={noteStore} contextEditable={false} apiRef={apiRef} />
+          <NoteEditor
+            note={note}
+            store={noteStore}
+            contextEditable={false}
+            apiRef={apiRef}
+            phone={isPhone}
+            renderFiling={({ saveWith, disabled }) => (
+              <FilingChip note={note} saveWith={saveWith} disabled={disabled} fixedContext lockGoal />
+            )}
+          />
         </div>
       </aside>
     </>

@@ -10,12 +10,15 @@
  * draft on close.
  */
 import { useEffect, type JSX, type MutableRefObject, type ReactNode } from "react";
-import { EditorContent } from "@tiptap/react";
+import { EditorContent, type Editor } from "@tiptap/react";
 import type { Attachment, Context, Note } from "@/types";
 import { ageInDays } from "@/lib/dates";
 import { errorMessageOf } from "@/lib/errors";
-import { AttachmentList, ContextDot } from "@/components";
+import { AttachmentList, ContextDot, Icon } from "@/components";
+import { useKeyboardInset } from "@/lib/keyboard";
 import { EditorToolbar } from "./EditorToolbar";
+import { FormatPill, FORMAT_PILL_GAP, FORMAT_PILL_HEIGHT } from "./FormatPill";
+import { ageLabel } from "./PhoneNotes";
 import { useNoteEditor, type NoteEditorStore } from "./useNoteEditor";
 
 const NOTE_CONTEXTS: ReadonlyArray<{ value: Context; label: string }> = [
@@ -44,6 +47,14 @@ export interface NoteEditorProps {
   metaExtra?: ReactNode;
   /** Receives a flush/isEmpty handle for close-time persistence + empty checks. */
   apiRef?: MutableRefObject<NoteEditorApi | null>;
+  /** Phone layout (ADR-0012): no top toolbar, a FormatPill above the keyboard, a filing row. Default false = desktop. */
+  phone?: boolean;
+  /** Phone only: renders a Back button (44px target) in the header row. */
+  onBack?: () => void;
+  /** Phone only: renders a Pin toggle in the header row. */
+  onTogglePin?: () => void;
+  /** Phone only: the filing row, given the editor's save-through handle. */
+  renderFiling?: (h: { saveWith: (patch: Partial<Note>) => boolean; disabled: boolean }) => ReactNode;
 }
 
 /** A compact Office / Personal toggle for switching a note's context inline. */
@@ -84,6 +95,10 @@ export function NoteEditor({
   contextEditable = true,
   metaExtra,
   apiRef,
+  phone = false,
+  onBack,
+  onTogglePin,
+  renderFiling,
 }: NoteEditorProps): JSX.Element {
   const {
     editor,
@@ -95,6 +110,7 @@ export function NoteEditor({
     flush,
     discard,
     saveWith,
+    canSave,
     getBody,
     isEmpty,
     attachments,
@@ -113,6 +129,25 @@ export function NoteEditor({
       window.alert(`Couldn't open "${attachment.name}": ${errorMessageOf(err)}`);
     });
   };
+
+  if (phone) {
+    return (
+      <PhoneEditorLayout
+        editor={editor}
+        note={note}
+        title={title}
+        setTitle={setTitle}
+        loadingBody={loadingBody}
+        onBack={onBack}
+        onTogglePin={onTogglePin}
+        onDelete={onDelete}
+        filing={renderFiling?.({ saveWith, disabled: loadingBody || !canSave })}
+        attachments={attachments}
+        onOpenAttachment={handleOpenAttachment}
+        onRemoveAttachment={removeAttachment}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
@@ -174,6 +209,145 @@ export function NoteEditor({
         )}
       </div>
 
+      <EditorStyles />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------ phone layout */
+
+interface PhoneEditorLayoutProps {
+  editor: Editor | null;
+  note: Note;
+  title: string;
+  setTitle: (next: string) => void;
+  loadingBody: boolean;
+  onBack?: () => void;
+  onTogglePin?: () => void;
+  onDelete?: () => void;
+  filing: ReactNode;
+  attachments: Attachment[];
+  onOpenAttachment: (a: Attachment) => void;
+  onRemoveAttachment: (path: string) => void;
+}
+
+/** The phone editing surface: header row, filing row, title + body, FormatPill. */
+function PhoneEditorLayout({
+  editor,
+  note,
+  title,
+  setTitle,
+  loadingBody,
+  onBack,
+  onTogglePin,
+  onDelete,
+  filing,
+  attachments,
+  onOpenAttachment,
+  onRemoveAttachment,
+}: PhoneEditorLayoutProps): JSX.Element {
+  const inset = useKeyboardInset();
+  // The scroller pads by pill + keyboard so the last line can scroll clear of both.
+  const below = FORMAT_PILL_HEIGHT + FORMAT_PILL_GAP + inset;
+
+  // Keep the caret clear of the keyboard + pill when ProseMirror scrolls it into view.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const margin = { top: 8, bottom: below + 24, left: 0, right: 0 };
+    try {
+      editor.view.setProps({ scrollMargin: margin, scrollThreshold: margin });
+    } catch {
+      /* view not mounted yet; re-runs when `below` or the editor changes */
+    }
+  }, [editor, below, loadingBody]);
+
+  return (
+    <div className="flex h-full min-w-0 flex-1 flex-col">
+      <div className="flex w-full flex-1 flex-col px-4" style={{ minHeight: 0 }}>
+        {(onBack || onDelete) && (
+          <div className="-ml-2 flex items-center justify-between">
+            {onBack ? (
+              <button
+                type="button"
+                onClick={onBack}
+                aria-label="Back to notes"
+                title="Back to the notes list"
+                className="inline-flex h-11 items-center gap-1 rounded-md pl-1 pr-3 text-[16px] font-medium text-accent-ink"
+              >
+                <Icon name="chevron" size={18} className="rotate-180" />
+                Notes
+              </button>
+            ) : (
+              <span />
+            )}
+            <span className="flex">
+            {onTogglePin && (
+            <button
+              type="button"
+              aria-pressed={note.pinned}
+              aria-label={note.pinned ? "Unpin note" : "Pin note"}
+              title={note.pinned ? "Unpin: drop it from Pinned" : "Pin: keep it at the top of Notes"}
+              onClick={onTogglePin}
+              className={`grid h-11 w-11 place-items-center rounded-md ${note.pinned ? "text-accent-ink" : "text-ink-3"}`}
+            >
+              <Icon name="pin" size={18} />
+            </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                aria-label="Delete note"
+                title="Delete note"
+                className="grid h-11 w-11 place-items-center rounded-md text-ink-3 active:bg-warn-soft active:text-warn-ink"
+              >
+                <Icon name="trash" size={18} />
+              </button>
+            )}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">{filing}</div>
+          <span className="shrink-0 text-[12px] text-ink-3">
+            {ageInDays(note.updated) <= 0 ? "Edited today" : `Edited ${ageLabel(ageInDays(note.updated))} ago`}
+          </span>
+        </div>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              editor?.commands.focus("start");
+            }
+          }}
+          placeholder="Untitled"
+          aria-label="Note title"
+          className="w-full border-none bg-transparent px-0 pb-3 pt-3 font-serif text-[26px] font-medium leading-[1.15] tracking-[-0.015em] text-ink outline-none placeholder:text-ink-3"
+        />
+        {loadingBody ? (
+          <div className="py-4 font-serif text-[18px] italic text-ink-3">Loading…</div>
+        ) : (
+          <div
+            className="scroll min-h-0 flex-1 cursor-text"
+            style={{ paddingBottom: below }}
+            onClick={() => editor?.commands.focus()}
+          >
+            <EditorContent editor={editor} className="note-prose py-2" />
+            {attachments.length > 0 && (
+              <div className="pb-4" onClick={(e) => e.stopPropagation()}>
+                <AttachmentList
+                  attachments={attachments}
+                  onOpen={onOpenAttachment}
+                  onRemove={(a) => onRemoveAttachment(a.path)}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      <FormatPill editor={editor} inset={inset} />
       <EditorStyles />
     </div>
   );

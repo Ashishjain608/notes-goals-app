@@ -25,6 +25,8 @@ import { confirmDestructive } from "@/lib/confirm";
 import { useIsPhone } from "@/lib/platform";
 import { NoteList } from "./NoteList";
 import { NoteEditor } from "./NoteEditor";
+import { PhoneNotes } from "./PhoneNotes";
+import { FilingChip } from "./FilingSheet";
 import type { NoteEditorStore } from "./useNoteEditor";
 
 /* ----------------------------------------------------------- store selectors */
@@ -192,28 +194,16 @@ export default function Notes(): JSX.Element {
       onBody={rememberBody}
       onOpenGoal={openGoal}
       onDelete={handleDelete}
+      phone={isPhone}
+      onBack={() => selectNote(null)}
+      onTogglePin={(n) => void useStore.getState().setNotePinned(n.id, !n.pinned)}
     />
   );
 
-  // Phone: the editor takes the whole screen, with a Back button to the list.
+  // Phone: the list, or the editor taking the whole screen (Back returns to the list).
+  if (isPhone && !selectedNote) return <PhoneNotes bodies={bodies} />;
   if (isPhone && selectedNote) {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="px-2 pt-1">
-          <button
-            type="button"
-            onClick={() => selectNote(null)}
-            aria-label="Back to notes"
-            title="Back to the notes list"
-            className="inline-flex h-11 items-center gap-1 rounded-md pl-2 pr-3 text-[15px] font-medium text-accent-ink"
-          >
-            <Icon name="chevron" size={18} className="rotate-180" />
-            Notes
-          </button>
-        </div>
-        <div className="min-h-0 flex-1">{editorPane}</div>
-      </div>
-    );
+    return <div className="h-full">{editorPane}</div>;
   }
 
   return (
@@ -249,6 +239,9 @@ interface NoteEditorPaneProps {
   onBody: (id: string, markdown: string) => void;
   onOpenGoal: (goalId: string) => void;
   onDelete: (note: Note) => void;
+  phone: boolean;
+  onBack: () => void;
+  onTogglePin: (note: Note) => void;
 }
 
 /** The editor pane: the shared NoteEditor wrapped with the Notes-screen chrome
@@ -261,6 +254,9 @@ function NoteEditorPane({
   onBody,
   onOpenGoal,
   onDelete,
+  phone,
+  onBack,
+  onTogglePin,
 }: NoteEditorPaneProps): JSX.Element {
   if (!note) {
     return (
@@ -300,6 +296,12 @@ function NoteEditorPane({
       onBody={onBody}
       onDelete={() => onDelete(note)}
       metaExtra={metaExtra}
+      phone={phone}
+      onBack={onBack}
+      onTogglePin={() => onTogglePin(note)}
+      renderFiling={({ saveWith, disabled }) => (
+        <FilingChip note={note} saveWith={saveWith} disabled={disabled} />
+      )}
     />
   );
 }

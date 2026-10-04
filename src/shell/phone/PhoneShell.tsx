@@ -1,6 +1,6 @@
 /**
  * PhoneShell — the phone's app frame (ADR-0012), rendered by App.tsx instead
- * of the desktop TitleBar/NavRail/BottomBar tree when `useIsPhone()`.
+ * of the desktop TitleBar/NavRail tree when `useIsPhone()`.
  *
  * The routed view fills the screen and scrolls under floating chrome: a glass
  * tab bar with search beside it, and the add button. Everything else is an
@@ -22,10 +22,10 @@ import { SearchOverlay } from "./SearchOverlay";
 import { UndoToast } from "./UndoToast";
 
 /**
- * Screens whose phone view draws its own PhoneHeader (title + context avatar).
- * The rest get a bare avatar row on top until they have a phone view.
+ * Screens that skip the shell's bare avatar row: those that draw their own
+ * PhoneHeader, and the goal page (its Back row leads; More is a tab away).
  */
-const OWN_HEADER = new Set<Screen>([]);
+const OWN_HEADER = new Set<Screen>(["today", "tasks", "notes", "goals", "goal"]);
 
 /** Register the page-like states with phone history so swipe-back closes them. */
 function usePageLayers(): void {

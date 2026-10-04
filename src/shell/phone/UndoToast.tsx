@@ -18,13 +18,15 @@ export function UndoToast(): JSX.Element | null {
       style={{ bottom: "calc(max(12px, env(safe-area-inset-bottom)) + 136px)" }}
     >
       <span className="min-w-0">{toast.label}</span>
-      <button
-        type="button"
-        onClick={() => void runUndo()}
-        className="min-h-[44px] min-w-[44px] text-[15px] font-bold text-[#a3adff]"
-      >
-        Undo
-      </button>
+      {toast.run && (
+        <button
+          type="button"
+          onClick={() => void runUndo()}
+          className="min-h-[44px] min-w-[44px] text-[15px] font-bold text-[#a3adff] [[data-theme=spectrum-dark]_&]:text-[#4038c4]"
+        >
+          Undo
+        </button>
+      )}
     </div>
   );
 }

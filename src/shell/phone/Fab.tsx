@@ -79,7 +79,7 @@ export function Fab({ onPick }: { onPick: (mode: ComposerMode) => void }): JSX.E
                 setPhoneOverlay(null);
                 onPick(mode);
               }}
-              className={`animate-riseIn flex h-14 items-center gap-[10px] rounded-full pl-[18px] pr-6 text-[17px] font-semibold ${PILL_SHADOW} ${
+              className={`animate-riseIn motion-reduce:animate-none flex h-14 items-center gap-[10px] rounded-full pl-[18px] pr-6 text-[17px] font-semibold ${PILL_SHADOW} ${
                 primary
                   ? "border-[1.5px] border-accent-line bg-menu-primary text-accent-ink"
                   : "bg-surface text-ink"

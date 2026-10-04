@@ -14,7 +14,9 @@ import type { Goal } from "@/types";
 import { useStore, selectGoalsOverview, selectGoalProgress, type GoalProgress } from "@/store";
 import { ProgressBar, ContextDot, Icon } from "@/components";
 import { formatShortDate } from "@/lib/dates";
+import { useIsPhone } from "@/lib/platform";
 import { NewGoalDialog } from "./NewGoalDialog";
+import PhoneGoals from "./PhoneGoals";
 
 /* ----------------------------------------------------------------- live cards */
 
@@ -140,6 +142,10 @@ function ClosedSection({ closed, onOpen }: ClosedSectionProps): JSX.Element | nu
 
 /** Goals overview: header, a 2-column grid of live goals, then Closed. */
 export default function GoalsOverview(): JSX.Element {
+  return useIsPhone() ? <PhoneGoals /> : <DesktopGoals />;
+}
+
+function DesktopGoals(): JSX.Element {
   const goals = useStore((s) => s.goals);
   const tasks = useStore((s) => s.tasks);
   const contextFilter = useStore((s) => s.contextFilter);

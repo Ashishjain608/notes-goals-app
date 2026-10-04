@@ -8,6 +8,17 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 /** Slightly longer than the slide-out animation (200ms) so the sheet unmounts after it finishes. */
 export const BOTTOM_SHEET_EXIT_MS = 260;
 
+/** Open sheets, oldest first: only the last (topmost) one answers Escape. */
+const openStack: symbol[] = [];
+export const isTopSheet = (id: symbol): boolean => openStack[openStack.length - 1] === id;
+export function pushSheet(id: symbol): () => void {
+  openStack.push(id);
+  return () => {
+    const i = openStack.indexOf(id);
+    if (i >= 0) openStack.splice(i, 1);
+  };
+}
+
 export interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
@@ -52,13 +63,18 @@ export function BottomSheet({
 
   useEffect(() => {
     if (!open) return;
+    const id = Symbol("sheet");
+    const pop = pushSheet(id);
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (e.key !== "Escape" || e.defaultPrevented || !isTopSheet(id)) return;
       e.preventDefault();
       onCloseRef.current();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      pop();
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   // Land screen-reader focus in the dialog when it opens.

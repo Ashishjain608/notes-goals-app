@@ -12,6 +12,8 @@ import { useMemo, useState, type JSX } from "react";
 import type { TaskStatus } from "@/types";
 import { useStore, selectBacklog, goalsById } from "@/store";
 import { TaskRow, Icon, type IconName } from "@/components";
+import { useIsPhone } from "@/lib/platform";
+import PhoneTasks from "./PhoneTasks";
 
 /* ----------------------------------------------------------------- filter UI */
 
@@ -50,6 +52,11 @@ const CHIPS: ChipDef[] = [
 
 /** All-tasks backlog with status tabs, filter chips, and a title search. */
 export default function Backlog(): JSX.Element {
+  if (useIsPhone()) return <PhoneTasks />;
+  return <DesktopBacklog />;
+}
+
+function DesktopBacklog(): JSX.Element {
   const [status, setStatus] = useState<StatusTab>("Open");
   const [chip, setChip] = useState<FilterChip | null>(null);
   const [query, setQuery] = useState("");
