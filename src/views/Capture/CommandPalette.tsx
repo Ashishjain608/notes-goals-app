@@ -11,16 +11,14 @@
  * `searchNoteBodies` on a short debounce and merged in by `searchAll`.
  */
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
-import type { Context, NoteBodyHit } from "@/types";
+import type { Context } from "@/types";
 import type { Screen } from "@/store";
 import type { IconName } from "@/components";
 import { useStore } from "@/store";
 import { Icon } from "@/components";
 import { searchAll, MIN_QUERY, type SearchHit, type SearchKind } from "@/lib/search";
 import { OptionRow } from "./OptionRow";
-
-/** How long typing has to settle before the note bodies are read off disk. */
-const BODY_SEARCH_DEBOUNCE_MS = 140;
+import { useNoteBodyHits } from "./useNoteBodyHits";
 
 /** Collapse the global filter to a concrete write context (`all` → office). */
 function defaultContext(filter: string): Context {
@@ -63,47 +61,22 @@ export function CommandPalette(): JSX.Element | null {
   const navigate = useStore((s) => s.navigate);
   const openTaskDetail = useStore((s) => s.openTaskDetail);
   const selectNote = useStore((s) => s.selectNote);
-  const searchNoteBodies = useStore((s) => s.searchNoteBodies);
 
   const [title, setTitle] = useState("");
-  const [bodyHits, setBodyHits] = useState<NoteBodyHit[]>([]);
   const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const trimmed = title.trim();
+  const bodyHits = useNoteBodyHits(open ? trimmed : "");
 
   // Reset + focus the input each time the palette opens.
   useEffect(() => {
     if (open) {
       setTitle("");
-      setBodyHits([]);
       setSelected(0);
       inputRef.current?.focus();
     }
   }, [open]);
-
-  // Note bodies live on disk; fetch matches after typing settles. A failure
-  // (no vault yet, unreadable file) simply means no body hits, never a crash.
-  useEffect(() => {
-    if (!open || trimmed.length < MIN_QUERY) {
-      setBodyHits([]);
-      return;
-    }
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      void searchNoteBodies(trimmed)
-        .then((hits) => {
-          if (!cancelled) setBodyHits(hits);
-        })
-        .catch(() => {
-          if (!cancelled) setBodyHits([]);
-        });
-    }, BODY_SEARCH_DEBOUNCE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [open, trimmed, searchNoteBodies]);
 
   const hits = useMemo(
     () => searchAll(trimmed, { tasks, notes, goals, notebooks }, bodyHits),
