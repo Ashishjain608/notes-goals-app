@@ -4,19 +4,19 @@
  *
  * The routed view fills the screen and scrolls under floating chrome: a glass
  * tab bar with search beside it, and the add button. Everything else is an
- * overlay above it: the FAB menu, the More sheet, search, the undo toast.
+ * overlay above it: the FAB menu, the composer, the More sheet, search, the
+ * undo toast.
  * Each page-like state (task detail, an open note, a goal page, Activity,
  * Settings) holds a history entry, so iOS swipe-back closes it.
  */
-import { useState, type JSX, type ReactNode } from "react";
-import { useStore, type ComposerMode, type Screen } from "@/store";
+import type { JSX, ReactNode } from "react";
+import { useStore, type Screen } from "@/store";
 import { ContextAvatar } from "@/components";
-import type { Context } from "@/types";
 import { useKeyboardInset } from "@/lib/keyboard";
 import { usePhoneLayer } from "@/lib/phoneHistory";
-import { NewGoalDialog } from "@/views/Goals/NewGoalDialog";
 import { GlassTabBar } from "./GlassTabBar";
 import { Fab } from "./Fab";
+import { Composer } from "./Composer";
 import { MoreSheet } from "./MoreSheet";
 import { SearchOverlay } from "./SearchOverlay";
 import { UndoToast } from "./UndoToast";
@@ -47,29 +47,13 @@ export function PhoneShell({ children }: { children: ReactNode }): JSX.Element {
   const selectedNoteId = useStore((s) => s.selectedNoteId);
   const paletteOpen = useStore((s) => s.paletteOpen);
   const contextFilter = useStore((s) => s.contextFilter);
+  const composing = useStore((s) => s.phoneOverlay?.kind === "composer");
   const keyboard = useKeyboardInset();
-  const [newGoalOpen, setNewGoalOpen] = useState(false);
   usePageLayers();
 
-  // The chrome steps aside while writing (a note open, search up, any keyboard).
+  // The chrome steps aside while writing (a note open, search up, the composer, any keyboard).
   const editingNote = screen === "notes" && selectedNoteId !== null;
-  const chrome = !editingNote && !paletteOpen && keyboard === 0;
-
-  const onPick = async (mode: ComposerMode): Promise<void> => {
-    const { navigate, addNote, selectNote } = useStore.getState();
-    const context: Context = contextFilter === "all" ? "personal" : contextFilter;
-    if (mode === "goal") {
-      setNewGoalOpen(true);
-    } else if (mode === "task") {
-      navigate("today");
-      // ponytail: focuses Today's quick-add until the composer (Phase 2) replaces it.
-      setTimeout(() => document.querySelector<HTMLInputElement>("main input")?.focus(), 50);
-    } else {
-      navigate("notes");
-      const created = await addNote({ title: "Untitled", context, body: mode === "checklist" ? "- [ ] " : "" });
-      selectNote(created.id);
-    }
-  };
+  const chrome = !editingNote && !paletteOpen && !composing && keyboard === 0;
 
   return (
     <div className="ng-phone relative flex h-[100dvh] flex-col bg-bg text-ink">
@@ -87,14 +71,14 @@ export function PhoneShell({ children }: { children: ReactNode }): JSX.Element {
       {chrome && (
         <>
           <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-[150px] bg-[image:var(--fade)]" />
-          <Fab onPick={(mode) => void onPick(mode)} />
+          <Fab onPick={(mode) => useStore.getState().setPhoneOverlay({ kind: "composer", mode })} />
           <GlassTabBar />
         </>
       )}
       <MoreSheet />
       <SearchOverlay />
+      <Composer />
       <UndoToast />
-      <NewGoalDialog open={newGoalOpen} onClose={() => setNewGoalOpen(false)} />
     </div>
   );
 }
